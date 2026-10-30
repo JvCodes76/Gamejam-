@@ -1,9 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2"]
 [ext_resource type="Script" path="res://components/health_component.gd" id="3"]
 [ext_resource type="Script" path="res://components/hurtbox.gd" id="4"]
+
+[ext_resource type="Script" path="res://player/crosshair.gd" id="5"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 10.0
@@ -27,6 +29,9 @@ texture = ExtResource("2")
 
 [node name="Muzzle" type="Marker2D" parent="Pivot"]
 position = Vector2(16, 0)
+
+[node name="Crosshair" type="Node2D" parent="."]
+script = ExtResource("5")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 

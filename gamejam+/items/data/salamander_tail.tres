@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" path="res://raboDeSalamandra.png" id="3"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+effect_type = 0
+magnitude = 1.0[sub_resource type="Resource" id="e2"]
+script = ExtResource("2")
+effect_type = 2
+magnitude = 1.0[resource]
+script = ExtResource("1")
+id = &"salamander_tail"
+display_name = "Salamander Tail"
+icon = ExtResource("3")
+rarity = 1
+aspects = Array[int]([4, 4])
+effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])

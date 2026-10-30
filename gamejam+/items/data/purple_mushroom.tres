@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" path="res://cogumeloRoxo.png" id="3"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+effect_type = 1
+magnitude = 1.0[resource]
+script = ExtResource("1")
+id = &"purple_mushroom"
+display_name = "Purple Mushroom"
+icon = ExtResource("3")
+rarity = 0
+aspects = Array[int]([1])
+effects = Array[ExtResource("2")]([SubResource("e1")])
