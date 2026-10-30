@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="2_pause"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="LabelVida" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 120.0
+offset_bottom = 31.0
+text = "Vida: --/--"
+
+[node name="LabelPontos" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 28.0
+offset_right = 120.0
+offset_bottom = 51.0
+text = "Pontos: 0"
+
+[node name="PauseMenu" parent="." instance=ExtResource("2_pause")]
