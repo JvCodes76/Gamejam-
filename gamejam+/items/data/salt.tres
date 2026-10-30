@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" path="res://Sal.png" id="3"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+effect_type = 4
+magnitude = 1.0
+
+[resource]
+script = ExtResource("1")
+id = &"salt"
+display_name = "Salt"
+icon = ExtResource("3")
+rarity = 0
+aspects = Array[int]([3])
+effects = Array[ExtResource("2")]([SubResource("e1")])
