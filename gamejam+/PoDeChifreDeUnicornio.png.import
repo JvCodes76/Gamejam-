@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bx27lo51nrd0u"
-path="res://.godot/imported/placeholder_rose_petal.png-0351b4d0bf591d7498ece7280a25e255.ctex"
+uid="uid://c3lgaf0c0sw6h"
+path="res://.godot/imported/PoDeChifreDeUnicornio.png-799c12cdf3e60d8df46ad23ab7087ed4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_rose_petal.png"
-dest_files=["res://.godot/imported/placeholder_rose_petal.png-0351b4d0bf591d7498ece7280a25e255.ctex"]
+source_file="res://PoDeChifreDeUnicornio.png"
+dest_files=["res://.godot/imported/PoDeChifreDeUnicornio.png-799c12cdf3e60d8df46ad23ab7087ed4.ctex"]
 
 [params]
 

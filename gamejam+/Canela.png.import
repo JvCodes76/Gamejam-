@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dmhqhe6n7i1h"
-path="res://.godot/imported/placeholder_unicorn_horn_shavings.png-e76d930019c321c75bbe43cff6b096a5.ctex"
+uid="uid://l7fivdljnyq6"
+path="res://.godot/imported/Canela.png-230831cf0732486e57f2ae968b7d1f17.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_unicorn_horn_shavings.png"
-dest_files=["res://.godot/imported/placeholder_unicorn_horn_shavings.png-e76d930019c321c75bbe43cff6b096a5.ctex"]
+source_file="res://Canela.png"
+dest_files=["res://.godot/imported/Canela.png-230831cf0732486e57f2ae968b7d1f17.ctex"]
 
 [params]
 

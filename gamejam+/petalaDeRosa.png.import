@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b05jpymi5xhqc"
-path="res://.godot/imported/placeholder_cinnamon.png-eb1942b33673393f2583433f05950239.ctex"
+uid="uid://dxmqx3eww8qkn"
+path="res://.godot/imported/petalaDeRosa.png-f017c8e532e87ac8375586f99b2df221.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_cinnamon.png"
-dest_files=["res://.godot/imported/placeholder_cinnamon.png-eb1942b33673393f2583433f05950239.ctex"]
+source_file="res://petalaDeRosa.png"
+dest_files=["res://.godot/imported/petalaDeRosa.png-f017c8e532e87ac8375586f99b2df221.ctex"]
 
 [params]
 

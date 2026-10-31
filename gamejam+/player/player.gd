@@ -6,15 +6,23 @@ const BULLET_SCENE: PackedScene = preload("res://projectiles/bullet.tscn")
 @export var move_speed: float = 110.0
 @export var acceleration: float = 900.0
 @export var friction: float = 1200.0
-@export var fire_rate_seconds: float = 0.18
+@export var fire_rate_seconds: float = 0.45
 @export var aim_deadzone: float = 0.3
 @export var gamepad_crosshair_distance: float = 60.0
+@export var walk_frame_time: float = 0.18
 
 var _fire_timer: float = 0.0
 var _aim_direction: Vector2 = Vector2.RIGHT
 var _use_gamepad: bool = false
 var _mods: ProjectileModifiers = ProjectileModifiers.new()
+var _walk_timer: float = 0.0
+var _walk_frame: int = 0
 
+# Folha com 4 direções x 2 quadros (parado/andando): baixo, direita, esquerda, cima
+const FRAMES_PER_DIRECTION: int = 2
+enum Facing { DOWN, RIGHT, LEFT, UP }
+
+@onready var _sprite: Sprite2D = $Sprite2D
 @onready var _pivot: Node2D = $Pivot
 @onready var _muzzle: Marker2D = $Pivot/Muzzle
 @onready var _health: HealthComponent = $HealthComponent
@@ -62,6 +70,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	_update_aim()
 	_handle_movement(delta)
+	_update_sprite(delta)
 	_fire_timer -= delta
 	if Input.is_action_pressed("shoot") and _fire_timer <= 0.0:
 		_shoot()
@@ -93,6 +102,27 @@ func _update_aim() -> void:
 	else:
 		_crosshair.global_position = global_position + _aim_direction * gamepad_crosshair_distance
 	_pivot.rotation = _aim_direction.angle()
+
+
+## Escolhe a direção do sprite pela mira e alterna os 2 quadros enquanto anda.
+func _update_sprite(delta: float) -> void:
+	var facing: Facing = _facing_from(_aim_direction)
+	if velocity.length() > 5.0:
+		_walk_timer += delta
+		if _walk_timer >= walk_frame_time:
+			_walk_timer = 0.0
+			_walk_frame = 1 - _walk_frame
+	else:
+		_walk_timer = 0.0
+		_walk_frame = 0
+	_sprite.frame = facing * FRAMES_PER_DIRECTION + _walk_frame
+
+
+## Converte a direção da mira em uma das 4 direções da folha.
+func _facing_from(direction: Vector2) -> Facing:
+	if absf(direction.x) > absf(direction.y):
+		return Facing.RIGHT if direction.x > 0.0 else Facing.LEFT
+	return Facing.DOWN if direction.y > 0.0 else Facing.UP
 
 
 ## Dispara uma bala na direção da mira.
