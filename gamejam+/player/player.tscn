@@ -1,13 +1,13 @@
 [gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1"]
-[ext_resource type="Texture2D" path="res://SpritesPlayer.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/SpritesPlayer.png" id="2"]
 [ext_resource type="Script" path="res://components/health_component.gd" id="3"]
 [ext_resource type="Script" path="res://components/hurtbox.gd" id="4"]
 
 [ext_resource type="Script" path="res://player/crosshair.gd" id="5"]
 [ext_resource type="Script" path="res://inventory/interactor.gd" id="6"]
-[ext_resource type="Texture2D" path="res://Cape_Animation2-Sheet.png" id="7"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/Cape_Animation2-Sheet.png" id="7"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 10.0

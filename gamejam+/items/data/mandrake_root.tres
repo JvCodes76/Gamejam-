@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://items/item_data.gd" id="1"]
 [ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
-[ext_resource type="Texture2D" path="res://assets/sprites/items/placeholder_mandrake_root.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/sprites/items/Mandragora.png" id="3"]
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
