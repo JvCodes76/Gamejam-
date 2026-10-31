@@ -16,6 +16,9 @@ const LIQUID_TOP_SKIP: int = 7
 var liquid_color: Color = Color.WHITE
 var filled: bool = false
 var active: bool = false
+# Anel de brilho ao virar o frasco ativo (0 = sem anel, 0..1 = expansão)
+var _ring_t: float = 0.0
+var _scale_tween: Tween
 
 
 func _ready() -> void:
@@ -27,10 +30,25 @@ func _ready() -> void:
 
 ## Atualiza o estado visual do frasco.
 func set_state(new_filled: bool, new_color: Color, new_active: bool) -> void:
+	var became_active: bool = new_active and not active
 	filled = new_filled
 	liquid_color = new_color
 	active = new_active
-	scale = Vector2.ONE * (active_scale if active else 1.0)
+	if _scale_tween != null:
+		_scale_tween.kill()
+	if became_active and is_inside_tree():
+		# Cresce além do tamanho ativo e volta com bounce, mais um anel de brilho
+		scale = Vector2.ONE * (active_scale + 0.25)
+		_scale_tween = create_tween().set_parallel()
+		_scale_tween.tween_property(self, "scale", Vector2.ONE * active_scale, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_scale_tween.tween_method(_set_ring, 0.001, 1.0, 0.3)
+	else:
+		scale = Vector2.ONE * (active_scale if active else 1.0)
+	queue_redraw()
+
+
+func _set_ring(value: float) -> void:
+	_ring_t = value if value < 1.0 else 0.0
 	queue_redraw()
 
 
@@ -44,4 +62,7 @@ func _draw() -> void:
 		var src: Rect2 = Rect2(0, skip, LIQUID_MASK.get_width(), LIQUID_MASK.get_height() - skip)
 		draw_texture_rect_region(LIQUID_MASK, Rect2(Vector2(0, skip * s), src.size * s), src, liquid_color)
 	draw_texture_rect(FLASK, Rect2(Vector2.ZERO, size), false, Color.WHITE if filled else Color(1, 1, 1, empty_alpha))
+	if _ring_t > 0.0:
+		var ring_color: Color = Color(liquid_color if filled else active_border_color, 1.0 - _ring_t)
+		draw_arc(size * 0.5, size.y * (0.5 + _ring_t * 0.6), 0.0, TAU, 24, ring_color, 1.5)
 	draw_string(ThemeDB.fallback_font, Vector2(0, size.y + 10), label_text, HORIZONTAL_ALIGNMENT_CENTER, size.x, 8, Color(1, 1, 1, 0.9 if active else 0.5))

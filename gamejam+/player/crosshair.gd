@@ -7,9 +7,25 @@ extends Node2D
 @export var color: Color = Color(1.0, 1.0, 1.0, 0.9)
 
 
+var _pulse_tween: Tween
+
+
 func _ready() -> void:
 	top_level = true
 	z_index = 100
+
+
+## Pop de escala com flash de brilho (troca de poção).
+func pulse() -> void:
+	if not is_inside_tree():
+		return
+	if _pulse_tween != null:
+		_pulse_tween.kill()
+	scale = Vector2.ONE * 1.8
+	modulate = Color(2.0, 2.0, 2.0, 1.0)
+	_pulse_tween = create_tween().set_parallel()
+	_pulse_tween.tween_property(self, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_pulse_tween.tween_property(self, "modulate", Color.WHITE, 0.2)
 
 
 ## Desenha um círculo com cruz centrado na posição.

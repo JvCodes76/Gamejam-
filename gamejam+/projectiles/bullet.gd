@@ -27,11 +27,44 @@ var _holy: bool = false
 var _tint: Color = Color.WHITE
 var _mud_distance: float = 0.0
 var _cloud_distance: float = 0.0
+# Rastro (Line2D em coordenadas globais) com os últimos pontos da bala
+var _trail: Line2D
 
 
 func _ready() -> void:
 	super()
 	body_entered.connect(_on_body_entered)
+	_build_trail()
+	# Nasce maior e encolhe para a escala normal
+	var sprite: Sprite2D = $Sprite2D as Sprite2D
+	var target_scale: Vector2 = sprite.scale
+	sprite.scale = target_scale * FeelConstants.BULLET_SPAWN_SCALE
+	create_tween().tween_property(sprite, "scale", target_scale, FeelConstants.BULLET_SPAWN_TIME)
+
+
+## Rastro curto na cor da bala, com alpha caindo até a cauda.
+func _build_trail() -> void:
+	_trail = Line2D.new()
+	_trail.top_level = true
+	_trail.width = FeelConstants.BULLET_TRAIL_WIDTH * (0.7 if split_child else 1.0)
+	_trail.z_index = -1
+	_trail.z_as_relative = true
+	_trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	var gradient: Gradient = Gradient.new()
+	gradient.set_color(0, Color(_tint, 0.0))
+	gradient.set_color(1, Color(_tint, 0.7))
+	_trail.gradient = gradient
+	var curve: Curve = Curve.new()
+	curve.add_point(Vector2(0.0, 0.3))
+	curve.add_point(Vector2(1.0, 1.0))
+	_trail.width_curve = curve
+	add_child(_trail)
+
+
+func _update_trail() -> void:
+	_trail.add_point(global_position)
+	while _trail.get_point_count() > FeelConstants.BULLET_TRAIL_POINTS:
+		_trail.remove_point(0)
 
 
 func _physics_process(delta: float) -> void:
@@ -41,6 +74,7 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 	global_position += direction * speed * delta
+	_update_trail()
 	if modifiers != null:
 		if modifiers.synergy.mud_enabled:
 			_drop_mud(speed * delta)
@@ -73,6 +107,14 @@ func apply_modifiers(mods: ProjectileModifiers, shooter: HealthComponent = null)
 func set_tint(color: Color) -> void:
 	_tint = color
 	($Sprite2D as Sprite2D).modulate = color
+	if _trail != null:
+		_trail.gradient.set_color(0, Color(color, 0.0))
+		_trail.gradient.set_color(1, Color(color, 0.7))
+
+
+## Cor atual da bala.
+func get_tint() -> Color:
+	return _tint
 
 
 ## Retorna true se a bala é santa (sinergia Light).
@@ -129,13 +171,16 @@ func apply_hit(area: Area2D) -> void:
 	if hurtbox in _ignored:
 		return
 	var dealt: int = damage
+	var crit: bool = false
 	if modifiers != null:
 		var extra: float = (1.0 + SynergyConstants.LIGHT_HOLY_BONUS if _holy else 1.0) * damage_factor
 		dealt = modifiers.roll_damage(damage, extra)
 		if not split_child and modifiers.roll_crit():
 			dealt = maxi(roundi(dealt * modifiers.crit_multiplier()), 1)
+			crit = true
 			print("[Combat] - crítico! dano %d" % dealt)
-	hurtbox.receive_hit(dealt)
+	hurtbox.receive_hit(dealt, direction, crit)
+	EventBus.play_sfx_requested.emit("crit" if crit else "hit")
 	if modifiers != null:
 		modifiers.apply_on_hit_effects(hurtbox, damage)
 		if _holy:
@@ -194,7 +239,18 @@ func _on_body_entered(body: Node2D) -> void:
 	var dealt: int = damage
 	if modifiers != null:
 		dealt = modifiers.roll_damage(damage, damage_factor)
+	_wall_feedback(Vector2(wall["position"]))
 	_impact(dealt)
+
+
+## Bala morreu na parede: mini burst com anel e aviso no EventBus.
+func _wall_feedback(at: Vector2) -> void:
+	var scene: Node = get_tree().current_scene
+	if scene != null:
+		var fx: ImpactEffect = ImpactEffect.spawn_burst(scene, at, 7.0, _tint, 5, 0.3, 1.0, 0.6)
+		fx.global_position = at
+	EventBus.bullet_hit_wall.emit(at, _tint)
+	EventBus.play_sfx_requested.emit("wall_hit")
 
 
 ## Ponto e normal da parede tocada: raio curto ao longo da direção; sem hit, usa a direção oposta como normal.

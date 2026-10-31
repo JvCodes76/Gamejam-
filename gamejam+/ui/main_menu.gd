@@ -9,6 +9,9 @@ func _ready() -> void:
 	# Conecta os botoes do menu
 	_botao_jogar.pressed.connect(_on_jogar_pressed)
 	_botao_sair.pressed.connect(_on_sair_pressed)
+	for button: Button in [_botao_jogar, _botao_sair]:
+		button.mouse_entered.connect(EventBus.play_sfx_requested.emit.bind("ui_hover"))
+		button.pressed.connect(EventBus.play_sfx_requested.emit.bind("ui_click"))
 	print("[UI] - Menu principal pronto")
 
 

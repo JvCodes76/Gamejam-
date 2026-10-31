@@ -50,3 +50,26 @@ signal enemy_dot_ticked(enemy: Node, source: StringName, amount: int)
 signal rage_changed(bonus: float)
 # Inimigo enfeitiçado morreu: o inimigo (ainda válido durante o sinal) e o tempo restante do charm
 signal charmed_enemy_died(enemy: Node2D, charm_time_left: float)
+
+# --- Game feel (escutados pelo autoload Juice, pela UI e pelo áudio) ---
+# Pedido de tremida de tela (trauma de 0 a 1, soma com o atual)
+signal screen_shake_requested(trauma: float)
+# Pedido de congelar o jogo por "duration" segundos reais (o maior vence, não empilha)
+signal hitstop_requested(duration: float)
+# Pedido de câmera lenta: escala de tempo por "duration" segundos reais
+signal slowmo_requested(scale: float, duration: float)
+# Dano direto causado a um inimigo (números de dano)
+signal damage_dealt(position: Vector2, amount: int, is_crit: bool, color: Color)
+# Dano negado (sinergia Darkness): mostra "BLOCK"
+signal damage_blocked(position: Vector2)
+# Player tomou dano
+signal player_hurt(position: Vector2)
+# Bala destruída numa parede
+signal bullet_hit_wall(position: Vector2, color: Color)
+# Sala trancou / foi limpa
+signal room_locked()
+signal room_cleared()
+# Item recolhido do chão (com a posição de onde estava)
+signal item_collected(item_id: StringName, position: Vector2)
+# Poção preparada no caldeirão
+signal potion_brewed(color: Color, position: Vector2)

@@ -10,6 +10,8 @@ var _alive: int = 0
 var _started: bool = false
 var _timer_left: float = 0.0
 var _timer_active: bool = false
+# Momento (ms) da última tremida de spawn: um lote de spawns treme a tela uma vez só
+var _last_spawn_shake: int = -100000
 
 
 func setup(new_room: RoomData, level: DungeonLevel) -> void:
@@ -69,9 +71,19 @@ func _spawn_elites(count: int) -> void:
 		_spawn(_level.elite_scene, true)
 
 
+# Marca o ponto no chão e só cria o inimigo quando o aviso termina (o inimigo já conta como vivo).
 func _spawn(scene: PackedScene, is_elite: bool) -> void:
 	if scene == null:
 		return
+	var marker: SpawnMarker = SpawnMarker.new()
+	marker.duration = FeelConstants.SPAWN_WARNING_TIME + randf_range(0.0, 0.2)
+	marker.finished.connect(_spawn_now.bind(scene, is_elite))
+	_level.add_child(marker)
+	marker.global_position = _random_point()
+	_alive += 1
+
+
+func _spawn_now(point: Vector2, scene: PackedScene, is_elite: bool) -> void:
 	var enemy: EnemyBase = scene.instantiate() as EnemyBase
 	var sprite: Sprite2D = enemy.get_node("Sprite2D") as Sprite2D
 	if is_elite:
@@ -80,11 +92,18 @@ func _spawn(scene: PackedScene, is_elite: bool) -> void:
 		sprite.scale *= _level.elite_scale
 		sprite.modulate = _level.elite_tint
 		enemy.is_basic = false
+		enemy.knockback_resistance = FeelConstants.ELITE_KNOCKBACK_RESISTANCE
 		enemy.add_to_group("elite")
 	_level.enemy_root.add_child(enemy)
-	enemy.global_position = _random_point()
+	enemy.global_position = point
 	enemy.tree_exited.connect(_on_enemy_gone)
-	_alive += 1
+	enemy.play_spawn_pop()
+	var fx: ImpactEffect = ImpactEffect.spawn_burst(_level, point, 10.0, Color(0.85, 0.2, 0.25), 6, 0.35, 1.0, 0.7)
+	fx.global_position = point
+	var now: int = Time.get_ticks_msec()
+	if now - _last_spawn_shake > 250:
+		_last_spawn_shake = now
+		EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_SPAWN)
 
 
 # Ponto livre aleatório dentro da sala, longe do player.
@@ -111,6 +130,9 @@ func _on_enemy_gone() -> void:
 		return
 	room.cleared = true
 	print("[Dungeon] - sala %s limpa" % RoomData.Type.keys()[room.type])
+	EventBus.slowmo_requested.emit(FeelConstants.ROOM_CLEAR_SLOWMO, FeelConstants.ROOM_CLEAR_SLOWMO_TIME)
+	EventBus.play_sfx_requested.emit("room_clear")
+	EventBus.room_cleared.emit()
 	if _timer_active:
 		_timer_active = false
 		set_process(false)
@@ -120,7 +142,23 @@ func _on_enemy_gone() -> void:
 
 func _lock() -> void:
 	room.set_doors_closed.call_deferred(true)
+	_animate_doors(true)
+	EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_ROOM_LOCK)
+	EventBus.play_sfx_requested.emit("room_lock")
+	EventBus.room_locked.emit()
 
 
 func _unlock() -> void:
 	room.set_doors_closed.call_deferred(false)
+	_animate_doors(false)
+
+
+# Portões caem com bounce ao trancar e dão um pulinho ao abrir (Fase 2: sprite de grade/lápide)
+func _animate_doors(closing: bool) -> void:
+	for door: RoomData.Door in room.doors:
+		if door.arch == null:
+			continue
+		var arch: Prop = door.arch
+		arch.scale = Vector2(1.1, 0.55) if closing else Vector2(0.9, 1.15)
+		var tween: Tween = arch.create_tween()
+		tween.tween_property(arch, "scale", Vector2.ONE, 0.35 if closing else 0.2).set_trans(Tween.TRANS_BOUNCE if closing else Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

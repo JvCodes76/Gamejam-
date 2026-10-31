@@ -32,6 +32,6 @@ func apply_hit(area: Area2D) -> void:
 		amount = int(_scale_carry)
 		_scale_carry -= amount
 	if amount > 0:
-		(area as Hurtbox).receive_hit(amount)
+		(area as Hurtbox).receive_hit(amount, (area.global_position - global_position).normalized())
 	hit_landed.emit()
 	hurtbox_hit.emit(area as Hurtbox)

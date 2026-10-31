@@ -466,6 +466,7 @@ func _complete_brew(items: Array[PhysicalItem]) -> void:
 	_vessel.show_potion(state.potion)
 	_vessel.set_brewing(false)
 	_toast_message("Potion brewed! Press F to bottle")
+	EventBus.potion_brewed.emit(state.potion.color, _cauldron.global_position)
 	print("[Cauldron] - Preparo concluído (%d itens, volume %.1f)" % [datas.size(), state.potion.volume])
 	_announce_special_synergies(state.potion)
 

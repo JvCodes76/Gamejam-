@@ -35,6 +35,18 @@ static func slow_power(fraction: float) -> float:
 
 func _ready() -> void:
 	set_process(false)
+	# Indicadores visuais desenhados sobre o dono (irmão do sprite)
+	var owner_node: Node2D = get_parent() as Node2D
+	if owner_node != null:
+		var indicator: EnemyStatusIndicator = EnemyStatusIndicator.new()
+		indicator.name = "StatusIndicator"
+		indicator.setup(self, owner_node.get_node_or_null("HealthComponent") as HealthComponent, owner_node.get_node_or_null("Sprite2D") as Sprite2D)
+		owner_node.add_child.call_deferred(indicator)
+
+
+## Retorna true se algum status está ativo.
+func has_any() -> bool:
+	return not _active.is_empty()
 
 
 ## Aplica (ou renova) um status; mantém a maior duração e potência.

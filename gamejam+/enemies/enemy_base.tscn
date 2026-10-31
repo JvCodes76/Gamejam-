@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://enemies/enemy_base.gd" id="1"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://components/hitbox.gd" id="5"]
 
 [ext_resource type="Script" path="res://enemies/status_effects.gd" id="6"]
+[ext_resource type="Script" path="res://components/hit_feedback.gd" id="7"]
 
 [sub_resource type="CircleShape2D" id="1"]
 radius = 8.0
@@ -58,3 +59,7 @@ damage = 1
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
 position = Vector2(0, -14)
 shape = SubResource("2")
+
+; Flash, squash, knockback e números de dano ao levar golpe
+[node name="HitFeedback" type="Node" parent="."]
+script = ExtResource("7")

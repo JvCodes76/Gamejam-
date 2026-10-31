@@ -22,6 +22,7 @@ GameManager="*res://autoloads/game_manager.gd"
 SceneManager="*res://autoloads/scene_manager.gd"
 AudioManager="*res://autoloads/audio_manager.gd"
 ItemManager="*res://autoloads/item_manager.gd"
+Juice="*res://autoloads/juice.gd"
 
 [display]
 

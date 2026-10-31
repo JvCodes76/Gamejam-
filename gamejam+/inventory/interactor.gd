@@ -62,7 +62,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	var entry: Dictionary = ground.entry
 	var item: ItemData = entry["item"]
 	_target = null
+	var from: Vector2 = ground.global_position
+	EventBus.play_sfx_requested.emit("pickup")
+	EventBus.item_collected.emit(item.id, from)
 	if ItemManager.try_auto_store(item):
+		var icon: Sprite2D = ground.get_node("Sprite2D") as Sprite2D
+		PickupFx.spawn(get_tree().current_scene, icon.global_position, item.icon, icon.scale, get_parent() as Node2D, item.color, item.display_name)
 		ItemManager.take_from_ground(entry)
 		EventBus.item_picked_up.emit(item.id)
 	else:

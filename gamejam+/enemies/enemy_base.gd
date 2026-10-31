@@ -9,6 +9,10 @@ const ENEMY_MASK: int = 4
 @export var contact_cooldown: float = 0.6
 # Inimigo básico (sujeito a mortes instantâneas das sinergias)
 @export var is_basic: bool = true
+## Fração do knockback ignorada (0 = recebe tudo, 1 = imóvel). Elites e boss resistem mais.
+@export_range(0.0, 1.0) var knockback_resistance: float = 0.0
+## Tempo após o spawn sem causar dano de contato (s)
+@export var spawn_grace: float = FeelConstants.SPAWN_GRACE
 
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _hitbox: Hitbox = $Hitbox
@@ -19,6 +23,8 @@ var _base_modulate: Color = Color.WHITE
 # Cooldown do dano de contato e verificação de sobreposição por contagem de quadros (sem await no inimigo)
 var _contact_cooldown_left: float = 0.0
 var _recheck_frames: int = 0
+# Velocidade externa (knockback), somada à perseguição e reduzida por atrito
+var _knockback: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -29,6 +35,10 @@ func _ready() -> void:
 	_hitbox.hurtbox_hit.connect(_on_hurtbox_hit)
 	_status.changed.connect(_on_status_changed)
 	_health.dot_damaged.connect(_on_dot_damaged)
+	# Carência do spawn: reaproveita o cooldown de contato (a hitbox volta sozinha e reverifica a sobreposição)
+	if spawn_grace > 0.0:
+		_hitbox.set_deferred("monitoring", false)
+		_contact_cooldown_left = spawn_grace
 
 
 # Persegue o jogador (ou o inimigo mais próximo se enfeitiçado); respeita roots, slow e stun.
@@ -40,7 +50,23 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 	else:
 		velocity = global_position.direction_to(target.global_position) * move_speed * _status.speed_multiplier()
+	velocity += _knockback
+	_knockback = _knockback.move_toward(Vector2.ZERO, FeelConstants.KNOCKBACK_FRICTION * delta)
 	move_and_slide()
+
+
+## Empurrão externo (golpe): reduzido pela resistência, decai por atrito em _physics_process.
+func apply_knockback(impulse: Vector2) -> void:
+	_knockback += impulse * (1.0 - knockback_resistance)
+
+
+## Animação de surgimento: o sprite cresce de 0 até a escala base.
+func play_spawn_pop() -> void:
+	var feedback: HitFeedback = get_node_or_null("HitFeedback") as HitFeedback
+	var target_scale: Vector2 = feedback.base_scale() if feedback != null else _sprite.scale
+	_sprite.scale = Vector2.ZERO
+	var tween: Tween = create_tween()
+	tween.tween_property(_sprite, "scale", target_scale, FeelConstants.SPAWN_POP_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 # Alvo atual: jogador, ou o inimigo não enfeitiçado mais próximo quando enfeitiçado.
@@ -142,7 +168,22 @@ func _on_died() -> void:
 		EventBus.charmed_enemy_died.emit(self, _status.time_left(StatusEffects.CHARMED))
 	EventBus.enemy_killed.emit(points)
 	EventBus.enemy_died.emit(global_position, _status.has(StatusEffects.MARKED), is_basic)
+	_play_death_feedback()
 	queue_free()
+
+
+# Visual da morte num nó separado (o inimigo some na hora): cadáver, tremida, hitstop em elite e som
+func _play_death_feedback() -> void:
+	var scene: Node = get_tree().current_scene
+	if scene != null:
+		EnemyDeathFx.spawn(scene, _sprite, global_position)
+	if is_basic:
+		EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_BASIC_DEATH)
+		EventBus.play_sfx_requested.emit("enemy_die")
+	else:
+		EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_ELITE_DEATH)
+		EventBus.hitstop_requested.emit(FeelConstants.HITSTOP_ELITE_DEATH_MS / 1000.0)
+		EventBus.play_sfx_requested.emit("elite_die")
 
 
 # Sprite do inimigo (usado para copiar a aparência, p.ex. fantasmas).

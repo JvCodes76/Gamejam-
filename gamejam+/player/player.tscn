@@ -7,6 +7,8 @@
 [ext_resource type="Script" uid="uid://buk2gfvkry4lo" path="res://player/crosshair.gd" id="5"]
 [ext_resource type="Script" uid="uid://2v3dbnukuav7" path="res://inventory/interactor.gd" id="6"]
 [ext_resource type="Texture2D" uid="uid://b5ca5qstvlqrg" path="res://assets/sprites/player/Cape_Animation2-Sheet.png" id="7"]
+[ext_resource type="Script" path="res://player/game_camera.gd" id="8"]
+[ext_resource type="Script" path="res://player/muzzle_flash.gd" id="9"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_feet"]
 radius = 5.0
@@ -49,11 +51,15 @@ position = Vector2(0, -25)
 [node name="Muzzle" type="Marker2D" parent="Pivot" unique_id=1337833854]
 position = Vector2(16, 0)
 
+[node name="MuzzleFlash" type="Node2D" parent="Pivot/Muzzle"]
+script = ExtResource("9")
+
 [node name="Crosshair" type="Node2D" parent="." unique_id=1949803959]
 script = ExtResource("5")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2053002263]
 position = Vector2(0, -25)
+script = ExtResource("8")
 
 [node name="HealthComponent" type="Node" parent="." unique_id=629877526]
 script = ExtResource("3")
@@ -63,6 +69,7 @@ collision_layer = 2
 collision_mask = 0
 script = ExtResource("4")
 health_component = NodePath("../HealthComponent")
+invulnerability_time = 0.8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=1446400420]
 position = Vector2(0, -17.5)

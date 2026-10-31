@@ -31,6 +31,14 @@ func setup(new_entry: Dictionary) -> void:
 		var size: Vector2 = item.icon.get_size()
 		_sprite.scale = Vector2.ONE * minf(1.0, 16.0 / maxf(size.x, size.y))
 		_build_outline(item)
+	_start_glow()
+
+
+# Brilho pulsante: o ícone fica mais claro e volta (Fase 2 pode trocar por shader com brilho)
+func _start_glow() -> void:
+	var glow: Tween = create_tween().set_loops()
+	glow.tween_property(_sprite, "self_modulate", Color(1.45, 1.45, 1.45, 1.0), 0.6).set_trans(Tween.TRANS_SINE)
+	glow.tween_property(_sprite, "self_modulate", Color.WHITE, 0.6).set_trans(Tween.TRANS_SINE)
 
 
 ## Mostra ou esconde o contorno na cor da raridade (item ao alcance do player).

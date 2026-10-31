@@ -119,7 +119,7 @@ func _apply_splash() -> void:
 		if hurtbox == null or hurtbox in seen:
 			continue
 		seen.append(hurtbox)
-		hurtbox.receive_hit(_splash_damage())
+		hurtbox.receive_hit(_splash_damage(), (hurtbox.global_position - global_position).normalized())
 		if modifiers != null:
 			modifiers.apply_on_hit_effects(hurtbox, base_damage)
 

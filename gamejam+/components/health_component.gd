@@ -25,6 +25,8 @@ var negate_chance: float = 0.0
 # source -> { dps, time, tick_every, tick_left, carry }; fontes diferentes empilham
 var _dots: Dictionary = {}
 var _taken_carry: float = 0.0
+# True enquanto um tick de DoT aplica dano (o feedback de acerto ignora esses danos)
+var applying_dot: bool = false
 
 
 func _ready() -> void:
@@ -105,7 +107,9 @@ func _process(delta: float) -> void:
 			dot["carry"] = float(dot["carry"]) + float(dot["dps"]) * float(dot["tick_every"])
 			var amount: int = int(dot["carry"])
 			dot["carry"] = float(dot["carry"]) - amount
+			applying_dot = true
 			var dealt: int = _apply_damage(amount) if amount > 0 else 0
+			applying_dot = false
 			if not _is_dead or dealt > 0:
 				dot_damaged.emit(source, dealt)
 		if float(dot["time"]) <= TICK_EPSILON:
@@ -113,3 +117,8 @@ func _process(delta: float) -> void:
 	if _dots.is_empty() or _is_dead:
 		_dots.clear()
 		set_process(false)
+
+
+# Fontes de DoT ativas (indicadores de status).
+func active_dot_sources() -> Array:
+	return _dots.keys()

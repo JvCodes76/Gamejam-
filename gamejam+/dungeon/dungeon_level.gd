@@ -69,6 +69,9 @@ func _ready() -> void:
 	_previous_clear_color = RenderingServer.get_default_clear_color()
 	RenderingServer.set_default_clear_color(void_color)
 	enemy_root = $Enemies as Node2D
+	var damage_numbers: DamageNumbers = DamageNumbers.new()
+	damage_numbers.name = "DamageNumbers"
+	add_child(damage_numbers)
 	_player = $Player as Node2D
 
 	var total: int = rooms_per_cemetery.size()

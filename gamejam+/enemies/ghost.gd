@@ -79,7 +79,7 @@ func _strike() -> void:
 	for area: Area2D in get_overlapping_areas():
 		var hurtbox: Hurtbox = area as Hurtbox
 		if hurtbox != null:
-			hurtbox.receive_hit(damage)
+			hurtbox.receive_hit(damage, (hurtbox.global_position - global_position).normalized())
 			hit_any = true
 	if hit_any:
 		_hit_left = SynergyConstants.GHOST_HIT_COOLDOWN

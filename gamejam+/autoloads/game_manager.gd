@@ -12,6 +12,8 @@ var room_index: int = 1
 # Cemitério atual (1 = primeiro) e semente da partida (as salas de cada cemitério derivam dela)
 var cemetery_index: int = 1
 var run_seed: int = 0
+# Acessibilidade: desliga a tremida de tela
+var reduce_screen_shake: bool = false
 
 
 func _ready() -> void:

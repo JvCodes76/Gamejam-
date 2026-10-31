@@ -63,4 +63,20 @@ func _wake_up() -> void:
 	_sprite.hframes = 4
 	_sprite.frame = 0
 	_sprite.position = Vector2(0.0, -16.0)
+	_play_wake_feedback()
 	print("[Enemy] - mímico de abóbora ativado")
+
+
+# Pulo, squash, tremida, "!" sobre a cabeça e som
+func _play_wake_feedback() -> void:
+	var tween: Tween = create_tween()
+	tween.tween_property(_sprite, "position:y", -28.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_sprite, "position:y", -16.0, 0.14).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	var feedback: HitFeedback = get_node_or_null("HitFeedback") as HitFeedback
+	if feedback != null:
+		feedback.squash()
+	var scene: Node = get_tree().current_scene
+	if scene != null:
+		FloatingText.spawn(scene, global_position + Vector2(0.0, -40.0), "!", Color(1.0, 0.6, 0.1), 14, 0.7, 20.0)
+	EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_MIMIC_WAKE)
+	EventBus.play_sfx_requested.emit("mimic_wake")
