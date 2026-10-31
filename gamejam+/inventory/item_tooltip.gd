@@ -16,6 +16,10 @@ const ASPECT_NAMES: Dictionary = {
 	ItemEnums.Aspect.EARTH: "Earth",
 	ItemEnums.Aspect.ROCK: "Rock",
 	ItemEnums.Aspect.ANIMAL: "Animal",
+	ItemEnums.Aspect.DARKNESS: "Darkness",
+	ItemEnums.Aspect.LIGHT: "Light",
+	ItemEnums.Aspect.MAGIC: "Magic",
+	ItemEnums.Aspect.EVIL: "Evil",
 }
 const EFFECT_NAMES: Dictionary = {
 	ItemEffect.EffectType.FIRE_DAMAGE: "Fire damage",
@@ -24,6 +28,16 @@ const EFFECT_NAMES: Dictionary = {
 	ItemEffect.EffectType.RANGE: "+Range",
 	ItemEffect.EffectType.DAMAGE: "+Damage",
 	ItemEffect.EffectType.FIRE_RATE: "+Fire rate",
+	ItemEffect.EffectType.LUCK: "Luck",
+	ItemEffect.EffectType.PIERCE: "+Pierce",
+	ItemEffect.EffectType.CHARM_CHANCE: "Charm chance",
+	ItemEffect.EffectType.HOMING: "Homing",
+	ItemEffect.EffectType.AOE: "Area of effect",
+	ItemEffect.EffectType.CRIT_DAMAGE: "Crit damage",
+	ItemEffect.EffectType.LASER: "Laser",
+	ItemEffect.EffectType.EXPLOSIVE: "Explosive",
+	ItemEffect.EffectType.FIRE_BREATH: "Fire breath",
+	ItemEffect.EffectType.REAL_BULLETS: "Real bullets",
 }
 
 var _item: PhysicalItem

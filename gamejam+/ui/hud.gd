@@ -4,8 +4,13 @@ extends CanvasLayer
 @onready var _label_vida: Label = $LabelVida
 @onready var _label_pontos: Label = $LabelPontos
 
+@onready var _slots: Array[PotionSlot] = [$PotionSlot1, $PotionSlot2]
+
 
 func _ready() -> void:
+	EventBus.potion_slots_changed.connect(_refresh_potions)
+	EventBus.potion_selected.connect(_on_potion_selected)
+	_refresh_potions()
 	EventBus.player_health_changed.connect(_on_player_health_changed)
 	EventBus.score_changed.connect(_on_score_changed)
 	_label_pontos.text = "Pontos: %d" % GameManager.score
@@ -20,3 +25,16 @@ func _on_player_health_changed(current: int, max_value: int) -> void:
 # Atualiza o texto de pontuacao
 func _on_score_changed(score: int) -> void:
 	_label_pontos.text = "Pontos: %d" % score
+
+
+# Atualiza os frascos ao trocar o slot ativo
+func _on_potion_selected(_index: int) -> void:
+	_refresh_potions()
+
+
+# Redesenha os dois frascos conforme os slots do ItemManager
+func _refresh_potions() -> void:
+	for i: int in _slots.size():
+		var potion: PotionData = ItemManager.potion_slots[i]
+		var color: Color = potion.color if potion != null else Color.WHITE
+		_slots[i].set_state(potion != null, color, i == ItemManager.active_potion_index)

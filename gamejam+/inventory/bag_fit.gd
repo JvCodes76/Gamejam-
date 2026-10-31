@@ -6,7 +6,7 @@ const ROTATIONS: Array[float] = [0.0, PI * 0.5, PI, PI * 1.5]
 
 
 # Procura a primeira posição livre (com margem) dentro da bolsa; null se não couber
-static func find_free_position(item: ItemData, entries: Array[Dictionary], shrink_scale: float, margin: float = 3.0) -> Variant:
+static func find_free_position(item: ItemData, entries: Array[Dictionary], shrink_scale: float, margin: float = 3.0, interior: PackedVector2Array = BagLayout.INTERIOR) -> Variant:
 	if item == null or item.icon == null:
 		return null
 	var hull: PackedVector2Array = ColliderBuilder.build_hull(item.icon, shrink_scale)
@@ -21,8 +21,8 @@ static func find_free_position(item: ItemData, entries: Array[Dictionary], shrin
 		var inflated: Array[PackedVector2Array] = Geometry2D.offset_polygon(placed, margin)
 		if not inflated.is_empty():
 			occupied.append(inflated[0])
-	var bounds: Rect2 = Rect2(BagLayout.INTERIOR[0], Vector2.ZERO)
-	for p: Vector2 in BagLayout.INTERIOR:
+	var bounds: Rect2 = Rect2(interior[0], Vector2.ZERO)
+	for p: Vector2 in interior:
 		bounds = bounds.expand(p)
 	var y: float = bounds.end.y
 	while y >= bounds.position.y:
@@ -30,16 +30,16 @@ static func find_free_position(item: ItemData, entries: Array[Dictionary], shrin
 		while x <= bounds.end.x:
 			for rot: float in ROTATIONS:
 				var candidate: PackedVector2Array = _transform(hull, Vector2(x, y), rot)
-				if _is_valid(candidate, occupied):
+				if _is_valid(candidate, occupied, interior):
 					return {"position": Vector2(x, y), "rotation": rot}
 			x += GRID_STEP
 		y -= GRID_STEP
 	return null
 
 
-static func _is_valid(candidate: PackedVector2Array, occupied: Array[PackedVector2Array]) -> bool:
+static func _is_valid(candidate: PackedVector2Array, occupied: Array[PackedVector2Array], interior: PackedVector2Array = BagLayout.INTERIOR) -> bool:
 	# Contido no interior: nada sobra ao subtrair o interior
-	if not Geometry2D.clip_polygons(candidate, BagLayout.INTERIOR).is_empty():
+	if not Geometry2D.clip_polygons(candidate, interior).is_empty():
 		return false
 	for other: PackedVector2Array in occupied:
 		if not Geometry2D.intersect_polygons(candidate, other).is_empty():

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://items/item_data.gd" id="1"]
 [ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
@@ -7,11 +7,14 @@
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
 effect_type = 1
-magnitude = 2.0[resource]
+magnitude = 2
+
+[resource]
 script = ExtResource("1")
-id = &"fly_agaric"
-display_name = "Fly Agaric"
+id = &"poisonous_mushroom"
+display_name = "Poisonous Mushroom"
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([1, 1])
 effects = Array[ExtResource("2")]([SubResource("e1")])
+color = Color(0.7294, 0.2745, 0.1843, 1)

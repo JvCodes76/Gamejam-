@@ -6,11 +6,15 @@
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
-effect_type = 0
-magnitude = 1.0[sub_resource type="Resource" id="e2"]
+effect_type = 4
+magnitude = 1.0
+
+[sub_resource type="Resource" id="e2"]
 script = ExtResource("2")
 effect_type = 2
-magnitude = 1.0[resource]
+magnitude = 1.0
+
+[resource]
 script = ExtResource("1")
 id = &"salamander_tail"
 display_name = "Salamander Tail"
@@ -18,3 +22,4 @@ icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([4, 4])
 effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])
+color = Color(0.7608, 0.4000, 0.1451, 1)

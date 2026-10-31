@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/items/placeholder_spider_gland.png" id="3"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+effect_type = 4
+magnitude = 2
+
+[resource]
+script = ExtResource("1")
+id = &"spider_gland"
+display_name = "Spider Gland"
+icon = ExtResource("3")
+rarity = 1
+aspects = Array[int]([4, 1])
+effects = Array[ExtResource("2")]([SubResource("e1")])
+color = Color(0.8000, 0.6000, 0.6902, 1)

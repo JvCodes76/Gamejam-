@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/items/placeholder_rose_petal.png" id="3"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+effect_type = 2
+magnitude = 1.0
+
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("2")
+effect_type = 8
+magnitude = 1.0
+
+[resource]
+script = ExtResource("1")
+id = &"rose_petal"
+display_name = "Rose Petal"
+icon = ExtResource("3")
+rarity = 1
+aspects = Array[int]([0, 0])
+effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])
+color = Color(0.9020, 0.1961, 0.4196, 1)

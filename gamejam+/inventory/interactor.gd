@@ -3,7 +3,7 @@ extends Area2D
 
 @export var interact_radius: float = 28.0
 
-var _target: GroundItem = null
+var _target: Node2D = null
 
 
 func _ready() -> void:
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	var best: GroundItem = null
+	var best: Node2D = null
 	var best_dist: float = interact_radius
 	for node: Node in get_tree().get_nodes_in_group("ground_item"):
 		var item_node: GroundItem = node as GroundItem
@@ -27,13 +27,25 @@ func _physics_process(_delta: float) -> void:
 		if dist <= best_dist:
 			best_dist = dist
 			best = item_node
+	for node: Node in get_tree().get_nodes_in_group("cauldron"):
+		var cauldron: Cauldron = node as Cauldron
+		if cauldron == null or cauldron.is_queued_for_deletion():
+			continue
+		var dist: float = global_position.distance_to(cauldron.global_position) - cauldron.interact_reach
+		if dist <= best_dist:
+			best_dist = dist
+			best = cauldron
 	if best == _target:
 		return
-	if is_instance_valid(_target):
-		_target.set_highlighted(false)
+	_set_highlight(_target, false)
 	_target = best
-	if _target != null:
-		_target.set_highlighted(true)
+	_set_highlight(_target, true)
+
+
+# Liga ou desliga o destaque do alvo (item do chão ou caldeirão)
+func _set_highlight(node: Node2D, value: bool) -> void:
+	if is_instance_valid(node) and node.has_method("set_highlighted"):
+		node.call("set_highlighted", value)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -41,7 +53,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if get_tree().paused or ItemManager.inventory_open or not is_instance_valid(_target):
 		return
-	var entry: Dictionary = _target.entry
+	if _target is Cauldron:
+		EventBus.cauldron_open_requested.emit(_target)
+		return
+	var ground: GroundItem = _target as GroundItem
+	if ground == null:
+		return
+	var entry: Dictionary = ground.entry
 	var item: ItemData = entry["item"]
 	_target = null
 	if ItemManager.try_auto_store(item):

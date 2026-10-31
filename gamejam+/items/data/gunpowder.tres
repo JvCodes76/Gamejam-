@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/items/placeholder_gunpowder.png" id="3"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+effect_type = 3
+magnitude = 1.0
+
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("2")
+effect_type = 5
+magnitude = 1.0
+
+[sub_resource type="Resource" id="e3"]
+script = ExtResource("2")
+effect_type = 13
+magnitude = 1.0
+
+[resource]
+script = ExtResource("1")
+id = &"gunpowder"
+display_name = "Gunpowder"
+icon = ExtResource("3")
+rarity = 2
+aspects = Array[int]([6, 5, 3])
+effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2"), SubResource("e3")])
+color = Color(0.2196, 0.2118, 0.1843, 1)

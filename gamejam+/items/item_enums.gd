@@ -2,7 +2,7 @@ class_name ItemEnums
 extends RefCounted
 
 # Aspectos (classes) dos itens
-enum Aspect { PLANT, POISON, EARTH, ROCK, ANIMAL }
+enum Aspect { PLANT, POISON, EARTH, ROCK, ANIMAL, DARKNESS, LIGHT, MAGIC, EVIL }
 # Raridade dos itens
 enum Rarity { BASIC, INTERMEDIATE, ADVANCED, LEGENDARY }
 
@@ -21,4 +21,20 @@ const ASPECT_COLORS: Dictionary = {
 	Aspect.EARTH: Color(0.5, 0.3, 0.15),
 	Aspect.ROCK: Color(0.92, 0.45, 0.72),
 	Aspect.ANIMAL: Color(0.92, 0.28, 0.28),
+	Aspect.DARKNESS: Color(0.2, 0.15, 0.55),
+	Aspect.LIGHT: Color(1.0, 1.0, 0.75),
+	Aspect.MAGIC: Color(0.55, 0.1, 0.75),
+	Aspect.EVIL: Color(0.45, 0.0, 0.1),
 }
+
+# Multiplicador de tamanho do sprite por raridade (balanceamento: edite aqui).
+# O lendário é 1.0 porque o sprite já é 32x32 (o dobro dos demais).
+const RARITY_SCALES: Dictionary = {
+	Rarity.BASIC: 1.0,
+	Rarity.INTERMEDIATE: 1.2,
+	Rarity.ADVANCED: 1.5,
+	Rarity.LEGENDARY: 1.0,
+}
+# Máximo de aspectos por item; só LEGENDARY pode ter MAX_ASPECTS_LEGENDARY
+const MAX_ASPECTS: int = 3
+const MAX_ASPECTS_LEGENDARY: int = 4

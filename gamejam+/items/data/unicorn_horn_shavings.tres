@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/items/placeholder_unicorn_horn_shavings.png" id="3"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+effect_type = 6
+magnitude = 2
+
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("2")
+effect_type = 11
+magnitude = 1.0
+
+[resource]
+script = ExtResource("1")
+; PLACEHOLDER: cor indefinida pelo usuario (#f0d9ff provisoria)
+id = &"unicorn_horn_shavings"
+display_name = "Unicorn Horn Shavings"
+icon = ExtResource("3")
+rarity = 2
+aspects = Array[int]([7, 6, 4])
+effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])
+color = Color(0.9412, 0.8510, 1.0000, 1)

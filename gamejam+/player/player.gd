@@ -13,6 +13,7 @@ const BULLET_SCENE: PackedScene = preload("res://projectiles/bullet.tscn")
 var _fire_timer: float = 0.0
 var _aim_direction: Vector2 = Vector2.RIGHT
 var _use_gamepad: bool = false
+var _mods: ProjectileModifiers = ProjectileModifiers.new()
 
 @onready var _pivot: Node2D = $Pivot
 @onready var _muzzle: Marker2D = $Pivot/Muzzle
@@ -26,6 +27,10 @@ func _ready() -> void:
 	# Adiado para o HUD (que vem depois na árvore) já estar conectado
 	EventBus.player_health_changed.emit.call_deferred(_health.current_health, _health.max_health)
 	EventBus.game_paused.connect(_on_game_paused)
+	EventBus.potion_selected.connect(_on_potion_selected)
+	EventBus.potion_slots_changed.connect(_recalculate_modifiers)
+	EventBus.active_effects_changed.connect(_recalculate_modifiers)
+	_recalculate_modifiers()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	print("[Player] - pronto")
 
@@ -39,6 +44,19 @@ func _exit_tree() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_use_gamepad = false
+
+
+## Alterna a poção ativa com o scroll do mouse.
+func _unhandled_input(event: InputEvent) -> void:
+	if ItemManager.inventory_open or not event is InputEventMouseButton:
+		return
+	var mouse: InputEventMouseButton = event as InputEventMouseButton
+	if not mouse.pressed:
+		return
+	if mouse.button_index == MOUSE_BUTTON_WHEEL_UP:
+		ItemManager.cycle_potion(1)
+	elif mouse.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		ItemManager.cycle_potion(-1)
 
 
 func _physics_process(delta: float) -> void:
@@ -79,7 +97,7 @@ func _update_aim() -> void:
 
 ## Dispara uma bala na direção da mira.
 func _shoot() -> void:
-	_fire_timer = fire_rate_seconds
+	_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
 	var bullet: Bullet = BULLET_SCENE.instantiate() as Bullet
 	bullet.global_position = _muzzle.global_position
 	var shot_dir: Vector2 = _aim_direction
@@ -88,8 +106,26 @@ func _shoot() -> void:
 		if to_mouse.length() > 1.0:
 			shot_dir = to_mouse.normalized()
 	bullet.setup(shot_dir)
+	bullet.apply_modifiers(_mods, _health)
 	get_tree().current_scene.add_child(bullet)
 	EventBus.play_sfx_requested.emit("shoot")
+
+
+## Recalcula os modificadores a partir da poção ativa e tinge o crosshair.
+func _recalculate_modifiers() -> void:
+	var potion: PotionData = ItemManager.get_active_potion()
+	_mods = ProjectileModifiers.from_totals(ItemManager.get_active_effect_totals())
+	if potion != null:
+		_mods.color = potion.color
+	_crosshair.color = Color(_mods.color, 0.9)
+	_crosshair.queue_redraw()
+	print("[Potion] - modificadores: dano x%.2f, alcance x%.2f, cadência x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])
+
+
+## Avisa uma vez dos efeitos não implementados ao trocar de poção.
+func _on_potion_selected(index: int) -> void:
+	_recalculate_modifiers()
+	_mods.print_unimplemented()
 
 
 ## Alterna cursor do sistema e crosshair conforme a pausa.

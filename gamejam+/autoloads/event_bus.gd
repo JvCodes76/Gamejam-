@@ -16,7 +16,7 @@ signal scene_change_requested(path: String)
 signal play_sfx_requested(sfx_name: String)
 # Pedido para tocar uma música
 signal play_music_requested(music_name: String)
-# Item usado no caldeirão
+# Item usado no caldeirão (reservado para o caldeirão)
 signal item_brewed(item_id: StringName)
 # Efeitos ativos mudaram
 signal active_effects_changed()
@@ -28,3 +28,11 @@ signal inventory_closed()
 signal ground_items_changed()
 # Item recolhido do chão
 signal item_picked_up(item_id: StringName)
+# Slots de poção mudaram (conteúdo)
+signal potion_slots_changed()
+# Slot de poção ativo mudou
+signal potion_selected(index: int)
+# Andar mudou (nível atual)
+signal floor_changed(level: int)
+# Pedido para abrir o menu do caldeirão
+signal cauldron_open_requested(cauldron: Node)

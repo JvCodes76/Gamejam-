@@ -6,7 +6,7 @@ signal unhovered(item: PhysicalItem)
 signal grabbed(item: PhysicalItem)
 signal released(item: PhysicalItem)
 
-@export var follow_strength: float = 20.0
+@export var follow_strength: float = 60.0
 @export var max_grab_speed: float = 450.0
 @export var rest_linear_damp: float = 0.4
 @export var rest_angular_damp: float = 2.0
@@ -39,6 +39,8 @@ func _ready() -> void:
 	collision_mask = 1
 	gravity_scale = gravity_scale_resting
 	can_sleep = true
+	contact_monitor = true
+	max_contacts_reported = 8
 	continuous_cd = RigidBody2D.CCD_MODE_CAST_SHAPE
 	var mat := PhysicsMaterial.new()
 	mat.friction = rest_friction
@@ -126,10 +128,6 @@ func _input(event: InputEvent) -> void:
 
 func _physics_process(_delta: float) -> void:
 	_update_hover()
-	if is_grabbed:
-		var to_mouse: Vector2 = _clamped_mouse() - global_position
-		linear_velocity = (to_mouse * follow_strength).limit_length(max_grab_speed)
-		angular_velocity = 0.0
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	if _has_pending_rotation:
@@ -137,6 +135,18 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		_has_pending_rotation = false
 	if is_grabbed:
 		state.angular_velocity = 0.0
+		# Alcança o mouse em um único passo (sem atraso), limitado por max_grab_speed
+		var to_mouse: Vector2 = _clamped_mouse() - state.transform.origin
+		var wanted: Vector2 = to_mouse * minf(follow_strength, 1.0 / state.step)
+		wanted = wanted.limit_length(max_grab_speed)
+		# Não empurra continuamente contra paredes estáticas (evita tremor): só desliza
+		for i: int in state.get_contact_count():
+			if state.get_contact_collider_object(i) is StaticBody2D:
+				var n: Vector2 = state.get_contact_local_normal(i)
+				var into: float = wanted.dot(n)
+				if into < 0.0:
+					wanted -= n * into
+		state.linear_velocity = wanted
 
 # Posição do mouse limitada ao retângulo do viewport (item nunca é puxado para fora)
 func _clamped_mouse() -> Vector2:
@@ -160,6 +170,7 @@ func _grab() -> void:
 	is_grabbed = true
 	current_grabbed = self
 	gravity_scale = 0.0
+	lock_rotation = true # rotação só pela roda durante o grab (evita torque de contato)
 	sleeping = false
 	linear_damp = 0.0
 	angular_damp = 0.0
@@ -171,6 +182,7 @@ func _release() -> void:
 	if current_grabbed == self:
 		current_grabbed = null
 	gravity_scale = gravity_scale_resting
+	lock_rotation = false
 	linear_damp = rest_linear_damp
 	angular_damp = rest_angular_damp
 	released.emit(self)
