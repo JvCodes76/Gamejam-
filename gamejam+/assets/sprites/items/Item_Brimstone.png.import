@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cba64jclta0vo"
-path="res://.godot/imported/placeholder_brimstone.png-f4b5363ee3636962290510e662366eaf.ctex"
+uid="uid://blhr5wjcsjvc4"
+path="res://.godot/imported/Item_Brimstone.png-5acbdefae97193b9eb3cf3d5da636e6f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_brimstone.png"
-dest_files=["res://.godot/imported/placeholder_brimstone.png-f4b5363ee3636962290510e662366eaf.ctex"]
+source_file="res://assets/sprites/items/Item_Brimstone.png"
+dest_files=["res://.godot/imported/Item_Brimstone.png-5acbdefae97193b9eb3cf3d5da636e6f.ctex"]
 
 [params]
 

@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://dungeon/dungeon_hud.gd" id="8_dhud"]
 [ext_resource type="Script" path="res://dungeon/minimap.gd" id="9_minimap"]
 [ext_resource type="PackedScene" path="res://enemies/bat.tscn" id="10_bat"]
+[ext_resource type="PackedScene" path="res://ui/run_summary.tscn" id="11_summary"]
 
 [node name="DungeonLevel" type="Node2D"]
 y_sort_enabled = true
@@ -35,3 +36,5 @@ script = ExtResource("8_dhud")
 
 [node name="Minimap" type="CanvasLayer" parent="."]
 script = ExtResource("9_minimap")
+
+[node name="RunSummary" parent="." instance=ExtResource("11_summary")]

@@ -79,6 +79,10 @@ O combate funciona, mas quase não dá feedback: não há áudio (`assets/audio/
 
 ### F1.9 Spawn com aviso
 - No `room_encounter`: antes de instanciar, desenhar um círculo/cruz pulsando no chão por 0,5 s. Depois, spawn com escala de 0 a 1, um pequeno burst e um shake de 0,05.
+- **Indicador grande e bem visível:** raio de ~24 px para inimigos básicos (diâmetro ~48 px, 1,5x o sprite de 32 px) e ~40 px para elites. Na sala do boss, ~64 px.
+  - O tamanho fica em `@export var spawn_marker_radius` e o multiplicador de elite em `feel_constants.gd`.
+  - O círculo começa no tamanho máximo e encolhe até o tamanho do inimigo durante o aviso, para mostrar o tempo restante.
+  - Contorno grosso (2–3 px) com preenchimento semitransparente, desenhado acima do chão e das poças (z acima de lama/nuvem).
 - O inimigo não causa dano nos primeiros 0,3 s.
 
 ### F1.10 Salas
@@ -141,7 +145,7 @@ Tudo em pixel art, filtro Nearest, paleta do tileset halloween. **Prioridade: A1
 | A4 | Ícones de status | 8x8, 1 frame cada | Stun, slow, marked, veneno, raiz, charm, rage | Alta |
 | A5 | HUD de vida | 16x16 | Coração (ou frasco) cheio, meio e vazio | Alta |
 | A6 | Fonte pixel para números | Altura 5–7 px, dígitos 0–9 + "!" | Opcional: pode ser uma fonte CC0 | Baixa |
-| A7 | Marcador de spawn | 32x32, 2–4 frames em loop | Runa ou terra mexendo, combinando com o cemitério | Média |
+| A7 | Marcador de spawn | 48x48 (básico) e 80x80 (elite/boss), 2–4 frames em loop | Runa ou terra mexendo, combinando com o cemitério. Precisa ser grande e bem legível no meio da horda | Média |
 | A8 | Barreira de porta da sala | Tamanho do vão da porta, 1 frame + 3 frames abrindo | Grade de ferro ou lápides | Média |
 | A9 | Player: frame de dano e de morte | 32x32, nas 4 direções (dano) + 4–6 frames (morte) | Mesma folha do `SpritesPlayer.png` | Média |
 | A10 | Bolha/vapor do caldeirão | 8x8, 3–4 frames | Branco, tingido por código | Baixa |

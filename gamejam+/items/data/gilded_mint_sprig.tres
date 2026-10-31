@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://7dc7skt1h77k" path="res://items/item_data.gd" id="1"]
 [ext_resource type="Script" uid="uid://bhhnmuuadul8h" path="res://items/item_effect.gd" id="2"]
-[ext_resource type="Texture2D" uid="uid://dh207turrti7f" path="res://assets/sprites/items/placeholder_gilded_rosemary.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://djlufrexlgos3" path="res://assets/sprites/items/Item_GildedMintSprig.png" id="3"]
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
@@ -15,8 +15,8 @@ effect_type = 7
 
 [resource]
 script = ExtResource("1")
-id = &"gilded_rosemary"
-display_name = "Gilded Rosemary"
+id = &"gilded_mint_sprig"
+display_name = "Gilded Mint Sprig"
 icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([0, 6, 7])

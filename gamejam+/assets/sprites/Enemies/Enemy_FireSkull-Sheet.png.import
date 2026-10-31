@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c46n4uekajogm"
-path="res://.godot/imported/placeholder_dragons_blood.png-9505c40ebad1dc412aede7a9afe12d44.ctex"
+uid="uid://kelsgnlneed0"
+path="res://.godot/imported/Enemy_FireSkull-Sheet.png-7788d5fc59ea62bc7f369096fa5d7ffa.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_dragons_blood.png"
-dest_files=["res://.godot/imported/placeholder_dragons_blood.png-9505c40ebad1dc412aede7a9afe12d44.ctex"]
+source_file="res://assets/sprites/Enemies/Enemy_FireSkull-Sheet.png"
+dest_files=["res://.godot/imported/Enemy_FireSkull-Sheet.png-7788d5fc59ea62bc7f369096fa5d7ffa.ctex"]
 
 [params]
 

@@ -20,7 +20,7 @@
 [ext_resource type="Resource" path="res://items/data/deathcap.tres" id="i_deathcap"]
 [ext_resource type="Resource" path="res://items/data/dragons_blood.tres" id="i_dragons_blood"]
 [ext_resource type="Resource" path="res://items/data/eye_of_giant_newt.tres" id="i_eye_of_giant_newt"]
-[ext_resource type="Resource" path="res://items/data/gilded_rosemary.tres" id="i_gilded_rosemary"]
+[ext_resource type="Resource" path="res://items/data/gilded_mint_sprig.tres" id="i_gilded_mint_sprig"]
 [ext_resource type="Resource" path="res://items/data/graveyard_dirt.tres" id="i_graveyard_dirt"]
 [ext_resource type="Resource" path="res://items/data/gun.tres" id="i_gun"]
 [ext_resource type="Resource" path="res://items/data/gunpowder.tres" id="i_gunpowder"]
@@ -884,7 +884,7 @@ mimic_scene = ExtResource("2_mimic")
 
 [node name="GroundItemSpawner" type="Node2D" parent="." unique_id=931790222]
 script = ExtResource("5_gis")
-starting_items = Array[ExtResource("6_idata")]([ExtResource("i_carrot"), ExtResource("i_mushroom"), ExtResource("i_cinnamon"), ExtResource("i_salt"), ExtResource("i_wolf_tooth"), ExtResource("i_obsidian"), ExtResource("i_rose_quartz"), ExtResource("i_salamander_tail"), ExtResource("i_poisonous_mushroom"), ExtResource("i_rose_petal"), ExtResource("i_star_anise"), ExtResource("i_spider_gland"), ExtResource("i_graveyard_dirt"), ExtResource("i_tree_sap"), ExtResource("i_gilded_rosemary"), ExtResource("i_eye_of_giant_newt"), ExtResource("i_wolfsbane"), ExtResource("i_mandrake_root"), ExtResource("i_deathcap"), ExtResource("i_unicorn_horn_shavings"), ExtResource("i_brimstone"), ExtResource("i_gunpowder"), ExtResource("i_dragons_blood"), ExtResource("i_gun")])
+starting_items = Array[ExtResource("6_idata")]([ExtResource("i_carrot"), ExtResource("i_mushroom"), ExtResource("i_cinnamon"), ExtResource("i_salt"), ExtResource("i_wolf_tooth"), ExtResource("i_obsidian"), ExtResource("i_rose_quartz"), ExtResource("i_salamander_tail"), ExtResource("i_poisonous_mushroom"), ExtResource("i_rose_petal"), ExtResource("i_star_anise"), ExtResource("i_spider_gland"), ExtResource("i_graveyard_dirt"), ExtResource("i_tree_sap"), ExtResource("i_gilded_mint_sprig"), ExtResource("i_eye_of_giant_newt"), ExtResource("i_wolfsbane"), ExtResource("i_mandrake_root"), ExtResource("i_deathcap"), ExtResource("i_unicorn_horn_shavings"), ExtResource("i_brimstone"), ExtResource("i_gunpowder"), ExtResource("i_dragons_blood"), ExtResource("i_gun")])
 ; [DEBUG] Teste: todos os itens espalhados no chao e raio maior
 max_radius = 300.0
 

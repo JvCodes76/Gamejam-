@@ -3,7 +3,6 @@ extends Node2D
 ## Um cemitério (andar da dungeon): gera o grafo de salas, monta o mapa contínuo e conduz as salas.
 ## O cemitério atual vem de GameManager.cemetery_index; o último termina na sala do boss.
 
-const ITEMS_DIR: String = "res://items/data/"
 # Folga entre a borda da sala e a área que conta como "dentro" (os pés do player precisam entrar)
 const ROOM_TRIGGER_INSET: float = 40.0
 
@@ -30,7 +29,7 @@ const ROOM_TRIGGER_INSET: float = 40.0
 ## Pesos de sorteio das salas além de spawn/caldeirão/item/saída
 @export var elite_room_weight: float = 1.0
 @export var horde_room_weight: float = 1.0
-@export var empty_room_weight: float = 1.0
+@export var empty_room_weight: float = 0.0
 
 @export_group("Inimigos")
 @export var swarm_scenes: Array[PackedScene] = []
@@ -45,6 +44,28 @@ const ROOM_TRIGGER_INSET: float = 40.0
 @export var elite_tint: Color = Color(0.6, 0.7, 1.0)
 @export var spawn_attempts: int = 12
 @export var min_spawn_distance: float = 140.0
+
+@export_group("Boss")
+## Cena do boss (placeholder: sem cena própria, usa o elite_scene ampliado)
+@export var boss_scene: PackedScene
+@export var boss_health_multiplier: float = 40.0
+@export var boss_scale: float = 2.6
+@export var boss_tint: Color = Color(1.0, 0.45, 0.45)
+@export var boss_move_speed_multiplier: float = 0.8
+@export var boss_points: int = 500
+
+@export_group("Modo infinito")
+## Vida extra dos inimigos por loop completado (0.6 = +60% por volta)
+@export var loop_health_scaling: float = 0.6
+## Dano de contato extra por loop (arredondado; 0.5 = +1 a cada 2 loops com dano base 1)
+@export var loop_damage_scaling: float = 0.5
+## Velocidade extra por loop, limitada por loop_max_speed_multiplier
+@export var loop_speed_scaling: float = 0.08
+@export var loop_max_speed_multiplier: float = 1.6
+## Quantidade extra de inimigos por loop nas salas de enxame/horda/elite
+@export var loop_count_scaling: float = 0.25
+## Pontos extras por inimigo por loop
+@export var loop_points_scaling: float = 0.5
 
 @export_group("Saída")
 @export var portal_radius: float = 20.0
@@ -118,6 +139,31 @@ func _physics_process(_delta: float) -> void:
 		GameManager.advance_cemetery()
 
 
+## Multiplicador de vida dos inimigos no loop atual do modo infinito.
+func loop_health_multiplier() -> float:
+	return 1.0 + loop_health_scaling * GameManager.loop_index
+
+
+## Multiplicador de dano de contato dos inimigos no loop atual.
+func loop_damage_multiplier() -> float:
+	return 1.0 + loop_damage_scaling * GameManager.loop_index
+
+
+## Multiplicador de velocidade dos inimigos no loop atual (com teto).
+func loop_speed_multiplier() -> float:
+	return minf(1.0 + loop_speed_scaling * GameManager.loop_index, loop_max_speed_multiplier)
+
+
+## Quantidade de inimigos escalada pelo loop atual (nunca menos que a base).
+func loop_count(base: int) -> int:
+	return maxi(base, roundi(base * (1.0 + loop_count_scaling * GameManager.loop_index)))
+
+
+## Multiplicador de pontos por inimigo no loop atual.
+func loop_points_multiplier() -> float:
+	return 1.0 + loop_points_scaling * GameManager.loop_index
+
+
 # Coloca o player, o caldeirão, o item e o portal; cria o encontro de cada sala.
 func _populate_rooms() -> void:
 	for room: RoomData in rooms:
@@ -129,6 +175,7 @@ func _populate_rooms() -> void:
 		match room.type:
 			RoomData.Type.SPAWN:
 				_player.global_position = room.center()
+				_drop_boss_carryover(room)
 			RoomData.Type.CAULDRON:
 				var cauldron: Node2D = cauldron_scene.instantiate() as Node2D
 				cauldron.position = room.center()
@@ -139,47 +186,19 @@ func _populate_rooms() -> void:
 				_build_portal(room)
 
 
-# Solta no centro da sala um item sorteado que o player ainda não tem.
+# Sala de item: sorteio de raridade + item pelo LootManager, no centro da sala.
 func _drop_room_item(room: RoomData) -> void:
-	var pool: Array[ItemData] = _item_pool()
-	if pool.is_empty():
+	if LootManager.drop_item(LootManager.Source.ITEM_ROOM, room.center()) == null:
 		print("[Dungeon] - sem itens para a sala de item")
+
+
+# Lendário do boss não recolhido no loop anterior (o chão é limpo na virada): reaparece perto do spawn.
+func _drop_boss_carryover(room: RoomData) -> void:
+	var item: ItemData = LootManager.take_unclaimed_boss_item()
+	if item == null:
 		return
-	var item: ItemData = pool[_rng.randi() % pool.size()]
-	ItemManager.drop_to_ground(item, room.center())
-	print("[Dungeon] - item da sala: %s" % item.id)
-
-
-# Itens de ingrediente (sem os lendários) que o player ainda não possui; se acabarem, todos de novo.
-func _item_pool() -> Array[ItemData]:
-	var all_items: Array[ItemData] = []
-	var dir: DirAccess = DirAccess.open(ITEMS_DIR)
-	if dir == null:
-		return all_items
-	var files: PackedStringArray = dir.get_files()
-	files.sort()
-	for file: String in files:
-		var clean: String = file.trim_suffix(".remap")
-		if not clean.ends_with(".tres"):
-			continue
-		var item: ItemData = load(ITEMS_DIR + clean) as ItemData
-		if item != null and item.rarity != ItemEnums.Rarity.LEGENDARY:
-			all_items.append(item)
-	var fresh: Array[ItemData] = []
-	for item: ItemData in all_items:
-		if not _is_owned(item):
-			fresh.append(item)
-	return fresh if not fresh.is_empty() else all_items
-
-
-func _is_owned(item: ItemData) -> bool:
-	for owned: ItemData in ItemManager.owned_items:
-		if owned.id == item.id:
-			return true
-	for entry: Dictionary in ItemManager.ground_entries:
-		if (entry["item"] as ItemData).id == item.id:
-			return true
-	return false
+	ItemManager.drop_to_ground(item, room.center() + Vector2(0.0, -48.0))
+	print("[Dungeon] - lendário do boss trazido para o spawn: %s" % item.id)
 
 
 # Portal roxo no centro da sala de saída (placeholder até existir o sprite).
@@ -213,4 +232,4 @@ func _print_layout(index: int, total: int) -> void:
 	for room: RoomData in rooms:
 		var key: String = RoomData.Type.keys()[room.type]
 		counts[key] = int(counts.get(key, 0)) + 1
-	print("[Dungeon] - cemitério %d/%d: %d salas %s" % [index, total, rooms.size(), counts])
+	print("[Dungeon] - loop %d, cemitério %d/%d: %d salas %s" % [GameManager.loop_index + 1, index, total, rooms.size(), counts])

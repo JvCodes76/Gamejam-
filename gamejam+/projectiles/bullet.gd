@@ -70,8 +70,7 @@ func _update_trail() -> void:
 func _physics_process(delta: float) -> void:
 	_age += delta
 	if _age >= lifetime:
-		_spent = true
-		queue_free()
+		_impact(_roll_impact_damage())
 		return
 	global_position += direction * speed * delta
 	_update_trail()
@@ -236,11 +235,15 @@ func _on_body_entered(body: Node2D) -> void:
 		global_position = out_pos
 		print("[Synergy] - bala ricocheteou (restam %d)" % bounce_count)
 		return
-	var dealt: int = damage
-	if modifiers != null:
-		dealt = modifiers.roll_damage(damage, damage_factor)
 	_wall_feedback(Vector2(wall["position"]))
-	_impact(dealt)
+	_impact(_roll_impact_damage())
+
+
+## Dano do impacto sem alvo direto (parede ou fim do alcance): sem crit, com a fração de dano da bala.
+func _roll_impact_damage() -> int:
+	if modifiers == null:
+		return damage
+	return modifiers.roll_damage(damage, damage_factor)
 
 
 ## Bala morreu na parede: mini burst com anel e aviso no EventBus.

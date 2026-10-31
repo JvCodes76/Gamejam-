@@ -1,7 +1,10 @@
 class_name RoomEncounter
 extends Node
 ## Comportamento de uma sala quando o player entra pela primeira vez:
-## caldeirão (enxame + 1 elite), elite (3 elites, tranca), horda (timer, tranca) e boss (placeholder).
+## caldeirão (enxame + 1 elite), elite (3 elites, tranca), horda (timer, tranca) e boss (tranca; placeholder).
+## No modo infinito os inimigos ganham vida, dano, velocidade e quantidade a cada loop (ver DungeonLevel).
+
+enum Kind { SWARM, ELITE, BOSS }
 
 var room: RoomData
 
@@ -29,19 +32,20 @@ func on_player_entered() -> void:
 	print("[Dungeon] - sala %s entrada" % RoomData.Type.keys()[room.type])
 	match room.type:
 		RoomData.Type.CAULDRON:
-			_spawn_swarm(_level.cauldron_swarm_count)
+			_spawn_swarm(_level.loop_count(_level.cauldron_swarm_count))
 			_spawn_elites(1)
 		RoomData.Type.ELITE:
 			_lock()
-			_spawn_elites(_level.elite_room_count)
+			_spawn_elites(_level.loop_count(_level.elite_room_count))
 		RoomData.Type.HORDE:
 			_lock()
-			_spawn_swarm(_level.horde_enemy_count)
+			_spawn_swarm(_level.loop_count(_level.horde_enemy_count))
 			_timer_left = _level.horde_time_limit
 			_timer_active = true
 			set_process(true)
 		RoomData.Type.BOSS:
-			print("[Dungeon] - sala do boss: arena e boss ainda não implementados")
+			_lock()
+			_spawn_boss()
 		_:
 			room.cleared = true
 
@@ -62,38 +66,60 @@ func _process(delta: float) -> void:
 # Cria "count" inimigos fracos em pontos livres da sala.
 func _spawn_swarm(count: int) -> void:
 	for i: int in count:
-		_spawn(_level.swarm_scenes.pick_random(), false)
+		_spawn(_level.swarm_scenes.pick_random(), Kind.SWARM)
 
 
 # Cria "count" elites (placeholder: inimigo base com mais vida, maior e azulado).
 func _spawn_elites(count: int) -> void:
 	for i: int in count:
-		_spawn(_level.elite_scene, true)
+		_spawn(_level.elite_scene, Kind.ELITE)
+
+
+# Cria o boss no centro da sala (placeholder: sem cena própria, usa o elite_scene bem maior e avermelhado).
+func _spawn_boss() -> void:
+	var scene: PackedScene = _level.boss_scene if _level.boss_scene != null else _level.elite_scene
+	_spawn(scene, Kind.BOSS, room.center())
 
 
 # Marca o ponto no chão e só cria o inimigo quando o aviso termina (o inimigo já conta como vivo).
-func _spawn(scene: PackedScene, is_elite: bool) -> void:
+func _spawn(scene: PackedScene, kind: Kind, point: Vector2 = Vector2.INF) -> void:
 	if scene == null:
 		return
 	var marker: SpawnMarker = SpawnMarker.new()
 	marker.duration = FeelConstants.SPAWN_WARNING_TIME + randf_range(0.0, 0.2)
-	marker.finished.connect(_spawn_now.bind(scene, is_elite))
+	marker.finished.connect(_spawn_now.bind(scene, kind))
 	_level.add_child(marker)
-	marker.global_position = _random_point()
+	marker.global_position = point if point != Vector2.INF else _random_point()
 	_alive += 1
 
 
-func _spawn_now(point: Vector2, scene: PackedScene, is_elite: bool) -> void:
+func _spawn_now(point: Vector2, scene: PackedScene, kind: Kind) -> void:
 	var enemy: EnemyBase = scene.instantiate() as EnemyBase
 	var sprite: Sprite2D = enemy.get_node("Sprite2D") as Sprite2D
-	if is_elite:
-		var health: HealthComponent = enemy.get_node("HealthComponent") as HealthComponent
-		health.max_health = roundi(health.max_health * _level.elite_health_multiplier)
-		sprite.scale *= _level.elite_scale
-		sprite.modulate = _level.elite_tint
-		enemy.is_basic = false
-		enemy.knockback_resistance = FeelConstants.ELITE_KNOCKBACK_RESISTANCE
-		enemy.add_to_group("elite")
+	var health: HealthComponent = enemy.get_node("HealthComponent") as HealthComponent
+	match kind:
+		Kind.ELITE:
+			health.max_health = roundi(health.max_health * _level.elite_health_multiplier)
+			sprite.scale *= _level.elite_scale
+			sprite.modulate = _level.elite_tint
+			enemy.is_basic = false
+			enemy.knockback_resistance = FeelConstants.ELITE_KNOCKBACK_RESISTANCE
+			enemy.add_to_group("elite")
+		Kind.BOSS:
+			health.max_health = roundi(health.max_health * _level.boss_health_multiplier)
+			sprite.scale *= _level.boss_scale
+			sprite.modulate = _level.boss_tint
+			enemy.move_speed *= _level.boss_move_speed_multiplier
+			enemy.points = _level.boss_points
+			enemy.is_basic = false
+			enemy.knockback_resistance = 1.0
+			enemy.add_to_group("boss")
+			# O sprite cresce muito: acompanha com as áreas de acerto para não ficar um alvo minúsculo
+			for area_name: String in ["Hurtbox", "Hitbox"]:
+				var area: Node2D = enemy.get_node_or_null(area_name) as Node2D
+				if area != null:
+					area.scale *= _level.boss_scale
+	_apply_loop_scaling(enemy, health)
 	_level.enemy_root.add_child(enemy)
 	enemy.global_position = point
 	enemy.tree_exited.connect(_on_enemy_gone)
@@ -104,6 +130,18 @@ func _spawn_now(point: Vector2, scene: PackedScene, is_elite: bool) -> void:
 	if now - _last_spawn_shake > 250:
 		_last_spawn_shake = now
 		EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_SPAWN)
+
+
+# Modo infinito: vida, dano de contato, velocidade e pontos crescem a cada loop completado.
+func _apply_loop_scaling(enemy: EnemyBase, health: HealthComponent) -> void:
+	if GameManager.loop_index <= 0:
+		return
+	health.max_health = maxi(1, roundi(health.max_health * _level.loop_health_multiplier()))
+	var hitbox: Hitbox = enemy.get_node_or_null("Hitbox") as Hitbox
+	if hitbox != null:
+		hitbox.damage = maxi(1, roundi(hitbox.damage * _level.loop_damage_multiplier()))
+	enemy.move_speed *= _level.loop_speed_multiplier()
+	enemy.points = roundi(enemy.points * _level.loop_points_multiplier())
 
 
 # Ponto livre aleatório dentro da sala, longe do player.
@@ -133,6 +171,13 @@ func _on_enemy_gone() -> void:
 	EventBus.slowmo_requested.emit(FeelConstants.ROOM_CLEAR_SLOWMO, FeelConstants.ROOM_CLEAR_SLOWMO_TIME)
 	EventBus.play_sfx_requested.emit("room_clear")
 	EventBus.room_cleared.emit()
+	# Timer ainda correndo = sala de horda limpa a tempo: recompensa com item
+	if room.type == RoomData.Type.HORDE and _timer_active:
+		EventBus.item_drop_requested.emit(LootManager.Source.HORDE_CLEAR, room.center())
+	if room.type == RoomData.Type.BOSS:
+		# Fim do conjunto de cemitérios: lendário garantido na arena
+		EventBus.item_drop_requested.emit(LootManager.Source.BOSS_REWARD, room.center())
+		EventBus.boss_defeated.emit()
 	if _timer_active:
 		_timer_active = false
 		set_process(false)

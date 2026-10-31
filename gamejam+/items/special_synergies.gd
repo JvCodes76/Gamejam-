@@ -31,7 +31,7 @@ const RECIPES: Array[Dictionary] = [
 		"description": "Charmed enemies return as ghosts"},
 	{"id": RAINBOWS, "name": "RAINBOWS!!!", "item_ids": [&"rose_petal", &"unicorn_horn_shavings"],
 		"description": "+10% charm, +1 bounce, rainbow shots"},
-	{"id": TEA, "name": "Do NOT make this tea.", "item_ids": [&"gilded_rosemary", &"wolfsbane"],
+	{"id": TEA, "name": "Do NOT make this tea.", "item_ids": [&"gilded_mint_sprig", &"wolfsbane"],
 		"description": "Piercing may drain 20% of a basic enemy's health"},
 	{"id": EYE_DROPS, "name": "Weird Eye Drops.", "item_ids": [&"tree_sap", &"eye_of_giant_newt"],
 		"description": "Shots split in two on hit"},

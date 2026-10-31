@@ -11,6 +11,9 @@ const MARKED: StringName = &"marked"
 const CHARMED: StringName = &"charmed"
 const WEAKENED: StringName = &"weakened"
 
+# Indicadores visuais (preload direto: não depende do cache de class_name do editor)
+const INDICATOR_SCRIPT: GDScript = preload("res://enemies/enemy_status_indicator.gd")
+
 # Fonte padrão de slow quando apply(SLOW) é chamado sem fonte
 const DEFAULT_SLOW_SOURCE: StringName = &"default"
 
@@ -38,7 +41,7 @@ func _ready() -> void:
 	# Indicadores visuais desenhados sobre o dono (irmão do sprite)
 	var owner_node: Node2D = get_parent() as Node2D
 	if owner_node != null:
-		var indicator: EnemyStatusIndicator = EnemyStatusIndicator.new()
+		var indicator: Node2D = INDICATOR_SCRIPT.new()
 		indicator.name = "StatusIndicator"
 		indicator.setup(self, owner_node.get_node_or_null("HealthComponent") as HealthComponent, owner_node.get_node_or_null("Sprite2D") as Sprite2D)
 		owner_node.add_child.call_deferred(indicator)

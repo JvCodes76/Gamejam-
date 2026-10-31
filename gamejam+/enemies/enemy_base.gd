@@ -49,10 +49,15 @@ func _physics_process(delta: float) -> void:
 	if target == null or not _status.can_move():
 		velocity = Vector2.ZERO
 	else:
-		velocity = global_position.direction_to(target.global_position) * move_speed * _status.speed_multiplier()
+		velocity = _chase_velocity(target) * _status.speed_multiplier()
 	velocity += _knockback
 	_knockback = _knockback.move_toward(Vector2.ZERO, FeelConstants.KNOCKBACK_FRICTION * delta)
 	move_and_slide()
+
+
+## Velocidade desejada em direção ao alvo (antes de lentidão e knockback); subclasses mudam o jeito de andar.
+func _chase_velocity(target: Node2D) -> Vector2:
+	return global_position.direction_to(target.global_position) * move_speed
 
 
 ## Empurrão externo (golpe): reduzido pela resistência, decai por atrito em _physics_process.
@@ -168,6 +173,10 @@ func _on_died() -> void:
 		EventBus.charmed_enemy_died.emit(self, _status.time_left(StatusEffects.CHARMED))
 	EventBus.enemy_killed.emit(points)
 	EventBus.enemy_died.emit(global_position, _status.has(StatusEffects.MARKED), is_basic)
+	# O boss não sorteia drop próprio: a recompensa dele é o lendário da arena
+	if not is_in_group("boss"):
+		var source: int = LootManager.Source.NORMAL_ENEMY if is_basic else LootManager.Source.ELITE_ENEMY
+		EventBus.item_drop_requested.emit(source, global_position)
 	_play_death_feedback()
 	queue_free()
 

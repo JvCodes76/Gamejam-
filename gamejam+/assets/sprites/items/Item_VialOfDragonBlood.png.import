@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c1duyw8ctk64v"
-path="res://.godot/imported/placeholder_tree_sap.png-e915c0ebef10a097baa05b637a6fb9c5.ctex"
+uid="uid://b3yay7f7rh0yw"
+path="res://.godot/imported/Item_VialOfDragonBlood.png-e6929aaeee50fe687b54e4a41e8eef50.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_tree_sap.png"
-dest_files=["res://.godot/imported/placeholder_tree_sap.png-e915c0ebef10a097baa05b637a6fb9c5.ctex"]
+source_file="res://assets/sprites/items/Item_VialOfDragonBlood.png"
+dest_files=["res://.godot/imported/Item_VialOfDragonBlood.png-e6929aaeee50fe687b54e4a41e8eef50.ctex"]
 
 [params]
 

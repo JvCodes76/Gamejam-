@@ -2,6 +2,10 @@ extends Node
 
 # Morte do jogador
 signal player_died()
+# Boss do último cemitério derrotado (fim do loop atual)
+signal boss_defeated()
+# Run terminou: mostra o sumário (victory = boss derrotado, pode seguir para o modo infinito)
+signal run_ended(victory: bool)
 # Vida atual do jogador alterada
 signal player_health_changed(current: int, max_value: int)
 # Inimigo derrotado, concede pontos
@@ -26,6 +30,8 @@ signal inventory_open_requested()
 signal inventory_closed()
 # Itens no chão mudaram
 signal ground_items_changed()
+# Pedido de drop de item (source = LootManager.Source); o LootManager sorteia e solta no chão
+signal item_drop_requested(source: int, position: Vector2)
 # Item recolhido do chão
 signal item_picked_up(item_id: StringName)
 # Slots de poção mudaram (conteúdo)

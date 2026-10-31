@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dk7pelrfeyjk0"
-path="res://.godot/imported/placeholder_eye_of_giant_newt.png-b3827c825e716ef4700382ee94adf68b.ctex"
+uid="uid://d4dolwqf41av4"
+path="res://.godot/imported/Item_Gun.png-97900f8c18889607c522c3322569f429.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_eye_of_giant_newt.png"
-dest_files=["res://.godot/imported/placeholder_eye_of_giant_newt.png-b3827c825e716ef4700382ee94adf68b.ctex"]
+source_file="res://assets/sprites/items/Item_Gun.png"
+dest_files=["res://.godot/imported/Item_Gun.png-97900f8c18889607c522c3322569f429.ctex"]
 
 [params]
 

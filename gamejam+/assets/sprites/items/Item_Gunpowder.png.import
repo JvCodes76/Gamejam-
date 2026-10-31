@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dh207turrti7f"
-path="res://.godot/imported/placeholder_gilded_rosemary.png-acd8c69e48db9b815a738126d634832e.ctex"
+uid="uid://bj0wwi2582440"
+path="res://.godot/imported/Item_Gunpowder.png-36ad0d3ab9d1e283b2e81ebad4f2eb36.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_gilded_rosemary.png"
-dest_files=["res://.godot/imported/placeholder_gilded_rosemary.png-acd8c69e48db9b815a738126d634832e.ctex"]
+source_file="res://assets/sprites/items/Item_Gunpowder.png"
+dest_files=["res://.godot/imported/Item_Gunpowder.png-36ad0d3ab9d1e283b2e81ebad4f2eb36.ctex"]
 
 [params]
 

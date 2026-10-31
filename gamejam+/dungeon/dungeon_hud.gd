@@ -27,8 +27,11 @@ func _make_label(pos: Vector2) -> Label:
 	return label
 
 
+# Mostra o cemitério atual e, no modo infinito, o loop
 func _on_cemetery_changed(index: int, total: int) -> void:
-	_label_cemetery.text = "Cemitério %d/%d" % [index, total]
+	_label_cemetery.text = tr("Cemitério %d/%d") % [index, total]
+	if GameManager.loop_index > 0:
+		_label_cemetery.text += "  " + tr("Loop %d") % (GameManager.loop_index + 1)
 
 
 # Valor negativo esconde o timer; nos últimos segundos o texto pulsa a cada segundo e fica vermelho

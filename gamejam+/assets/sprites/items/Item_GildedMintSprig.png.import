@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b3udur7416a41"
-path="res://.godot/imported/placeholder_wolfsbane.png-49edbb65e9f8e2250764b66981447a16.ctex"
+uid="uid://djlufrexlgos3"
+path="res://.godot/imported/Item_GildedMintSprig.png-2b08e901e050b14a775612f70e5d16af.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/items/placeholder_wolfsbane.png"
-dest_files=["res://.godot/imported/placeholder_wolfsbane.png-49edbb65e9f8e2250764b66981447a16.ctex"]
+source_file="res://assets/sprites/items/Item_GildedMintSprig.png"
+dest_files=["res://.godot/imported/Item_GildedMintSprig.png-2b08e901e050b14a775612f70e5d16af.ctex"]
 
 [params]
 
