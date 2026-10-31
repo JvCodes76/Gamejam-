@@ -229,7 +229,7 @@ const ANNOUNCE_BURST_LIFETIME: float = 0.9
 const ANNOUNCE_FLASH_ALPHA: float = 0.35
 const ANNOUNCE_FLASH_TIME: float = 0.1
 # Duração da subida do nome até o topo da tela (s)
-const ANNOUNCE_FLOAT_TIME: float = 2.5
+const ANNOUNCE_FLOAT_TIME: float = 5.0
 # Curva de aceleração da subida (1 = linear; maior = acelera mais)
 const ANNOUNCE_ACCEL_CURVE: float = 1.4
 # Fração final da subida em que o nome some (fade)

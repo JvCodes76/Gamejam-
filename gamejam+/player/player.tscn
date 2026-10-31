@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1"]
 [ext_resource type="Texture2D" path="res://SpritesPlayer.png" id="2"]
@@ -7,6 +7,7 @@
 
 [ext_resource type="Script" path="res://player/crosshair.gd" id="5"]
 [ext_resource type="Script" path="res://inventory/interactor.gd" id="6"]
+[ext_resource type="Texture2D" path="res://Cape_Animation2-Sheet.png" id="7"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 10.0
@@ -22,7 +23,15 @@ script = ExtResource("1")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_body")
 
+[node name="Cape" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, 10)
+texture = ExtResource("7")
+hframes = 4
+
 [node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, -8)
 texture_filter = 1
 texture = ExtResource("2")
 hframes = 8

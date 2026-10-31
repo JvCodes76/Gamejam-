@@ -1,6 +1,6 @@
 class_name InventoryScreen
 extends CanvasLayer
-## Tela do inventário físico: pausa o jogo e mostra a bolsa e o chão.
+## Tela do inventário físico: mostra a bolsa e o chão; o jogo continua rodando.
 
 @export var spawn_area: Rect2 = Rect2(400, 40, 190, 80)
 @export var drop_scatter: float = 24.0
@@ -24,6 +24,10 @@ extends CanvasLayer
 @export var wobble_interval: float = 0.15
 @export var wobble_impulse: float = 22.0
 @export var toast_time: float = 1.6
+# Distância do player ao caldeirão aberto a partir da qual o menu fecha sozinho
+@export var cauldron_leave_distance: float = 72.0
+@export var hint_time: float = 2.0
+@export var hint_text: String = "Time keeps running"
 @export var trash_position: Vector2 = Vector2(560, 230)
 @export var picker_slot_gap: float = 48.0
 @export var picker_dim_color: Color = Color(0, 0, 0, 0.6)
@@ -41,8 +45,6 @@ var _open: bool = false
 # Item físico -> posição original no mundo (itens vindos do chão)
 var _origins: Dictionary = {}
 var _spawn_index: int = 0
-var _frozen_scene: Node
-var _prev_scene_mode: Node.ProcessMode = Node.PROCESS_MODE_INHERIT
 var _cauldron: Cauldron = null
 var _vessel: CauldronVessel = null
 var _wobble_timer: float = 0.0
@@ -71,6 +73,7 @@ func _ready() -> void:
 	_build_screen_walls()
 	EventBus.inventory_open_requested.connect(open)
 	EventBus.cauldron_open_requested.connect(_on_cauldron_open_requested)
+	EventBus.player_died.connect(_on_player_died)
 	_help_normal = _help.text
 	_build_brew_ui()
 	_announce_layer = CanvasLayer.new()
@@ -165,10 +168,7 @@ func _begin_open(cauldron: Cauldron) -> void:
 		_spawn_in_area(data)
 	ItemManager.pending_items.clear()
 	visible = true
-	# Não usa get_tree().paused: pausar a árvore também pausa o PhysicsServer2D e congelaria os itens
-	_frozen_scene = get_tree().current_scene
-	_prev_scene_mode = _frozen_scene.process_mode
-	_frozen_scene.process_mode = Node.PROCESS_MODE_DISABLED
+	_toast_message(hint_text, hint_time)
 	print("[Inventory] - Aberto (%d na bolsa%s)" % [ItemManager.bag_entries.size(), ", modo caldeirão" if _cauldron != null else ""])
 
 # Fecha: salva a bolsa (e o caldeirão) e derruba o resto no chão do mundo
@@ -206,13 +206,25 @@ func close() -> void:
 	ItemManager.save_bag_layout(kept)
 	_tooltip.clear()
 	visible = false
-	if is_instance_valid(_frozen_scene):
-		_frozen_scene.process_mode = _prev_scene_mode
-	_frozen_scene = null
 	Input.mouse_mode = _prev_mouse_mode
 	ItemManager.inventory_open = false
 	EventBus.inventory_closed.emit()
 	print("[Inventory] - Fechado (%d na bolsa, %d no chão)" % [kept.size(), dropped])
+
+# Fecha ao morrer para restaurar cursor e flags
+func _on_player_died() -> void:
+	close()
+
+
+# Se sair da árvore aberta (level descarregado), libera o estado preso
+func _exit_tree() -> void:
+	if not _open:
+		return
+	_open = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	ItemManager.inventory_open = false
+	print("[Inventory] - Descarregado com a tela aberta")
+
 
 # Entradas do chão dentro do raio do player, as mais próximas primeiro
 func _nearby_ground_entries() -> Array[Dictionary]:
@@ -301,6 +313,11 @@ func _entries_in(container: Bag) -> Array[Dictionary]:
 
 func _process(delta: float) -> void:
 	if not _open or _cauldron == null:
+		return
+	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
+	if player != null and player.global_position.distance_to(_cauldron.global_position) > cauldron_leave_distance:
+		print("[Inventory] - Player se afastou do caldeirão")
+		close()
 		return
 	var state: CauldronState = _cauldron.state
 	var items: Array[PhysicalItem] = [] as Array[PhysicalItem]
@@ -505,8 +522,11 @@ func discard_potion() -> void:
 
 
 func _clear_cauldron_potion() -> void:
+	if _cauldron == null:
+		return
 	_cauldron.state.potion = null
-	_vessel.clear_potion()
+	if _vessel != null:
+		_vessel.clear_potion()
 	_refresh_brew_ui()
 
 
@@ -640,7 +660,7 @@ func _refresh_brew_ui() -> void:
 
 
 # Mensagem curta no topo que some sozinha
-func _toast_message(text: String) -> void:
+func _toast_message(text: String, time: float = -1.0) -> void:
 	_warn_active = false
 	_toast.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
 	_toast.text = text
@@ -648,5 +668,5 @@ func _toast_message(text: String) -> void:
 		_toast_tween.kill()
 	_toast.modulate.a = 1.0
 	_toast_tween = create_tween()
-	_toast_tween.tween_interval(toast_time)
+	_toast_tween.tween_interval(toast_time if time < 0.0 else time)
 	_toast_tween.tween_property(_toast, "modulate:a", 0.0, 0.4)

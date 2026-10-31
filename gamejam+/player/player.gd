@@ -10,6 +10,9 @@ const BULLET_SCENE: PackedScene = preload("res://projectiles/bullet.tscn")
 @export var aim_deadzone: float = 0.3
 @export var gamepad_crosshair_distance: float = 60.0
 @export var walk_frame_time: float = 0.18
+@export var cape_frame_time: float = 0.12
+# Pixels que a cabeça sobe nos quadros "andando"
+@export var head_bob: float = 1.0
 
 var _fire_timer: float = 0.0
 var _aim_direction: Vector2 = Vector2.RIGHT
@@ -18,6 +21,9 @@ var _mods: ProjectileModifiers = ProjectileModifiers.new()
 var _director: SynergyDirector = null
 var _walk_timer: float = 0.0
 var _walk_frame: int = 0
+var _cape_timer: float = 0.0
+var _cape_frame: int = 0
+var _head_base_y: float = 0.0
 # Posição no ciclo de cores do arco-íris (receita RAINBOWS!!!)
 var _rainbow_index: int = 0
 
@@ -26,6 +32,7 @@ const FRAMES_PER_DIRECTION: int = 2
 enum Facing { DOWN, RIGHT, LEFT, UP }
 
 @onready var _sprite: Sprite2D = $Sprite2D
+@onready var _cape: Sprite2D = $Cape
 @onready var _pivot: Node2D = $Pivot
 @onready var _muzzle: Marker2D = $Pivot/Muzzle
 @onready var _health: HealthComponent = $HealthComponent
@@ -33,6 +40,7 @@ enum Facing { DOWN, RIGHT, LEFT, UP }
 
 
 func _ready() -> void:
+	_head_base_y = _sprite.position.y
 	_health.health_changed.connect(_on_health_changed)
 	_health.died.connect(_on_died)
 	_director = SynergyDirector.new()
@@ -79,7 +87,7 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 	_update_sprite(delta)
 	_fire_timer -= delta
-	if Input.is_action_pressed("shoot") and _fire_timer <= 0.0:
+	if Input.is_action_pressed("shoot") and _fire_timer <= 0.0 and not ItemManager.inventory_open:
 		_shoot()
 
 
@@ -95,6 +103,11 @@ func _handle_movement(delta: float) -> void:
 
 ## Atualiza a mira (analógico ou mouse), gira o Pivot e posiciona o crosshair.
 func _update_aim() -> void:
+	# Com o inventário aberto a mira fica congelada e o crosshair some
+	if ItemManager.inventory_open:
+		_crosshair.visible = false
+		return
+	_crosshair.visible = not get_tree().paused
 	var stick: Vector2 = Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	if stick.length() > aim_deadzone:
 		_use_gamepad = true
@@ -122,7 +135,22 @@ func _update_sprite(delta: float) -> void:
 	else:
 		_walk_timer = 0.0
 		_walk_frame = 0
+	_update_cape(delta, velocity.length() > 5.0)
+	_sprite.position.y = _head_base_y - (head_bob if _walk_frame == 1 else 0.0)
 	_sprite.frame = facing * FRAMES_PER_DIRECTION + _walk_frame
+
+
+## Anima a capa: parada no quadro 0, cicla os 4 quadros ao andar.
+func _update_cape(delta: float, walking: bool) -> void:
+	if walking:
+		_cape_timer += delta
+		if _cape_timer >= cape_frame_time:
+			_cape_timer = 0.0
+			_cape_frame = (_cape_frame + 1) % _cape.hframes
+	else:
+		_cape_timer = 0.0
+		_cape_frame = 0
+	_cape.frame = _cape_frame
 
 
 ## Converte a direção da mira em uma das 4 direções da folha.
@@ -174,6 +202,8 @@ func _on_potion_selected(index: int) -> void:
 
 ## Alterna cursor do sistema e crosshair conforme a pausa.
 func _on_game_paused(paused: bool) -> void:
+	if ItemManager.inventory_open:
+		return
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_HIDDEN
 	_crosshair.visible = not paused
 
