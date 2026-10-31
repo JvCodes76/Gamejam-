@@ -7,9 +7,12 @@ signal grabbed(item: PhysicalItem)
 signal released(item: PhysicalItem)
 
 @export var follow_strength: float = 20.0
-@export var max_grab_speed: float = 900.0
-@export var rest_linear_damp: float = 8.0
-@export var rest_angular_damp: float = 8.0
+@export var max_grab_speed: float = 450.0
+@export var rest_linear_damp: float = 0.4
+@export var rest_angular_damp: float = 2.0
+@export var gravity_scale_resting: float = 1.0
+@export var rest_friction: float = 0.8
+@export var rest_bounce: float = 0.1
 @export var rotate_step_degrees: float = 45.0
 @export var polygon_epsilon: float = 1.0
 
@@ -17,7 +20,7 @@ signal released(item: PhysicalItem)
 static var current_grabbed: PhysicalItem = null
 
 var item_data: ItemData
-var item_scale: float = 1.0
+var item_scale: float = 3.0
 
 var is_hovered: bool = false
 var is_grabbed: bool = false
@@ -34,7 +37,13 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	collision_layer = 1
 	collision_mask = 1
-	gravity_scale = 0.0
+	gravity_scale = gravity_scale_resting
+	can_sleep = true
+	continuous_cd = RigidBody2D.CCD_MODE_CAST_SHAPE
+	var mat := PhysicsMaterial.new()
+	mat.friction = rest_friction
+	mat.bounce = rest_bounce
+	physics_material_override = mat
 	lock_rotation = false
 	linear_damp_mode = RigidBody2D.DAMP_MODE_REPLACE
 	angular_damp_mode = RigidBody2D.DAMP_MODE_REPLACE
@@ -42,7 +51,7 @@ func _ready() -> void:
 	angular_damp = rest_angular_damp
 
 # Configura sprite e colliders a partir do ItemData
-func setup(data: ItemData, new_scale: float = 1.0) -> void:
+func setup(data: ItemData, new_scale: float = 3.0) -> void:
 	item_data = data
 	item_scale = new_scale
 	if _sprite == null:
@@ -118,7 +127,7 @@ func _input(event: InputEvent) -> void:
 func _physics_process(_delta: float) -> void:
 	_update_hover()
 	if is_grabbed:
-		var to_mouse: Vector2 = get_global_mouse_position() - global_position
+		var to_mouse: Vector2 = _clamped_mouse() - global_position
 		linear_velocity = (to_mouse * follow_strength).limit_length(max_grab_speed)
 		angular_velocity = 0.0
 
@@ -128,6 +137,12 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		_has_pending_rotation = false
 	if is_grabbed:
 		state.angular_velocity = 0.0
+
+# Posição do mouse limitada ao retângulo do viewport (item nunca é puxado para fora)
+func _clamped_mouse() -> Vector2:
+	var rect: Rect2 = get_viewport().get_visible_rect()
+	var m: Vector2 = get_global_mouse_position()
+	return Vector2(clampf(m.x, rect.position.x, rect.end.x), clampf(m.y, rect.position.y, rect.end.y))
 
 # Atualiza estado de hover (apenas se ninguém está segurando outro item)
 func _update_hover() -> void:
@@ -144,6 +159,8 @@ func _update_hover() -> void:
 func _grab() -> void:
 	is_grabbed = true
 	current_grabbed = self
+	gravity_scale = 0.0
+	sleeping = false
 	linear_damp = 0.0
 	angular_damp = 0.0
 	grabbed.emit(self)
@@ -153,6 +170,7 @@ func _release() -> void:
 	is_grabbed = false
 	if current_grabbed == self:
 		current_grabbed = null
+	gravity_scale = gravity_scale_resting
 	linear_damp = rest_linear_damp
 	angular_damp = rest_angular_damp
 	released.emit(self)

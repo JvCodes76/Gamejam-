@@ -102,7 +102,7 @@ func _on_mouth_exited(body: Node2D) -> void:
 	if item.is_scaling:
 		return
 	if to_local(item.global_position).y < BagLayout.MOUTH_RECT.position.y:
-		item.apply_item_scale(1.0, shrink_tween_time)
+		item.apply_item_scale(ItemManager.base_item_scale, shrink_tween_time)
 
 func _on_inside_entered(body: Node2D) -> void:
 	if body is PhysicalItem:
@@ -113,7 +113,7 @@ func _on_inside_exited(body: Node2D) -> void:
 		item_left_bag.emit(body as PhysicalItem)
 
 # Instancia um item como filho da bolsa
-func spawn_item(data: ItemData, local_position: Vector2, item_rotation: float = 0.0, item_scale: float = 1.0) -> PhysicalItem:
+func spawn_item(data: ItemData, local_position: Vector2, item_rotation: float = 0.0, item_scale: float = 3.0) -> PhysicalItem:
 	var item: PhysicalItem = item_scene.instantiate() as PhysicalItem
 	item.position = local_position
 	item.rotation = item_rotation

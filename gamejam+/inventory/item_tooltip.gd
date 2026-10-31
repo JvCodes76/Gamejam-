@@ -3,12 +3,6 @@ extends PanelContainer
 
 @export var mouse_offset: Vector2 = Vector2(14, 14)
 @export var screen_margin: float = 4.0
-@export var rarity_colors: Dictionary[ItemEnums.Rarity, Color] = {
-	ItemEnums.Rarity.BASIC: Color(0.7, 0.7, 0.7),
-	ItemEnums.Rarity.INTERMEDIATE: Color(0.4, 0.85, 0.4),
-	ItemEnums.Rarity.ADVANCED: Color(0.4, 0.6, 1.0),
-	ItemEnums.Rarity.LEGENDARY: Color(1.0, 0.8, 0.2),
-}
 
 const RARITY_NAMES: Dictionary = {
 	ItemEnums.Rarity.BASIC: "Basic",
@@ -36,7 +30,7 @@ var _item: PhysicalItem
 
 @onready var _name_label: Label = $VBox/NameLabel
 @onready var _rarity_label: Label = $VBox/RarityLabel
-@onready var _aspects_label: Label = $VBox/AspectsLabel
+@onready var _aspects_label: RichTextLabel = $VBox/AspectsLabel
 @onready var _effects_label: Label = $VBox/EffectsLabel
 @onready var _desc_label: Label = $VBox/DescLabel
 
@@ -90,14 +84,14 @@ func _follow_mouse() -> void:
 func _fill(data: ItemData) -> void:
 	_name_label.text = data.display_name if data.display_name != "" else str(data.id)
 	_rarity_label.text = RARITY_NAMES.get(data.rarity, "")
-	_rarity_label.add_theme_color_override("font_color", rarity_colors.get(data.rarity, Color.WHITE))
+	_rarity_label.add_theme_color_override("font_color", ItemEnums.RARITY_COLORS.get(data.rarity, Color.WHITE))
 	_aspects_label.text = _aspects_text(data)
 	_effects_label.text = _effects_text(data)
 	_effects_label.visible = _effects_label.text != ""
 	_desc_label.text = data.description
 	_desc_label.visible = data.description.strip_edges() != ""
 
-# Agrupa aspectos repetidos: "Animal x2, Plant"
+# Agrupa aspectos repetidos, cada um na sua cor (BBCode): "Animal x2, Plant"
 func _aspects_text(data: ItemData) -> String:
 	var counts: Dictionary = {}
 	for a: ItemEnums.Aspect in data.aspects:
@@ -105,7 +99,9 @@ func _aspects_text(data: ItemData) -> String:
 	var parts: PackedStringArray = []
 	for a: ItemEnums.Aspect in counts:
 		var n: int = counts[a]
-		parts.append(ASPECT_NAMES.get(a, "?") + (" x%d" % n if n > 1 else ""))
+		var text: String = ASPECT_NAMES.get(a, "?") + (" x%d" % n if n > 1 else "")
+		var color: Color = ItemEnums.ASPECT_COLORS.get(a, Color.WHITE)
+		parts.append("[color=#%s]%s[/color]" % [color.to_html(false), text])
 	return ", ".join(parts)
 
 # Uma linha por efeito; magnitude diferente de 1 vira "xN"

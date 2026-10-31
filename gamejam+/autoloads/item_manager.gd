@@ -21,6 +21,8 @@ var pending_items: Array[ItemData] = []
 var inventory_open: bool = false
 var shrink_upgrade_active: bool = false
 var shrink_scale: float = 0.6
+# Escala base dos sprites na tela de inventário (16 px -> 48 px)
+var base_item_scale: float = 3.0
 
 
 func _ready() -> void:
@@ -103,7 +105,7 @@ func reset() -> void:
 
 # Escala atual dos itens (reduzida se o upgrade estiver ativo)
 func current_item_scale() -> float:
-	return shrink_scale if shrink_upgrade_active else 1.0
+	return base_item_scale * (shrink_scale if shrink_upgrade_active else 1.0)
 
 
 # Guarda o item na bolsa se couber facilmente
