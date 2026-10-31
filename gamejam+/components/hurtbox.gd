@@ -21,3 +21,10 @@ func apply_status(status: StringName, duration: float, power: float = 1.0) -> vo
 	var effects: StatusEffects = get_parent().get_node_or_null("StatusEffects") as StatusEffects
 	if effects != null:
 		effects.apply(status, duration, power)
+
+
+# Aplica uma lentidão de uma fonte nomeada (fontes diferentes multiplicam); fraction 0.4 = -40%.
+func apply_slow(source: StringName, duration: float, fraction: float) -> void:
+	var effects: StatusEffects = get_parent().get_node_or_null("StatusEffects") as StatusEffects
+	if effects != null:
+		effects.apply_slow(source, duration, StatusEffects.slow_power(fraction))

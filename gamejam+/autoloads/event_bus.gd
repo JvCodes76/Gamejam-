@@ -44,3 +44,5 @@ signal enemy_died(position: Vector2, was_marked: bool, is_basic: bool)
 signal enemy_dot_ticked(enemy: Node, source: StringName, amount: int)
 # Raiva (sinergia Evil) mudou: bônus de dano (0.05 = +5%)
 signal rage_changed(bonus: float)
+# Inimigo enfeitiçado morreu: o inimigo (ainda válido durante o sinal) e o tempo restante do charm
+signal charmed_enemy_died(enemy: Node2D, charm_time_left: float)

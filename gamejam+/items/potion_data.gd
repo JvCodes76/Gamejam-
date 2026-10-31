@@ -11,6 +11,8 @@ var volume: float = 0.0
 var effect_totals: Dictionary = {}
 # Aspect -> int
 var aspect_counts: Dictionary = {}
+# Ids das receitas especiais ativas (SpecialSynergies)
+var special_synergies: Array[StringName] = []
 
 
 # Monta a poção; scales[i] é a escala do item i (mesmo tamanho de items)
@@ -30,6 +32,9 @@ static func from_items(new_items: Array[ItemData], scales: Array[float]) -> Poti
 		potion.color = Color(weighted.r / total, weighted.g / total, weighted.b / total, 1.0)
 	potion.effect_totals = ItemManager.compute_effect_totals(new_items)
 	potion.aspect_counts = ItemManager.count_aspects(new_items)
+	potion.special_synergies = SpecialSynergies.find_ids(new_items)
+	if not potion.special_synergies.is_empty():
+		print("[Synergy] - receitas especiais na poção: %s" % ", ".join(potion.special_synergies))
 	print("[Items] - Poção: %d itens, volume %.1f" % [new_items.size(), total])
 	return potion
 

@@ -58,6 +58,8 @@ var _warn_timer: float = 0.0
 var _warn_active: bool = false
 var _highlight_timer: float = 0.0
 var _tinted: Array[PhysicalItem] = []
+# CanvasLayer acima do inventário para o anúncio das sinergias especiais
+var _announce_layer: CanvasLayer = null
 
 @onready var _viewport: SubViewport = $ViewportContainer/SubViewport
 @onready var _bag: Bag = $ViewportContainer/SubViewport/Bag
@@ -71,6 +73,11 @@ func _ready() -> void:
 	EventBus.cauldron_open_requested.connect(_on_cauldron_open_requested)
 	_help_normal = _help.text
 	_build_brew_ui()
+	_announce_layer = CanvasLayer.new()
+	_announce_layer.name = "AnnounceLayer"
+	_announce_layer.layer = layer + 1
+	_announce_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_announce_layer)
 	print("[Inventory] - Tela de inventário pronta")
 
 # Alterna com a ação "inventory"; Esc fecha
@@ -193,6 +200,8 @@ func close() -> void:
 		_vessel = null
 	_cauldron = null
 	_set_brew_ui_visible(false)
+	for child: Node in _announce_layer.get_children():
+		child.queue_free()
 	_origins.clear()
 	ItemManager.save_bag_layout(kept)
 	_tooltip.clear()
@@ -441,6 +450,16 @@ func _complete_brew(items: Array[PhysicalItem]) -> void:
 	_vessel.set_brewing(false)
 	_toast_message("Potion brewed! Press F to bottle")
 	print("[Cauldron] - Preparo concluído (%d itens, volume %.1f)" % [datas.size(), state.potion.volume])
+	_announce_special_synergies(state.potion)
+
+
+## Explosão no caldeirão e nomes das receitas especiais subindo até o topo (não bloqueia a interação).
+func _announce_special_synergies(potion: PotionData) -> void:
+	var recipes: Array[Dictionary] = SpecialSynergies.recipes_for(potion.special_synergies)
+	if recipes.is_empty() or _vessel == null:
+		return
+	var origin: Vector2 = _vessel.to_global(_vessel.mouth_rect.get_center())
+	SynergyAnnouncement.play(_announce_layer, origin, potion.color, recipes)
 
 
 # Anima o item sumindo e o libera

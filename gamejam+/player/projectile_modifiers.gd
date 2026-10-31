@@ -35,8 +35,8 @@ var _heal_carry: float = 0.0
 var _secondary_carry: float = 0.0
 
 
-## Resolve os campos a partir de EffectType -> float e Aspect -> int.
-static func from_totals(totals: Dictionary, aspects: Dictionary = {}) -> ProjectileModifiers:
+## Resolve os campos a partir de EffectType -> float, Aspect -> int e ids das receitas especiais.
+static func from_totals(totals: Dictionary, aspects: Dictionary = {}, specials: Array[StringName] = []) -> ProjectileModifiers:
 	var m: ProjectileModifiers = ProjectileModifiers.new()
 	m.damage_multiplier = 1.0 + _total(totals, ItemEffect.EffectType.DAMAGE) * CombatConstants.DAMAGE_PER_POINT
 	m.range_multiplier = 1.0 + _total(totals, ItemEffect.EffectType.RANGE) * CombatConstants.RANGE_PER_POINT
@@ -47,7 +47,7 @@ static func from_totals(totals: Dictionary, aspects: Dictionary = {}) -> Project
 	m.charm_level = _total(totals, ItemEffect.EffectType.CHARM_CHANCE)
 	m.poison_level = _total(totals, ItemEffect.EffectType.POISON_DAMAGE)
 	m.pierce_count = int(_total(totals, ItemEffect.EffectType.PIERCE))
-	m.synergy = SynergyResolver.resolve(aspects)
+	m.synergy = SynergyResolver.resolve(aspects, specials)
 	m.has_poison_ingredient = int(aspects.get(ItemEnums.Aspect.POISON, 0)) >= 1
 	m.fire_dps = _total(totals, ItemEffect.EffectType.FIRE_DAMAGE) * CombatConstants.FIRE_DPS_PER_POINT
 	for t: ItemEffect.EffectType in UNIMPLEMENTED_TYPES:
@@ -98,7 +98,7 @@ func try_holy_slay(target: Hurtbox) -> bool:
 	if not enemy.slay_if_basic():
 		return false
 	print("[Synergy] - rajada de luz matou um inimigo básico")
-	ImpactEffect.spawn_blast(target.get_tree().current_scene, pos, SynergyConstants.LIGHT_BURST_RADIUS, 0, SynergyConstants.LIGHT_HOLY_COLOR, 24)
+	ImpactEffect.spawn_blast(target.get_tree().current_scene, pos, explosion_radius(SynergyConstants.LIGHT_BURST_RADIUS), 0, SynergyConstants.LIGHT_HOLY_COLOR, 24)
 	return true
 
 
@@ -117,12 +117,22 @@ func roll_crit() -> bool:
 	return randf() < crit_chance()
 
 
-## Chance de lifesteal por hit (logarítmica em lifesteal e luck; 0 sem lifesteal).
+## Chance de lifesteal por hit (logarítmica em lifesteal e luck) mais o bônus da Salad!, que vale sem lifesteal.
 func lifesteal_chance() -> float:
-	if lifesteal_level <= 0.0:
-		return 0.0
-	var chance: float = CombatConstants.LIFESTEAL_CHANCE_SCALE * log(1.0 + lifesteal_level) * (1.0 + log(1.0 + maxf(luck, 0.0)))
+	var chance: float = synergy.lifesteal_chance_bonus
+	if lifesteal_level > 0.0:
+		chance += CombatConstants.LIFESTEAL_CHANCE_SCALE * log(1.0 + lifesteal_level) * (1.0 + log(1.0 + maxf(luck, 0.0)))
 	return clampf(chance, 0.0, 1.0)
+
+
+## Raio de uma explosão de sinergia após o Magical Potentializer.
+func explosion_radius(radius: float) -> float:
+	return radius * synergy.explosion_radius_mult
+
+
+## Dano inteiro (mín. 1) de uma explosão de sinergia: fração do dano da arma com o bônus do Potentializer.
+func roll_explosion_damage(base: int, fraction: float = 1.0) -> int:
+	return roll_secondary_damage(base, fraction * synergy.explosion_damage_mult)
 
 
 ## Cura inteira de um hit direto: sorteia a chance e acumula frações (mín. 1% da vida máxima).
@@ -135,9 +145,9 @@ func roll_heal(damage_dealt: int, max_health: int) -> int:
 	return amount
 
 
-## Chance de envenenar por hit (0 sem ingrediente de veneno).
+## Chance de envenenar por hit (0 sem ingrediente de veneno), com o bônus da EVIL Salad!!.
 func poison_chance() -> float:
-	return CombatConstants.POISON_HIT_CHANCE if has_poison_ingredient else 0.0
+	return clampf(CombatConstants.POISON_HIT_CHANCE + synergy.poison_chance_bonus, 0.0, 1.0) if has_poison_ingredient else 0.0
 
 
 ## Dano por segundo do veneno: dano base da arma * (1 + bônus por ponto de POISON_DAMAGE).
@@ -145,16 +155,31 @@ func poison_dps(base_damage: int) -> float:
 	return base_damage * (1.0 + CombatConstants.POISON_DPS_BONUS_PER_POINT * poison_level) * (1.0 + synergy.poison_dps_bonus)
 
 
-## Chance de enfeitiçar por hit (0 sem CHARM_CHANCE).
+## Chance de enfeitiçar por hit (CHARM_CHANCE) mais o bônus do RAINBOWS!!!, que vale sem CHARM_CHANCE.
 func charm_chance() -> float:
-	if charm_level <= 0.0:
-		return 0.0
-	return clampf(CombatConstants.CHARM_PER_POINT * charm_level * (1.0 + log(1.0 + maxf(luck, 0.0))), 0.0, 1.0)
+	var chance: float = synergy.charm_chance_bonus
+	if charm_level > 0.0:
+		chance += CombatConstants.CHARM_PER_POINT * charm_level * (1.0 + log(1.0 + maxf(luck, 0.0)))
+	return clampf(chance, 0.0, 1.0)
 
 
-## Raio da área de impacto (escala com o alcance).
+## Raio da área de impacto (escala com o alcance e com o Potentializer).
 func impact_radius() -> float:
-	return CombatConstants.IMPACT_RADIUS_BASE * range_multiplier
+	return explosion_radius(CombatConstants.IMPACT_RADIUS_BASE * range_multiplier)
+
+
+## Do NOT make this tea.: ao atravessar um básico, sorteia a perda imediata de vida máxima. Retorna true se ocorreu.
+func try_tea(target: Hurtbox) -> bool:
+	if synergy.tea_chance <= 0.0 or randf() >= synergy.tea_chance:
+		return false
+	var enemy: EnemyBase = target.get_parent() as EnemyBase
+	if enemy == null or not enemy.is_basic or not enemy.is_alive():
+		return false
+	var health: HealthComponent = enemy.get_health()
+	var loss: int = maxi(roundi(health.max_health * synergy.tea_health_fraction), 1)
+	health.take_damage(loss)
+	print("[Synergy] - chá ruim: básico perdeu %d de vida (%d%% da máxima)" % [loss, roundi(synergy.tea_health_fraction * 100.0)])
+	return true
 
 
 ## Aplica fogo (sempre) e sorteia veneno e charme num alvo; usado no hit direto e no splash.
@@ -173,7 +198,7 @@ func apply_on_hit_effects(target: Hurtbox, base_damage: int) -> void:
 ## Veneno com sinergia: lentidão (tier 3) e enfraquecimento (tier 9) enquanto envenenado.
 func _apply_poison_synergy(target: Hurtbox) -> void:
 	if synergy.poison_slow > 0.0:
-		target.apply_status(StatusEffects.SLOW, CombatConstants.POISON_DURATION, StatusEffects.slow_power(synergy.poison_slow))
+		target.apply_slow(&"poison", CombatConstants.POISON_DURATION, synergy.poison_slow)
 	if synergy.poison_weaken > 0.0:
 		target.apply_status(StatusEffects.WEAKENED, CombatConstants.POISON_DURATION, synergy.poison_weaken)
 

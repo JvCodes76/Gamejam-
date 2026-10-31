@@ -58,6 +58,6 @@ func _affect_overlapping() -> void:
 		var hurtbox: Hurtbox = area as Hurtbox
 		if hurtbox == null:
 			continue
-		hurtbox.apply_status(StatusEffects.SLOW, span, StatusEffects.slow_power(slow_fraction))
+		hurtbox.apply_slow(&"mud", span, slow_fraction)
 		if dps > 0.0:
 			hurtbox.apply_dot(dps, span, &"mud", SynergyConstants.EARTH_MUD_TICK)

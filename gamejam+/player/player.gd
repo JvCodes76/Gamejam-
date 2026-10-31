@@ -18,6 +18,8 @@ var _mods: ProjectileModifiers = ProjectileModifiers.new()
 var _director: SynergyDirector = null
 var _walk_timer: float = 0.0
 var _walk_frame: int = 0
+# Posição no ciclo de cores do arco-íris (receita RAINBOWS!!!)
+var _rainbow_index: int = 0
 
 # Folha com 4 direções x 2 quadros (parado/andando): baixo, direita, esquerda, cima
 const FRAMES_PER_DIRECTION: int = 2
@@ -143,6 +145,10 @@ func _shoot() -> void:
 	bullet.damage = CombatConstants.WEAPON_BASE_DAMAGE
 	bullet.setup(shot_dir)
 	bullet.apply_modifiers(_mods, _health)
+	if _mods.synergy.rainbow_colors:
+		if not bullet.is_holy():
+			bullet.set_tint(SynergyConstants.RAINBOW_COLORS[_rainbow_index % SynergyConstants.RAINBOW_COLORS.size()])
+		_rainbow_index += 1
 	get_tree().current_scene.add_child(bullet)
 	EventBus.play_sfx_requested.emit("shoot")
 
@@ -150,7 +156,8 @@ func _shoot() -> void:
 ## Recalcula os modificadores a partir da poção ativa e tinge o crosshair.
 func _recalculate_modifiers() -> void:
 	var potion: PotionData = ItemManager.get_active_potion()
-	_mods = ProjectileModifiers.from_totals(ItemManager.get_active_effect_totals(), potion.aspect_counts if potion != null else {})
+	var specials: Array[StringName] = potion.special_synergies if potion != null else ([] as Array[StringName])
+	_mods = ProjectileModifiers.from_totals(ItemManager.get_active_effect_totals(), potion.aspect_counts if potion != null else {}, specials)
 	if potion != null:
 		_mods.color = potion.color
 	_director.configure(_mods, potion.aspect_counts if potion != null else {})

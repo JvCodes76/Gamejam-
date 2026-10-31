@@ -69,11 +69,12 @@ static func nearest_enemy(from: EnemyBase, only_unmarked_uncharmed: bool) -> Ene
 	return best
 
 
-# Reage a mudanças de status: stun, charme (máscara e cor) e dano de marcado.
+# Reage a mudanças de status: stun (e dano recebido), charme (máscara e cor) e dano de marcado.
 func _on_status_changed(status: StringName, active: bool) -> void:
 	match status:
 		StatusEffects.STUN:
 			_hitbox.suppressed = active
+			_health.damage_taken_multiplier = _status.damage_taken_multiplier()
 			if not active:
 				_recheck_contact()
 		StatusEffects.CHARMED:
@@ -137,9 +138,16 @@ func _on_died() -> void:
 		if next != null:
 			next._status.apply(StatusEffects.MARKED, maxf(_status.time_left(StatusEffects.MARKED), 1.0))
 			print("[Combat] - marca passou para o inimigo mais próximo")
+	if _status.has(StatusEffects.CHARMED):
+		EventBus.charmed_enemy_died.emit(self, _status.time_left(StatusEffects.CHARMED))
 	EventBus.enemy_killed.emit(points)
 	EventBus.enemy_died.emit(global_position, _status.has(StatusEffects.MARKED), is_basic)
 	queue_free()
+
+
+# Sprite do inimigo (usado para copiar a aparência, p.ex. fantasmas).
+func get_sprite() -> Sprite2D:
+	return _sprite
 
 
 # Componente de status do inimigo.

@@ -16,6 +16,11 @@ var impact_radius: float = CombatConstants.IMPACT_RADIUS_BASE
 var excluded: Array[Hurtbox] = []
 # Quando false, só o visual (ex.: rajada de luz sem dano de área)
 var splash_enabled: bool = true
+# Espessura do anel (0 = disco preenchido) e multiplicador da velocidade das partículas
+var ring_width: float = 0.0
+var speed_scale: float = 1.0
+# Tempo de expansão do anel (s)
+var ring_grow_time: float = 0.15
 
 var _ring_scale: float = 0.2
 
@@ -50,6 +55,24 @@ static func spawn_blast(scene: Node, pos: Vector2, radius: float, damage: int, c
 	return fx
 
 
+## Só visual (sem dano): burst de partículas e anel expansivo, maior que o impacto normal (ex.: anúncio no caldeirão).
+static func spawn_burst(parent: Node, pos: Vector2, radius: float, color: Color, particles: int, lifetime: float, new_ring_width: float, new_speed_scale: float) -> ImpactEffect:
+	var fx: ImpactEffect = (load("res://projectiles/impact_effect.tscn") as PackedScene).instantiate() as ImpactEffect
+	fx.position = pos
+	fx.impact_damage = 0
+	fx.splash_enabled = false
+	fx.impact_radius = radius
+	fx.tint = color
+	fx.particle_count = particles
+	fx.particle_lifetime = lifetime
+	fx.ring_alpha = 0.6
+	fx.ring_width = new_ring_width
+	fx.speed_scale = new_speed_scale
+	fx.ring_grow_time = SynergyConstants.ANNOUNCE_RING_GROW_TIME
+	parent.add_child(fx)
+	return fx
+
+
 func _ready() -> void:
 	z_index = 5
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -57,23 +80,27 @@ func _ready() -> void:
 		_apply_splash()
 	_spawn_particles()
 	var tween: Tween = create_tween()
-	tween.tween_property(self, "_ring_scale", 1.0, 0.15)
+	tween.tween_property(self, "_ring_scale", 1.0, ring_grow_time)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, particle_lifetime)
 	tween.tween_callback(queue_free)
 	print("[Combat] - impacto em %s (dano de área %d)" % [global_position, _splash_damage() if splash_enabled else 0])
 
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, impact_radius * _ring_scale, Color(tint, ring_alpha))
+	if ring_width > 0.0:
+		draw_arc(Vector2.ZERO, impact_radius * _ring_scale, 0.0, TAU, 48, Color(tint, ring_alpha), ring_width)
+	else:
+		draw_circle(Vector2.ZERO, impact_radius * _ring_scale, Color(tint, ring_alpha))
 
 
 func _process(_delta: float) -> void:
 	queue_redraw()
 
 
-## Dano de área (mínimo 1).
+## Dano de área (mínimo 1), com o multiplicador de dano das explosões (Magical Potentializer).
 func _splash_damage() -> int:
-	return maxi(roundi(impact_damage * splash_damage_fraction), 1)
+	var mult: float = modifiers.synergy.explosion_damage_mult if modifiers != null else 1.0
+	return maxi(roundi(impact_damage * splash_damage_fraction * mult), 1)
 
 
 ## Aplica dano e efeitos (sem crit/lifesteal) às Hurtbox de inimigos no raio, exceto as já atingidas.
@@ -111,8 +138,8 @@ func _spawn_particles() -> void:
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_POINT
 	p.direction = Vector2.UP
 	p.spread = 180.0
-	p.initial_velocity_min = 20.0
-	p.initial_velocity_max = 60.0
+	p.initial_velocity_min = 20.0 * speed_scale
+	p.initial_velocity_max = 60.0 * speed_scale
 	p.gravity = Vector2(0.0, -20.0)
 	p.scale_amount_min = 1.0
 	p.scale_amount_max = 1.5

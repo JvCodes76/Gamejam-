@@ -22,6 +22,7 @@ func setup(player: Node2D, health: HealthComponent) -> void:
 	_health.damage_negated.connect(_on_damage_negated)
 	EventBus.enemy_killed.connect(_on_enemy_killed)
 	EventBus.enemy_died.connect(_on_enemy_died)
+	EventBus.charmed_enemy_died.connect(_on_charmed_enemy_died)
 	EventBus.enemy_dot_ticked.connect(_on_enemy_dot_ticked)
 	EventBus.room_changed.connect(_on_room_changed)
 	EventBus.floor_changed.connect(_on_floor_changed)
@@ -31,12 +32,13 @@ func setup(player: Node2D, health: HealthComponent) -> void:
 func configure(mods: ProjectileModifiers, aspect_counts: Dictionary) -> void:
 	_mods = mods
 	_state = mods.synergy
+	StatusEffects.stun_damage_bonus = _state.stun_damage_bonus
 	if _health != null:
 		_health.negate_chance = _state.negate_chance
 	mods.rage_multiplier = 1.0 + rage_bonus()
 	if _state.mark_count == 0:
 		_clear_marks()
-	var summary: String = SynergyResolver.summary(aspect_counts)
+	var summary: String = SynergyResolver.summary(aspect_counts, _state.specials)
 	if summary != _last_summary:
 		_last_summary = summary
 		print("[Synergy] - %s" % (summary + " ativos" if summary != "" else "nenhuma ativa"))
@@ -127,14 +129,24 @@ func _on_enemy_died(pos: Vector2, was_marked: bool, _is_basic: bool) -> void:
 		return
 	var scene: Node = get_tree().current_scene
 	if _state.marked_explode and was_marked:
-		var dmg: int = _mods.roll_secondary_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.ANIMAL_EXPLOSION_FRACTION)
-		ImpactEffect.spawn_blast(scene, pos, SynergyConstants.ANIMAL_EXPLOSION_RADIUS, dmg, SynergyConstants.ANIMAL_EXPLOSION_COLOR)
+		var dmg: int = _mods.roll_explosion_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.ANIMAL_EXPLOSION_FRACTION)
+		ImpactEffect.spawn_blast(scene, pos, _mods.explosion_radius(SynergyConstants.ANIMAL_EXPLOSION_RADIUS), dmg, SynergyConstants.ANIMAL_EXPLOSION_COLOR)
 		print("[Synergy] - inimigo marcado explodiu (dano %d)" % dmg)
 	if _state.mud_death_pool:
 		MudTrail.spawn(scene, pos, SynergyConstants.EARTH_DEATH_POOL_RADIUS, SynergyConstants.EARTH_DEATH_POOL_LIFETIME, _state.mud_slow, _mods.mud_dps(CombatConstants.WEAPON_BASE_DAMAGE))
 		print("[Synergy] - poça de lama na morte")
+	if was_marked and _state.butcher_orb_chance > 0.0 and randf() < _state.butcher_orb_chance:
+		HealOrb.spawn(scene, pos)
+		print("[Synergy] - Unethical Butcher: orbe de cura dropada")
 	if _state.mark_count > 0:
 		reevaluate_marks()
+
+
+## Press F to pay respects: o inimigo enfeitiçado que morreu vira um fantasma pelo tempo restante do charm.
+func _on_charmed_enemy_died(enemy: Node2D, time_left: float) -> void:
+	if not _state.ghosts_enabled or time_left < SynergyConstants.GHOST_MIN_TIME or not is_instance_valid(enemy):
+		return
+	Ghost.spawn(get_tree().current_scene, enemy, time_left)
 
 
 ## Cada morte acumula raiva (Evil).
@@ -181,6 +193,6 @@ func _on_damage_negated(amount: int) -> void:
 		_flash_tween = _player.create_tween()
 		_flash_tween.tween_property(_player, "modulate", Color.WHITE, SynergyConstants.DARKNESS_FLASH_TIME)
 	if _state.negate_blast and _mods != null and _player != null:
-		var dmg: int = _mods.roll_secondary_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.DARKNESS_BLAST_FRACTION)
-		ImpactEffect.spawn_blast(get_tree().current_scene, _player.global_position, SynergyConstants.DARKNESS_BLAST_RADIUS, dmg, SynergyConstants.DARKNESS_COLOR, 24)
+		var dmg: int = _mods.roll_explosion_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.DARKNESS_BLAST_FRACTION)
+		ImpactEffect.spawn_blast(get_tree().current_scene, _player.global_position, _mods.explosion_radius(SynergyConstants.DARKNESS_BLAST_RADIUS), dmg, SynergyConstants.DARKNESS_COLOR, 24)
 		print("[Synergy] - explosão sombria (dano %d)" % dmg)

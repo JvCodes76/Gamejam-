@@ -14,8 +14,8 @@ static func tier_of(count: int) -> int:
 	return tier
 
 
-## Resolve o estado de sinergias a partir de Aspect -> int.
-static func resolve(aspect_counts: Dictionary) -> SynergyState:
+## Resolve o estado de sinergias a partir de Aspect -> int e dos ids das receitas especiais.
+static func resolve(aspect_counts: Dictionary, specials: Array[StringName] = []) -> SynergyState:
 	var s: SynergyState = SynergyState.new()
 	for aspect: int in ItemEnums.Aspect.values():
 		s.tiers[aspect] = tier_of(int(aspect_counts.get(aspect, 0)))
@@ -97,7 +97,36 @@ static func resolve(aspect_counts: Dictionary) -> SynergyState:
 	t = s.tier(A.EVIL)
 	s.rage_enabled = t >= 1
 	s.rage_resets_per_floor = t >= 2
+	_resolve_specials(s, specials)
 	return s
+
+
+## Preenche as flags/valores das receitas especiais ativas.
+static func _resolve_specials(s: SynergyState, specials: Array[StringName]) -> void:
+	s.specials = specials.duplicate()
+	if s.has_special(SpecialSynergies.SALAD):
+		s.lifesteal_chance_bonus = SynergyConstants.SALAD_LIFESTEAL_CHANCE
+	if s.has_special(SpecialSynergies.EVIL_SALAD):
+		s.poison_chance_bonus = SynergyConstants.EVIL_SALAD_POISON_CHANCE
+	if s.has_special(SpecialSynergies.SPICE_BAG):
+		s.cloud_enabled = true
+		s.cloud_slow = SynergyConstants.CLOUD_SLOW
+	if s.has_special(SpecialSynergies.BUTCHER):
+		s.butcher_orb_chance = SynergyConstants.BUTCHER_ORB_CHANCE
+	if s.has_special(SpecialSynergies.CRUNCHY):
+		s.stun_damage_bonus = SynergyConstants.CRUNCHY_STUN_DAMAGE_BONUS
+	s.ghosts_enabled = s.has_special(SpecialSynergies.RESPECTS)
+	if s.has_special(SpecialSynergies.RAINBOWS):
+		s.charm_chance_bonus = SynergyConstants.RAINBOW_CHARM_CHANCE
+		s.bounce_count = SynergyConstants.RAINBOW_BOUNCE_COUNT
+		s.rainbow_colors = true
+	if s.has_special(SpecialSynergies.TEA):
+		s.tea_chance = SynergyConstants.TEA_CHANCE
+		s.tea_health_fraction = SynergyConstants.TEA_HEALTH_FRACTION
+	s.split_on_hit = s.has_special(SpecialSynergies.EYE_DROPS)
+	if s.has_special(SpecialSynergies.POTENTIALIZER):
+		s.explosion_radius_mult = SynergyConstants.POTENTIALIZER_RADIUS_MULT
+		s.explosion_damage_mult = SynergyConstants.POTENTIALIZER_DAMAGE_MULT
 
 
 ## Linhas legíveis (inglês) das sinergias ativas, p.ex. "Poison (6): poison slows by 20%, deals +50% damage".
@@ -117,13 +146,15 @@ static func describe(aspect_counts: Dictionary) -> PackedStringArray:
 	return lines
 
 
-## Resumo curto para log, p.ex. "Poison 6, Plant 3" (vazio se nada ativo).
-static func summary(aspect_counts: Dictionary) -> String:
+## Resumo curto para log, p.ex. "Poison 6, Plant 3" (vazio se nada ativo); receitas especiais entre colchetes.
+static func summary(aspect_counts: Dictionary, specials: Array[StringName] = []) -> String:
 	var parts: PackedStringArray = PackedStringArray()
 	for aspect: int in ItemEnums.Aspect.values():
 		var count: int = int(aspect_counts.get(aspect, 0))
 		if tier_of(count) > 0:
 			parts.append("%s %d" % [_aspect_name(aspect), count])
+	for recipe: Dictionary in SpecialSynergies.recipes_for(specials):
+		parts.append("[%s]" % recipe["name"])
 	return ", ".join(parts)
 
 
