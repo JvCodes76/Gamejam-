@@ -15,6 +15,7 @@ var _fire_timer: float = 0.0
 var _aim_direction: Vector2 = Vector2.RIGHT
 var _use_gamepad: bool = false
 var _mods: ProjectileModifiers = ProjectileModifiers.new()
+var _director: SynergyDirector = null
 var _walk_timer: float = 0.0
 var _walk_frame: int = 0
 
@@ -32,6 +33,10 @@ enum Facing { DOWN, RIGHT, LEFT, UP }
 func _ready() -> void:
 	_health.health_changed.connect(_on_health_changed)
 	_health.died.connect(_on_died)
+	_director = SynergyDirector.new()
+	_director.name = "SynergyDirector"
+	add_child(_director)
+	_director.setup(self, _health)
 	# Adiado para o HUD (que vem depois na árvore) já estar conectado
 	EventBus.player_health_changed.emit.call_deferred(_health.current_health, _health.max_health)
 	EventBus.game_paused.connect(_on_game_paused)
@@ -135,6 +140,7 @@ func _shoot() -> void:
 		var to_mouse: Vector2 = get_global_mouse_position() - _muzzle.global_position
 		if to_mouse.length() > 1.0:
 			shot_dir = to_mouse.normalized()
+	bullet.damage = CombatConstants.WEAPON_BASE_DAMAGE
 	bullet.setup(shot_dir)
 	bullet.apply_modifiers(_mods, _health)
 	get_tree().current_scene.add_child(bullet)
@@ -144,9 +150,10 @@ func _shoot() -> void:
 ## Recalcula os modificadores a partir da poção ativa e tinge o crosshair.
 func _recalculate_modifiers() -> void:
 	var potion: PotionData = ItemManager.get_active_potion()
-	_mods = ProjectileModifiers.from_totals(ItemManager.get_active_effect_totals())
+	_mods = ProjectileModifiers.from_totals(ItemManager.get_active_effect_totals(), potion.aspect_counts if potion != null else {})
 	if potion != null:
 		_mods.color = potion.color
+	_director.configure(_mods, potion.aspect_counts if potion != null else {})
 	_crosshair.color = Color(_mods.color, 0.9)
 	_crosshair.queue_redraw()
 	print("[Potion] - modificadores: dano x%.2f, alcance x%.2f, cadência x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])

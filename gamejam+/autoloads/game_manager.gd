@@ -7,6 +7,8 @@ const MENU_PATH: String = "res://ui/main_menu.tscn"
 
 var state: State = State.MENU
 var score: int = 0
+# Sala atual (1 = primeira); sem triggers por enquanto
+var room_index: int = 1
 
 
 func _ready() -> void:
@@ -18,12 +20,20 @@ func _ready() -> void:
 ## Zera o estado e carrega o level principal.
 func start_game() -> void:
 	score = 0
+	room_index = 1
 	ItemManager.reset()
 	EventBus.score_changed.emit(score)
 	state = State.PLAYING
 	get_tree().paused = false
 	EventBus.scene_change_requested.emit(LEVEL_PATH)
 	print("[Game] - partida iniciada")
+
+
+## Avança para a próxima sala e avisa o EventBus.
+func advance_room() -> void:
+	room_index += 1
+	print("[Game] - sala %d" % room_index)
+	EventBus.room_changed.emit(room_index)
 
 
 ## Alterna entre jogando e pausado. Ignora fora de partida.

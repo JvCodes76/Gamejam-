@@ -1,7 +1,6 @@
 class_name ImpactEffect
 extends Node2D
 
-@export var impact_radius: float = 28.0
 @export var splash_damage_fraction: float = 0.5
 @export var particle_count: int = 16
 @export var particle_lifetime: float = 0.6
@@ -11,20 +10,42 @@ const ENEMY_MASK: int = 4
 
 var impact_damage: int = 1
 var tint: Color = Color.WHITE
-var dots: Array[Vector2] = []
+var modifiers: ProjectileModifiers = null
+var base_damage: int = 1
+var impact_radius: float = CombatConstants.IMPACT_RADIUS_BASE
 var excluded: Array[Hurtbox] = []
+# Quando false, só o visual (ex.: rajada de luz sem dano de área)
+var splash_enabled: bool = true
 
 var _ring_scale: float = 0.2
 
 
 ## Cria o efeito na cena atual (adicionado de forma deferida, seguro dentro de callbacks de física).
-static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, new_dots: Array[Vector2], skip: Array[Hurtbox]) -> ImpactEffect:
+static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, mods: ProjectileModifiers, new_base_damage: int, skip: Array[Hurtbox]) -> ImpactEffect:
 	var fx: ImpactEffect = (load("res://projectiles/impact_effect.tscn") as PackedScene).instantiate() as ImpactEffect
 	fx.global_position = pos
 	fx.impact_damage = damage
 	fx.tint = color
-	fx.dots = new_dots
+	fx.modifiers = mods
+	fx.base_damage = new_base_damage
+	if mods != null:
+		fx.impact_radius = mods.impact_radius()
 	fx.excluded = skip
+	scene.add_child.call_deferred(fx)
+	return fx
+
+
+## Explosão parametrizada das sinergias: raio, dano exato (0 = só visual) e cor; sem crit nem efeitos de poção.
+static func spawn_blast(scene: Node, pos: Vector2, radius: float, damage: int, color: Color, particles: int = 16) -> ImpactEffect:
+	var fx: ImpactEffect = (load("res://projectiles/impact_effect.tscn") as PackedScene).instantiate() as ImpactEffect
+	fx.global_position = pos
+	fx.impact_damage = damage
+	fx.splash_damage_fraction = 1.0
+	fx.splash_enabled = damage > 0
+	fx.impact_radius = radius
+	fx.tint = color
+	fx.particle_count = particles
+	fx.ring_alpha = 0.4
 	scene.add_child.call_deferred(fx)
 	return fx
 
@@ -32,13 +53,14 @@ static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, new_dots
 func _ready() -> void:
 	z_index = 5
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_apply_splash()
+	if splash_enabled:
+		_apply_splash()
 	_spawn_particles()
 	var tween: Tween = create_tween()
 	tween.tween_property(self, "_ring_scale", 1.0, 0.15)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, particle_lifetime)
 	tween.tween_callback(queue_free)
-	print("[Combat] - impacto em %s (dano de área %d)" % [global_position, _splash_damage()])
+	print("[Combat] - impacto em %s (dano de área %d)" % [global_position, _splash_damage() if splash_enabled else 0])
 
 
 func _draw() -> void:
@@ -54,7 +76,7 @@ func _splash_damage() -> int:
 	return maxi(roundi(impact_damage * splash_damage_fraction), 1)
 
 
-## Aplica dano e DoTs às Hurtbox de inimigos no raio, exceto as já atingidas.
+## Aplica dano e efeitos (sem crit/lifesteal) às Hurtbox de inimigos no raio, exceto as já atingidas.
 func _apply_splash() -> void:
 	var shape: CircleShape2D = CircleShape2D.new()
 	shape.radius = impact_radius
@@ -71,8 +93,8 @@ func _apply_splash() -> void:
 			continue
 		seen.append(hurtbox)
 		hurtbox.receive_hit(_splash_damage())
-		for dot: Vector2 in dots:
-			hurtbox.apply_dot(dot.x, dot.y)
+		if modifiers != null:
+			modifiers.apply_on_hit_effects(hurtbox, base_damage)
 
 
 ## Burst de partículas quadradas (pixel art) na cor da poção.

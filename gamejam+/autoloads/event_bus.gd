@@ -36,3 +36,11 @@ signal potion_selected(index: int)
 signal floor_changed(level: int)
 # Pedido para abrir o menu do caldeirão
 signal cauldron_open_requested(cauldron: Node)
+# Sala mudou (índice da sala atual)
+signal room_changed(index: int)
+# Inimigo morreu: posição, estava marcado, é básico
+signal enemy_died(position: Vector2, was_marked: bool, is_basic: bool)
+# Tick de dano ao longo do tempo num inimigo: fonte e dano causado
+signal enemy_dot_ticked(enemy: Node, source: StringName, amount: int)
+# Raiva (sinergia Evil) mudou: bônus de dano (0.05 = +5%)
+signal rage_changed(bonus: float)

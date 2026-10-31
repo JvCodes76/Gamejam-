@@ -22,6 +22,14 @@ offset_right = 120.0
 offset_bottom = 51.0
 text = "Pontos: 0"
 
+[node name="LabelRage" type="Label" parent="."]
+visible = false
+offset_left = 8.0
+offset_top = 48.0
+offset_right = 160.0
+offset_bottom = 71.0
+text = "Rage +0%"
+
 [node name="PotionSlot1" type="Control" parent="."]
 anchors_preset = 2
 anchor_top = 1.0
