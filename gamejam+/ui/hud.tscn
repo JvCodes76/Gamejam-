@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://ui/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="2_pause"]
+[ext_resource type="PackedScene" path="res://inventory/inventory_screen.tscn" id="3_inv"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -21,3 +22,5 @@ offset_bottom = 51.0
 text = "Pontos: 0"
 
 [node name="PauseMenu" parent="." instance=ExtResource("2_pause")]
+
+[node name="InventoryScreen" parent="." instance=ExtResource("3_inv")]

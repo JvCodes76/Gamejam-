@@ -4,6 +4,8 @@ extends Node2D
 @export var spawn_interval: float = 1.5
 @export var max_enemies: int = 12
 @export var spawn_radius: float = 260.0
+# Área jogável; o spawn é limitado a ela para não nascer dentro das paredes
+@export var spawn_bounds: Rect2 = Rect2(-620.0, -340.0, 1240.0, 680.0)
 
 var _timer: Timer
 
@@ -25,5 +27,6 @@ func _spawn_enemy() -> void:
 		return
 	var enemy := enemy_scene.instantiate() as Node2D
 	add_child(enemy)
-	enemy.global_position = player.global_position + Vector2.from_angle(randf() * TAU) * spawn_radius
+	var pos: Vector2 = player.global_position + Vector2.from_angle(randf() * TAU) * spawn_radius
+	enemy.global_position = pos.clamp(spawn_bounds.position, spawn_bounds.end)
 	print("[Enemy] - spawn em %s" % enemy.global_position)

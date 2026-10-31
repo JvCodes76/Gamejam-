@@ -23,7 +23,8 @@ var _use_gamepad: bool = false
 func _ready() -> void:
 	_health.health_changed.connect(_on_health_changed)
 	_health.died.connect(_on_died)
-	EventBus.player_health_changed.emit(_health.current_health, _health.max_health)
+	# Adiado para o HUD (que vem depois na árvore) já estar conectado
+	EventBus.player_health_changed.emit.call_deferred(_health.current_health, _health.max_health)
 	EventBus.game_paused.connect(_on_game_paused)
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	print("[Player] - pronto")

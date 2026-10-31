@@ -29,6 +29,9 @@ func change_scene(path: String) -> void:
 	var err: Error = get_tree().change_scene_to_file(path)
 	if err != OK:
 		push_error("[Scene] - falha ao carregar %s (erro %d)" % [path, err])
+		_rect.modulate.a = 0.0
+		_changing = false
+		return
 	tween = create_tween()
 	tween.tween_property(_rect, "modulate:a", 0.0, fade_duration)
 	await tween.finished

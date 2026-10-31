@@ -5,6 +5,15 @@
 [ext_resource type="Script" path="res://enemies/enemy_spawner.gd" id="3_spawner"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
 
+[ext_resource type="Script" path="res://inventory/ground_item_spawner.gd" id="5_gis"]
+[ext_resource type="Resource" path="res://items/data/salamander_tail.tres" id="i_salamander_tail"]
+[ext_resource type="Resource" path="res://items/data/purple_mushroom.tres" id="i_purple_mushroom"]
+[ext_resource type="Resource" path="res://items/data/fly_agaric.tres" id="i_fly_agaric"]
+[ext_resource type="Resource" path="res://items/data/carrot.tres" id="i_carrot"]
+[ext_resource type="Resource" path="res://items/data/salt.tres" id="i_salt"]
+[ext_resource type="Resource" path="res://items/data/wolf_tooth.tres" id="i_wolf_tooth"]
+[ext_resource type="Script" path="res://items/item_data.gd" id="6_idata"]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h"]
 size = Vector2(1280, 32)
 
@@ -59,5 +68,9 @@ shape = SubResource("RectangleShape2D_v")
 [node name="EnemySpawner" type="Node2D" parent="."]
 script = ExtResource("3_spawner")
 enemy_scene = ExtResource("2_enemy")
+
+[node name="GroundItemSpawner" type="Node2D" parent="."]
+script = ExtResource("5_gis")
+starting_items = Array[ExtResource("6_idata")]([ExtResource("i_salamander_tail"), ExtResource("i_purple_mushroom"), ExtResource("i_fly_agaric"), ExtResource("i_carrot"), ExtResource("i_salt"), ExtResource("i_wolf_tooth")])
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]

@@ -18,7 +18,8 @@ func _ready() -> void:
 ## Zera o estado e carrega o level principal.
 func start_game() -> void:
 	score = 0
-	score_reset()
+	ItemManager.reset()
+	EventBus.score_changed.emit(score)
 	state = State.PLAYING
 	get_tree().paused = false
 	EventBus.scene_change_requested.emit(LEVEL_PATH)
@@ -48,10 +49,6 @@ func restart() -> void:
 	start_game()
 
 
-func score_reset() -> void:
-	EventBus.score_changed.emit(score)
-
-
 func _on_enemy_killed(points: int) -> void:
 	score += points
 	EventBus.score_changed.emit(score)
@@ -61,4 +58,7 @@ func _on_player_died() -> void:
 	state = State.GAME_OVER
 	print("[Game] - game over com %d pontos" % score)
 	await get_tree().create_timer(1.5).timeout
+	# Ignora se o jogador já saiu da tela de game over (ex.: voltou ao menu e iniciou outra partida)
+	if state != State.GAME_OVER:
+		return
 	quit_to_menu()

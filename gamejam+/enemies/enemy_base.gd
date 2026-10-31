@@ -28,8 +28,17 @@ func _physics_process(_delta: float) -> void:
 func _on_hit_landed() -> void:
 	_hitbox.set_deferred("monitoring", false)
 	await get_tree().create_timer(contact_cooldown).timeout
-	if is_instance_valid(_hitbox):
-		_hitbox.set_deferred("monitoring", true)
+	if not is_instance_valid(_hitbox):
+		return
+	_hitbox.set_deferred("monitoring", true)
+	# Quem já está encostado não gera novo area_entered; verifica a sobreposição manualmente
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if not is_instance_valid(_hitbox):
+		return
+	for area: Area2D in _hitbox.get_overlapping_areas():
+		_hitbox.apply_hit(area)
+		break
 
 
 # Concede pontos e remove o inimigo.

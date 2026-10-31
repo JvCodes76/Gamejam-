@@ -10,6 +10,18 @@ var brewed_items: Array[ItemData] = []
 var synergies: Array[ItemSynergy] = []
 var aspect_bonuses: Array[AspectBonus] = []
 
+# Itens na bolsa: {"item", "position", "rotation", "scale"}
+var bag_entries: Array[Dictionary] = []
+# Itens no chão: {"item": ItemData, "position": Vector2 mundo}
+var ground_entries: Array[Dictionary] = []
+var starting_items_seeded: bool = false
+# Itens aguardando no chão da tela de inventário (bolsa cheia)
+var pending_items: Array[ItemData] = []
+# True enquanto a tela de inventário está aberta
+var inventory_open: bool = false
+var shrink_upgrade_active: bool = false
+var shrink_scale: float = 0.6
+
 
 func _ready() -> void:
 	synergies.assign(_load_resources(SYNERGIES_DIR))
@@ -21,6 +33,8 @@ func _ready() -> void:
 func add_item(item: ItemData) -> void:
 	if item == null or not item.is_valid():
 		return
+	if _contains(owned_items, item):
+		return
 	owned_items.append(item)
 	print("[Items] - Item possuído: %s" % item.id)
 
@@ -29,9 +43,9 @@ func add_item(item: ItemData) -> void:
 func brew_item(item: ItemData) -> void:
 	if item == null or not item.is_valid():
 		return
-	if not owned_items.has(item):
+	if not _contains(owned_items, item):
 		owned_items.append(item)
-	if brewed_items.has(item):
+	if _contains(brewed_items, item):
 		push_warning("[Items] - Item já brewed: %s" % item.id)
 		return
 	brewed_items.append(item)
@@ -41,7 +55,7 @@ func brew_item(item: ItemData) -> void:
 
 
 func is_brewed(item: ItemData) -> bool:
-	return brewed_items.has(item)
+	return _contains(brewed_items, item)
 
 
 # Conta aspectos apenas dos itens brewed
@@ -80,16 +94,66 @@ func get_effect_totals() -> Dictionary[ItemEffect.EffectType, float]:
 func reset() -> void:
 	owned_items.clear()
 	brewed_items.clear()
+	bag_entries.clear()
+	ground_entries.clear()
+	starting_items_seeded = false
+	shrink_upgrade_active = false
 	EventBus.active_effects_changed.emit()
+
+
+# Escala atual dos itens (reduzida se o upgrade estiver ativo)
+func current_item_scale() -> float:
+	return shrink_scale if shrink_upgrade_active else 1.0
+
+
+# Guarda o item na bolsa se couber facilmente
+func try_auto_store(item: ItemData) -> bool:
+	var scale_now: float = current_item_scale()
+	var spot: Variant = BagFit.find_free_position(item, bag_entries, scale_now)
+	if spot == null:
+		print("[Inventory] - Sem espaço na bolsa: %s" % (item.id if item != null else &"null"))
+		return false
+	bag_entries.append({"item": item, "position": spot["position"], "rotation": spot["rotation"], "scale": scale_now})
+	add_item(item)
+	print("[Inventory] - Item guardado na bolsa: %s" % item.id)
+	return true
+
+
+# Substitui o layout da bolsa
+func save_bag_layout(entries: Array[Dictionary]) -> void:
+	bag_entries = entries.duplicate()
+
+
+func remove_from_bag(entry: Dictionary) -> void:
+	bag_entries.erase(entry)
+
+
+# Solta o item no chão do mundo
+func drop_to_ground(item: ItemData, world_position: Vector2) -> void:
+	ground_entries.append({"item": item, "position": world_position})
+	EventBus.ground_items_changed.emit()
+
+
+func take_from_ground(entry: Dictionary) -> void:
+	ground_entries.erase(entry)
+	EventBus.ground_items_changed.emit()
 
 
 func _is_synergy_active(synergy: ItemSynergy) -> bool:
 	if synergy.required_items.is_empty():
 		return false
 	for req: ItemData in synergy.required_items:
-		if not brewed_items.has(req):
+		if not _contains(brewed_items, req):
 			return false
 	return true
+
+
+# Compara por id, já que o mesmo .tres pode ser carregado como instâncias distintas
+func _contains(list: Array[ItemData], item: ItemData) -> bool:
+	for other: ItemData in list:
+		if other == item or other.id == item.id:
+			return true
+	return false
 
 
 func _load_resources(dir_path: String) -> Array:

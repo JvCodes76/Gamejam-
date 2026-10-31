@@ -5,5 +5,5 @@ extends Resource
 enum EffectType { FIRE_DAMAGE, POISON_DAMAGE, LIFESTEAL, RANGE, DAMAGE, FIRE_RATE }
 
 @export var effect_type: EffectType = EffectType.FIRE_DAMAGE
-# 1.0 = base; 2.0 = dobro
+# Bônus aditivo: as magnitudes de todos os efeitos do mesmo tipo são somadas
 @export var magnitude: float = 1.0

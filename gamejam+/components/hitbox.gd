@@ -12,6 +12,11 @@ func _ready() -> void:
 
 # Aplica dano se a area atingida for uma Hurtbox.
 func _on_area_entered(area: Area2D) -> void:
+	apply_hit(area)
+
+
+# Aplica dano a uma area, se for Hurtbox.
+func apply_hit(area: Area2D) -> void:
 	if area is Hurtbox:
 		(area as Hurtbox).receive_hit(damage)
 		hit_landed.emit()

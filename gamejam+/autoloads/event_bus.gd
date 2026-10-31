@@ -20,3 +20,11 @@ signal play_music_requested(music_name: String)
 signal item_brewed(item_id: StringName)
 # Efeitos ativos mudaram
 signal active_effects_changed()
+# Pedido para abrir o inventário
+signal inventory_open_requested()
+# Inventário fechado
+signal inventory_closed()
+# Itens no chão mudaram
+signal ground_items_changed()
+# Item recolhido do chão
+signal item_picked_up(item_id: StringName)

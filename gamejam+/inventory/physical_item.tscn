@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://inventory/physical_item.gd" id="1"]
+
+[node name="PhysicalItem" type="RigidBody2D"]
+collision_mask = 1
+process_mode = 3
+gravity_scale = 0.0
+script = ExtResource("1")
