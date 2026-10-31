@@ -74,7 +74,7 @@ static func spawn_burst(parent: Node, pos: Vector2, radius: float, color: Color,
 
 
 func _ready() -> void:
-	z_index = 5
+	z_index = CombatConstants.Z_IMPACT
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if splash_enabled:
 		_apply_splash()

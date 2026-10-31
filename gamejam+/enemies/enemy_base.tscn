@@ -9,17 +9,25 @@
 [ext_resource type="Script" path="res://enemies/status_effects.gd" id="6"]
 
 [sub_resource type="CircleShape2D" id="1"]
+radius = 8.0
+
+[sub_resource type="CapsuleShape2D" id="2"]
 radius = 10.0
+height = 32.0
 
 [node name="EnemyBase" type="CharacterBody2D"]
 collision_layer = 4
-collision_mask = 1
+collision_mask = 33
+motion_mode = 1
 script = ExtResource("1")
 
+; A origem do no fica nos PES (y-sort): colisor de movimento pequeno na base, hurtbox/hitbox cobrem o corpo
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
 shape = SubResource("1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -16)
 modulate = Color(1, 0.2, 0.2, 1)
 scale = Vector2(0.25, 0.25)
 texture = ExtResource("2")
@@ -38,7 +46,8 @@ script = ExtResource("4")
 health_component = NodePath("../HealthComponent")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-shape = SubResource("1")
+position = Vector2(0, -14)
+shape = SubResource("2")
 
 [node name="Hitbox" type="Area2D" parent="."]
 collision_layer = 0
@@ -47,4 +56,5 @@ script = ExtResource("5")
 damage = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-shape = SubResource("1")
+position = Vector2(0, -14)
+shape = SubResource("2")

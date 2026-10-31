@@ -2,7 +2,6 @@ class_name Bullet
 extends Hitbox
 
 const BULLET_SCENE_PATH: String = "res://projectiles/bullet.tscn"
-const WORLD_MASK: int = 1
 
 @export var speed: float = 300.0
 @export var lifetime: float = 1.5
@@ -99,13 +98,18 @@ func setup_child(parent: Bullet, new_direction: Vector2) -> void:
 	setup(new_direction)
 
 
+## Ponto do chão sob a bala (ela voa na altura do corpo do player): lama e nuvem ficam no chão, não no ar.
+func _ground_point() -> Vector2:
+	return global_position + Vector2(0.0, CombatConstants.BODY_HEIGHT)
+
+
 ## Deixa uma poça de lama a cada EARTH_TRAIL_SPACING px percorridos.
 func _drop_mud(step: float) -> void:
 	_mud_distance += step
 	if _mud_distance < SynergyConstants.EARTH_TRAIL_SPACING:
 		return
 	_mud_distance -= SynergyConstants.EARTH_TRAIL_SPACING
-	MudTrail.spawn(get_tree().current_scene, global_position, SynergyConstants.EARTH_TRAIL_RADIUS, SynergyConstants.EARTH_TRAIL_LIFETIME, modifiers.synergy.mud_slow, modifiers.mud_dps(damage))
+	MudTrail.spawn(get_tree().current_scene, _ground_point(), SynergyConstants.EARTH_TRAIL_RADIUS, SynergyConstants.EARTH_TRAIL_LIFETIME, modifiers.synergy.mud_slow, modifiers.mud_dps(damage))
 
 
 ## Deixa uma nuvem (Spice bag) a cada CLOUD_TRAIL_SPACING px percorridos.
@@ -114,7 +118,7 @@ func _drop_cloud(step: float) -> void:
 	if _cloud_distance < SynergyConstants.CLOUD_TRAIL_SPACING:
 		return
 	_cloud_distance -= SynergyConstants.CLOUD_TRAIL_SPACING
-	CloudTrail.spawn(get_tree().current_scene, global_position, SynergyConstants.CLOUD_TRAIL_RADIUS, SynergyConstants.CLOUD_TRAIL_LIFETIME, modifiers.synergy.cloud_slow)
+	CloudTrail.spawn(get_tree().current_scene, _ground_point(), SynergyConstants.CLOUD_TRAIL_RADIUS, SynergyConstants.CLOUD_TRAIL_LIFETIME, modifiers.synergy.cloud_slow)
 
 
 ## Aplica dano (com crit por hit), efeitos de status e lifesteal; consome a bala se não restar pierce.
@@ -171,7 +175,7 @@ func _on_area_entered(area: Area2D) -> void:
 	super(area)
 
 
-## Parede: ricocheteia se ainda há ricochetes, senão destrói a bala (inimigos são tratados pela Hurtbox, para o pierce funcionar).
+## Parede alta ou volume de obstáculo alto (obstáculos baixos não colidem): ricocheteia se ainda há ricochetes, senão destrói a bala (inimigos são tratados pela Hurtbox, para o pierce funcionar).
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemy") or _spent:
 		return
@@ -195,7 +199,7 @@ func _on_body_entered(body: Node2D) -> void:
 
 ## Ponto e normal da parede tocada: raio curto ao longo da direção; sem hit, usa a direção oposta como normal.
 func _probe_wall() -> Dictionary:
-	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position - direction * 12.0, global_position + direction * 10.0, WORLD_MASK)
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position - direction * 12.0, global_position + direction * 10.0, PhysicsLayers.PROJECTILE_WALL_MASK)
 	var hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
 		return {"position": global_position, "normal": -direction}

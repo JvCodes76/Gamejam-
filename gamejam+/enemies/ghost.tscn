@@ -1,7 +1,10 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://enemies/ghost.gd" id="1"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 6.0
 
 [node name="Ghost" type="Area2D"]
 collision_layer = 0
@@ -9,8 +12,21 @@ collision_mask = 4
 monitorable = false
 script = ExtResource("1")
 
+; Area de golpe no corpo (a forma e criada em ghost.gd com GHOST_RADIUS)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -16)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -16)
 scale = Vector2(0.25, 0.25)
 texture = ExtResource("2")
+
+; Corpo de movimento: colisor pequeno nos pes, bloqueado pelas layers world e low_obstacle (nao e atingivel)
+[node name="Mover" type="CharacterBody2D" parent="."]
+collision_layer = 0
+collision_mask = 33
+motion_mode = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Mover"]
+position = Vector2(0, -6)
+shape = SubResource("1")

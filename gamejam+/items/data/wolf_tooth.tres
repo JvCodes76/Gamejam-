@@ -1,20 +1,18 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dfsiau0cdsbtu"]
 
-[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
-[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
-[ext_resource type="Texture2D" path="res://assets/sprites/items/denteDeLobo.png" id="3"]
+[ext_resource type="Script" uid="uid://7dc7skt1h77k" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://bhhnmuuadul8h" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://dw84cqwcbkpcj" path="res://assets/sprites/items/denteDeLobo.png" id="3"]
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
 effect_type = 5
-magnitude = 1.0
 
 [resource]
 script = ExtResource("1")
 id = &"wolf_tooth"
 display_name = "Wolf Tooth"
 icon = ExtResource("3")
-rarity = 0
 aspects = Array[int]([4])
 effects = Array[ExtResource("2")]([SubResource("e1")])
 color = Color(0.7608, 0.7608, 0.7608, 1)

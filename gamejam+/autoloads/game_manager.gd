@@ -2,13 +2,16 @@ extends Node
 
 enum State { MENU, PLAYING, PAUSED, GAME_OVER }
 
-const LEVEL_PATH: String = "res://levels/main_level.tscn"
+const LEVEL_PATH: String = "res://levels/dungeon_level.tscn"
 const MENU_PATH: String = "res://ui/main_menu.tscn"
 
 var state: State = State.MENU
 var score: int = 0
 # Sala atual (1 = primeira); sem triggers por enquanto
 var room_index: int = 1
+# Cemitério atual (1 = primeiro) e semente da partida (as salas de cada cemitério derivam dela)
+var cemetery_index: int = 1
+var run_seed: int = 0
 
 
 func _ready() -> void:
@@ -21,6 +24,8 @@ func _ready() -> void:
 func start_game() -> void:
 	score = 0
 	room_index = 1
+	cemetery_index = 1
+	run_seed = randi()
 	ItemManager.reset()
 	EventBus.score_changed.emit(score)
 	state = State.PLAYING
@@ -34,6 +39,16 @@ func advance_room() -> void:
 	room_index += 1
 	print("[Game] - sala %d" % room_index)
 	EventBus.room_changed.emit(room_index)
+
+
+## Passa para o próximo cemitério: os itens encolhem, o chão é limpo e o level é gerado de novo.
+func advance_cemetery() -> void:
+	cemetery_index += 1
+	room_index = 1
+	ItemManager.ground_entries.clear()
+	ItemManager.advance_floor()
+	print("[Game] - cemitério %d" % cemetery_index)
+	EventBus.scene_change_requested.emit(LEVEL_PATH)
 
 
 ## Alterna entre jogando e pausado. Ignora fora de partida.

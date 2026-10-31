@@ -15,9 +15,10 @@ var _outlines: Array[Line2D] = []
 func _ready() -> void:
 	add_to_group("ground_item")
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var base_y: float = _sprite.position.y
 	var tween: Tween = create_tween().set_loops()
-	tween.tween_property(_sprite, "position:y", -bob_height, bob_time).set_trans(Tween.TRANS_SINE)
-	tween.tween_property(_sprite, "position:y", 0.0, bob_time).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(_sprite, "position:y", base_y - bob_height, bob_time).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(_sprite, "position:y", base_y, bob_time).set_trans(Tween.TRANS_SINE)
 
 
 ## Guarda a entry (mesma referência do ItemManager) e mostra o ícone com seu contorno.

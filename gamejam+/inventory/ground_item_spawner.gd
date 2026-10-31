@@ -14,6 +14,8 @@ var _nodes: Dictionary = {}  # entry (Dictionary) -> GroundItem
 
 
 func _ready() -> void:
+	# Itens do chão ficam acima do chão e dos decalques, mas abaixo de tudo que é ordenado por Y
+	z_index = CombatConstants.Z_GROUND_ITEM
 	EventBus.ground_items_changed.connect(_sync)
 	if seed_on_first_load and not ItemManager.starting_items_seeded:
 		ItemManager.starting_items_seeded = true

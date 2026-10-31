@@ -46,9 +46,10 @@ static func _draw_arc(scene: Node, a: Vector2, b: Vector2, color: Color, jag: fl
 	var line: MagicArc = MagicArc.new()
 	var side: Vector2 = (b - a).orthogonal().normalized() * jag
 	line.points = PackedVector2Array([a, a.lerp(b, 0.5) + side, b])
+	line.position = CombatConstants.ENEMY_BODY_OFFSET
 	line.width = SynergyConstants.MAGIC_ARC_WIDTH
 	line.default_color = color
-	line.z_index = 6
+	line.z_index = CombatConstants.Z_ARC
 	scene.add_child(line)
 	var tween: Tween = line.create_tween()
 	tween.tween_property(line, "modulate:a", 0.0, SynergyConstants.MAGIC_ARC_TIME)

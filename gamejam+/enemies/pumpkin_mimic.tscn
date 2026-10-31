@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="1_base"]
+[ext_resource type="Script" path="res://enemies/pumpkin_mimic.gd" id="2_mimic"]
+
+[node name="PumpkinMimic" instance=ExtResource("1_base")]
+script = ExtResource("2_mimic")
+move_speed = 55.0
+points = 25
+
+[node name="Sprite2D" parent="." index="1"]
+modulate = Color(1, 1, 1, 1)
+scale = Vector2(1, 1)

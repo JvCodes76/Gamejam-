@@ -25,7 +25,7 @@ static func spawn(scene: Node, pos: Vector2, new_radius: float, new_lifetime: fl
 
 
 func _ready() -> void:
-	z_index = 1
+	z_index = CombatConstants.Z_CLOUD
 	var shape: CircleShape2D = CircleShape2D.new()
 	shape.radius = radius
 	($CollisionShape2D as CollisionShape2D).shape = shape

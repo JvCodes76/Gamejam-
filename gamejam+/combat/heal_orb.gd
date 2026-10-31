@@ -2,6 +2,8 @@ class_name HealOrb
 extends Area2D
 ## Orbe de cura (receita Unethical Butcher): atrai levemente o player e cura ao ser coletada; some após alguns segundos.
 
+const ORB_HOVER: float = 8.0
+
 var heal_amount: int = SynergyConstants.BUTCHER_ORB_HEAL
 var lifetime: float = SynergyConstants.BUTCHER_ORB_LIFETIME
 
@@ -19,7 +21,6 @@ static func spawn(scene: Node, pos: Vector2) -> HealOrb:
 
 
 func _ready() -> void:
-	z_index = 3
 	var shape: CircleShape2D = CircleShape2D.new()
 	shape.radius = SynergyConstants.BUTCHER_ORB_PICKUP_RADIUS
 	($CollisionShape2D as CollisionShape2D).shape = shape
@@ -30,9 +31,12 @@ func _ready() -> void:
 func _draw() -> void:
 	var pulse: float = 0.5 + 0.5 * sin(_age * 8.0)
 	var glow: Color = SynergyConstants.BUTCHER_ORB_COLOR_A.lerp(SynergyConstants.BUTCHER_ORB_COLOR_B, pulse)
-	draw_circle(Vector2.ZERO, 6.0, Color(glow, 0.25))
-	draw_circle(Vector2.ZERO, 4.0, Color(SynergyConstants.BUTCHER_ORB_COLOR_A, 0.9))
-	draw_circle(Vector2.ZERO, 2.0, Color(SynergyConstants.BUTCHER_ORB_COLOR_B, 0.95))
+	# A origem do nó é o chão (y-sort, z 0); a orbe paira ORB_HOVER px acima, com sombra no chão
+	draw_circle(Vector2.ZERO, 3.0, Color(0.0, 0.0, 0.0, 0.25))
+	var center: Vector2 = Vector2(0.0, -ORB_HOVER)
+	draw_circle(center, 6.0, Color(glow, 0.25))
+	draw_circle(center, 4.0, Color(SynergyConstants.BUTCHER_ORB_COLOR_A, 0.9))
+	draw_circle(center, 2.0, Color(SynergyConstants.BUTCHER_ORB_COLOR_B, 0.95))
 
 
 func _physics_process(delta: float) -> void:

@@ -49,3 +49,16 @@ const WEAPON_BASE_DAMAGE: int = 1
 
 # --- Área de impacto: raio = base * range_multiplier ---
 const IMPACT_RADIUS_BASE: float = 28.0
+
+# --- Alturas (px acima dos pés): os atores ficam com a origem nos pés, a mira sai do corpo ---
+const BODY_HEIGHT: float = 25.0
+# Centro do corpo de um inimigo em relação aos pés (arcos mágicos ligam os corpos)
+const ENEMY_BODY_OFFSET: Vector2 = Vector2(0.0, -14.0)
+
+# --- Camadas de render (z_index): chão < decalques < itens < lama < nuvem < atores (y-sort, z 0) < projéteis < efeitos ---
+const Z_GROUND_ITEM: int = -3
+const Z_MUD: int = -2
+const Z_CLOUD: int = -1
+const Z_BULLET: int = 10
+const Z_IMPACT: int = 11
+const Z_ARC: int = 12

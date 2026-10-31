@@ -2,13 +2,13 @@ class_name PotionSlot
 extends Control
 ## Slot de poção: líquido colorido (máscara do interior) atrás do sprite do frasco.
 
-const FLASK: Texture2D = preload("res://assets/sprites/ui/potion_flask.png")
+const FLASK: Texture2D = preload("res://assets/sprites/ui/Flask.png")
 const LIQUID_MASK: Texture2D = preload("res://assets/sprites/ui/potion_flask_liquid_mask.png")
-## Linhas do topo do frasco (gargalo) que ficam sem líquido
-const LIQUID_TOP_SKIP: int = 3
+## Linhas do topo do frasco (gargalo e rolha) que ficam sem líquido
+const LIQUID_TOP_SKIP: int = 7
 
 @export var label_text: String = "1"
-@export var pixel_scale: int = 3
+@export var pixel_scale: int = 2
 @export var active_scale: float = 1.2
 @export var empty_alpha: float = 0.35
 @export var active_border_color: Color = Color(1.0, 1.0, 0.8, 1.0)

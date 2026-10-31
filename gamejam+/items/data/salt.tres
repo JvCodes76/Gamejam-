@@ -1,20 +1,18 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bgibpwvxpysb4"]
 
-[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
-[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
-[ext_resource type="Texture2D" path="res://assets/sprites/items/Sal.png" id="3"]
+[ext_resource type="Script" uid="uid://7dc7skt1h77k" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://bhhnmuuadul8h" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://w8l7jxash5r2" path="res://assets/sprites/items/Sal.png" id="3"]
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
 effect_type = 4
-magnitude = 1.0
 
 [resource]
 script = ExtResource("1")
 id = &"salt"
 display_name = "Salt"
 icon = ExtResource("3")
-rarity = 0
 aspects = Array[int]([3])
 effects = Array[ExtResource("2")]([SubResource("e1")])
 color = Color(0.9882, 0.9882, 0.9882, 1)

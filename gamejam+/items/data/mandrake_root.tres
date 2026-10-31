@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://be4y4or6ejd6u"]
 
-[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
-[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
-[ext_resource type="Texture2D" path="res://assets/sprites/items/Mandragora.png" id="3"]
+[ext_resource type="Script" uid="uid://7dc7skt1h77k" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://bhhnmuuadul8h" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://cwolvkbmq4sl5" path="res://assets/sprites/items/Mandragora.png" id="3"]
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
@@ -12,7 +12,6 @@ magnitude = 2
 [sub_resource type="Resource" id="e2"]
 script = ExtResource("2")
 effect_type = 10
-magnitude = 1.0
 
 [resource]
 script = ExtResource("1")
@@ -22,4 +21,4 @@ icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([2, 7, 0])
 effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])
-color = Color(0.4314, 1.0000, 0.1882, 1)
+color = Color(0.4314, 1, 0.1882, 1)

@@ -130,7 +130,7 @@ func _on_enemy_died(pos: Vector2, was_marked: bool, _is_basic: bool) -> void:
 	var scene: Node = get_tree().current_scene
 	if _state.marked_explode and was_marked:
 		var dmg: int = _mods.roll_explosion_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.ANIMAL_EXPLOSION_FRACTION)
-		ImpactEffect.spawn_blast(scene, pos, _mods.explosion_radius(SynergyConstants.ANIMAL_EXPLOSION_RADIUS), dmg, SynergyConstants.ANIMAL_EXPLOSION_COLOR)
+		ImpactEffect.spawn_blast(scene, pos + CombatConstants.ENEMY_BODY_OFFSET, _mods.explosion_radius(SynergyConstants.ANIMAL_EXPLOSION_RADIUS), dmg, SynergyConstants.ANIMAL_EXPLOSION_COLOR)
 		print("[Synergy] - inimigo marcado explodiu (dano %d)" % dmg)
 	if _state.mud_death_pool:
 		MudTrail.spawn(scene, pos, SynergyConstants.EARTH_DEATH_POOL_RADIUS, SynergyConstants.EARTH_DEATH_POOL_LIFETIME, _state.mud_slow, _mods.mud_dps(CombatConstants.WEAPON_BASE_DAMAGE))
@@ -194,5 +194,11 @@ func _on_damage_negated(amount: int) -> void:
 		_flash_tween.tween_property(_player, "modulate", Color.WHITE, SynergyConstants.DARKNESS_FLASH_TIME)
 	if _state.negate_blast and _mods != null and _player != null:
 		var dmg: int = _mods.roll_explosion_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.DARKNESS_BLAST_FRACTION)
-		ImpactEffect.spawn_blast(get_tree().current_scene, _player.global_position, _mods.explosion_radius(SynergyConstants.DARKNESS_BLAST_RADIUS), dmg, SynergyConstants.DARKNESS_COLOR, 24)
+		ImpactEffect.spawn_blast(get_tree().current_scene, _body_position(), _mods.explosion_radius(SynergyConstants.DARKNESS_BLAST_RADIUS), dmg, SynergyConstants.DARKNESS_COLOR, 24)
 		print("[Synergy] - explosão sombria (dano %d)" % dmg)
+
+
+## Centro do corpo do player (a origem do nó fica nos pés); explosões "do corpo" partem daqui.
+func _body_position() -> Vector2:
+	var player: Player = _player as Player
+	return player.aim_origin if player != null else _player.global_position

@@ -33,10 +33,18 @@ enum Facing { DOWN, RIGHT, LEFT, UP }
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _cape: Sprite2D = $Cape
+@onready var _body_center: Marker2D = $BodyCenter
 @onready var _pivot: Node2D = $Pivot
 @onready var _muzzle: Marker2D = $Pivot/Muzzle
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _crosshair: Crosshair = $Crosshair
+
+
+## Centro do corpo no mundo. A origem do nó fica nos pés (y-sort e colisão);
+## a mira, o muzzle e as sinergias "do corpo" partem daqui.
+var aim_origin: Vector2:
+	get:
+		return _body_center.global_position
 
 
 func _ready() -> void:
@@ -112,15 +120,15 @@ func _update_aim() -> void:
 	if stick.length() > aim_deadzone:
 		_use_gamepad = true
 		_aim_direction = stick.normalized()
-		_crosshair.global_position = global_position + _aim_direction * gamepad_crosshair_distance
+		_crosshair.global_position = aim_origin + _aim_direction * gamepad_crosshair_distance
 	elif not _use_gamepad:
 		var mouse_pos: Vector2 = get_global_mouse_position()
-		var to_mouse: Vector2 = mouse_pos - global_position
+		var to_mouse: Vector2 = mouse_pos - aim_origin
 		if to_mouse.length() > 1.0:
 			_aim_direction = to_mouse.normalized()
 		_crosshair.global_position = mouse_pos
 	else:
-		_crosshair.global_position = global_position + _aim_direction * gamepad_crosshair_distance
+		_crosshair.global_position = aim_origin + _aim_direction * gamepad_crosshair_distance
 	_pivot.rotation = _aim_direction.angle()
 
 

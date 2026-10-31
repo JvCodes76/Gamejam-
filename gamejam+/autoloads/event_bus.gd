@@ -38,6 +38,10 @@ signal floor_changed(level: int)
 signal cauldron_open_requested(cauldron: Node)
 # Sala mudou (índice da sala atual)
 signal room_changed(index: int)
+# Cemitério carregado (índice a partir de 1 e total de cemitérios)
+signal cemetery_changed(index: int, total: int)
+# Tempo restante da sala de horda (valor negativo = esconder)
+signal horde_timer_changed(seconds_left: float)
 # Inimigo morreu: posição, estava marcado, é básico
 signal enemy_died(position: Vector2, was_marked: bool, is_basic: bool)
 # Tick de dano ao longo do tempo num inimigo: fonte e dano causado

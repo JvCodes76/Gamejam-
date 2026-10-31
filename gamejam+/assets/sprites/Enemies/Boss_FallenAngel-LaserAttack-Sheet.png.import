@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d3mppypvqywab"
-path="res://.godot/imported/potion_flask.png-70df058e7dc6a09e9b60135e88b8edb5.ctex"
+uid="uid://c0qanf1dn5xuy"
+path="res://.godot/imported/Boss_FallenAngel-LaserAttack-Sheet.png-bb8697d4b86304b0af728e38af13226d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/ui/potion_flask.png"
-dest_files=["res://.godot/imported/potion_flask.png-70df058e7dc6a09e9b60135e88b8edb5.ctex"]
+source_file="res://assets/sprites/Enemies/Boss_FallenAngel-LaserAttack-Sheet.png"
+dest_files=["res://.godot/imported/Boss_FallenAngel-LaserAttack-Sheet.png-bb8697d4b86304b0af728e38af13226d.ctex"]
 
 [params]
 

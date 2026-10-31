@@ -1,11 +1,14 @@
 extends Node2D
 
 @export var enemy_scene: PackedScene
+# Variantes extras sorteadas junto com enemy_scene (ex.: Skull)
+@export var extra_enemy_scenes: Array[PackedScene] = []
 @export var spawn_interval: float = 1.5
 @export var max_enemies: int = 12
 @export var spawn_radius: float = 260.0
 # Área jogável; o spawn é limitado a ela para não nascer dentro das paredes
-@export var spawn_bounds: Rect2 = Rect2(-620.0, -340.0, 1240.0, 680.0)
+# (o topo para em y=-312: a parede de cima da arena fica em y=-322, para a cabeça do player não sair do chão)
+@export var spawn_bounds: Rect2 = Rect2(-620.0, -312.0, 1240.0, 652.0)
 
 const SPAWN_ATTEMPTS: int = 8
 
@@ -39,7 +42,9 @@ func _spawn_enemy() -> void:
 	if not found:
 		print("[Enemy] - sem ponto livre para spawn (%d tentativas)" % SPAWN_ATTEMPTS)
 		return
-	var enemy := enemy_scene.instantiate() as Node2D
+	var pool: Array[PackedScene] = [enemy_scene]
+	pool.append_array(extra_enemy_scenes)
+	var enemy := pool.pick_random().instantiate() as Node2D
 	add_child(enemy)
 	enemy.global_position = pos
 	print("[Enemy] - spawn em %s" % enemy.global_position)

@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://o8ccwdo0p30n"]
+
+[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://dp6dxdcpbl44d" path="res://enemies/skull.gd" id="2_skull"]
+[ext_resource type="Texture2D" uid="uid://b4hh184p7pqxm" path="res://assets/sprites/Enemies/Enemy_Skull-Sheet.png" id="3_tex"]
+
+[node name="Skull" unique_id=600226065 instance=ExtResource("1_base")]
+script = ExtResource("2_skull")
+anim_fps = 10.0
+move_speed = 60.0
+points = 15
+
+[node name="Sprite2D" parent="." index="1"]
+modulate = Color(1, 1, 1, 1)
+position = Vector2(0, -22)
+scale = Vector2(2, 2)
+texture = ExtResource("3_tex")
+hframes = 16

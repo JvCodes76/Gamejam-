@@ -19,6 +19,11 @@ const CENTER_CLEAR_RADIUS: float = 150.0
 const CAULDRON_POS: Vector2 = Vector2(120, -60)
 const CAULDRON_CLEAR_RADIUS: float = 72.0
 const ARENA: Rect2 = Rect2(-640, -372, 1280, 732)
+# Parede de cima da arena (centro; 32 px de altura): a face interna fica em y=-322, assim os pes do player param
+# a tempo da cabeca (47 px acima) nao sair do chao (que termina em y=-360).
+const TOP_WALL_Y: float = -338.0
+# Origem do caldeirao nos pes: o desenho (centro em (120,-60)) sobe 13 px em relacao a origem
+const CAULDRON_FEET_POS: Vector2 = Vector2(120, -47)
 
 # Blocos 2x2 de chao laranja (origem em celulas) e peso.
 const ORANGE_BLOCKS: Array = [
@@ -77,6 +82,7 @@ func _initialize() -> void:
 
 	_build_ground(root)
 	_build_props(root)
+	_apply_scene_rules(root)
 
 	var out: PackedScene = PackedScene.new()
 	var pack_err: Error = out.pack(root)
@@ -85,6 +91,17 @@ func _initialize() -> void:
 	_restore_debug_comment()
 	root.free()
 	quit()
+
+
+# Regras de camadas/ordenacao do level: spawner de inimigos y-sorted, parede de cima, caldeirao com origem nos pes.
+func _apply_scene_rules(root: Node2D) -> void:
+	var spawner: Node2D = root.get_node("EnemySpawner") as Node2D
+	spawner.y_sort_enabled = true
+	(root.get_node("Walls/Top") as Node2D).position.y = TOP_WALL_Y
+	(root.get_node("Cauldron") as Node2D).position = CAULDRON_FEET_POS
+	var items: Node2D = root.get_node("GroundItemSpawner") as Node2D
+	items.y_sort_enabled = false
+	print("[Level] - regras de camadas aplicadas (EnemySpawner y-sort, parede de cima, caldeirao)")
 
 
 # Cria a TileMapLayer "Ground" com base azul, remendos laranja, decalques e caminho de pedra.
@@ -285,12 +302,21 @@ func _validate_props() -> void:
 		var def: Dictionary = Prop.get_def(kind)
 		var region: Rect2 = def["region"]
 		var origin: Vector2 = def.get("origin", Vector2(region.size.x / 2.0, region.size.y))
-		for rect: Rect2 in def["rects"]:
-			var world: Rect2 = Rect2((entry["pos"] as Vector2) - origin + rect.position, rect.size)
+		for foot: Variant in def["rects"]:
+			var bounds: Rect2 = _bounds_of(Prop.footprint_points(foot))
+			var world: Rect2 = Rect2((entry["pos"] as Vector2) - origin + bounds.position, bounds.size)
 			if _distance_to_rect(Vector2.ZERO, world) < CENTER_CLEAR_RADIUS - 10.0 or _distance_to_rect(CAULDRON_POS, world) < 40.0:
 				warnings += 1
 				print("[Level] - AVISO: colisao de %s em %s invade a area livre" % [Prop.Kind.keys()[kind], entry["pos"]])
 	print("[Level] - validacao dos props: %d avisos" % warnings)
+
+
+# Retangulo que envolve uma lista de pontos.
+func _bounds_of(points: PackedVector2Array) -> Rect2:
+	var bounds: Rect2 = Rect2(points[0], Vector2.ZERO)
+	for point: Vector2 in points:
+		bounds = bounds.expand(point)
+	return bounds
 
 
 # Instancia um prop e registra o retangulo ocupado.

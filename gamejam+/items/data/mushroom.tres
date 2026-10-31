@@ -1,20 +1,18 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bocs3447tnw0m"]
 
-[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
-[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
-[ext_resource type="Texture2D" path="res://assets/sprites/items/cogumeloRoxo.png" id="3"]
+[ext_resource type="Script" uid="uid://7dc7skt1h77k" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://bhhnmuuadul8h" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://d6qg6mdh705y" path="res://assets/sprites/items/cogumeloRoxo.png" id="3"]
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
 effect_type = 1
-magnitude = 1.0
 
 [resource]
 script = ExtResource("1")
 id = &"mushroom"
 display_name = "Mushroom"
 icon = ExtResource("3")
-rarity = 0
 aspects = Array[int]([1])
 effects = Array[ExtResource("2")]([SubResource("e1")])
-color = Color(0.2784, 0.0000, 0.4392, 1)
+color = Color(0.2784, 0, 0.4392, 1)

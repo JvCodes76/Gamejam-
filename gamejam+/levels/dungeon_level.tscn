@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://dungeon/dungeon_level.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="3_enemy"]
+[ext_resource type="PackedScene" path="res://enemies/skull.tscn" id="4_skull"]
+[ext_resource type="PackedScene" path="res://ui/hud.tscn" id="5_hud"]
+[ext_resource type="PackedScene" path="res://cauldron/cauldron.tscn" id="6_cauldron"]
+[ext_resource type="Script" path="res://inventory/ground_item_spawner.gd" id="7_gis"]
+[ext_resource type="Script" path="res://dungeon/dungeon_hud.gd" id="8_dhud"]
+[ext_resource type="Script" path="res://dungeon/minimap.gd" id="9_minimap"]
+[ext_resource type="PackedScene" path="res://enemies/bat.tscn" id="10_bat"]
+
+[node name="DungeonLevel" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_level")
+swarm_scenes = Array[PackedScene]([ExtResource("3_enemy"), ExtResource("4_skull"), ExtResource("10_bat")])
+elite_scene = ExtResource("3_enemy")
+cauldron_scene = ExtResource("6_cauldron")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+
+[node name="Enemies" type="Node2D" parent="."]
+y_sort_enabled = true
+
+; Itens do chão vêm só das salas de item (sem itens iniciais)
+[node name="GroundItemSpawner" type="Node2D" parent="."]
+script = ExtResource("7_gis")
+seed_on_first_load = false
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
+
+[node name="DungeonHud" type="CanvasLayer" parent="."]
+script = ExtResource("8_dhud")
+
+[node name="Minimap" type="CanvasLayer" parent="."]
+script = ExtResource("9_minimap")

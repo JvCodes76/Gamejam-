@@ -94,7 +94,7 @@ func try_holy_slay(target: Hurtbox) -> bool:
 	var enemy: EnemyBase = target.get_parent() as EnemyBase
 	if enemy == null:
 		return false
-	var pos: Vector2 = enemy.global_position
+	var pos: Vector2 = enemy.global_position + CombatConstants.ENEMY_BODY_OFFSET
 	if not enemy.slay_if_basic():
 		return false
 	print("[Synergy] - rajada de luz matou um inimigo básico")

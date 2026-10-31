@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dsapa0ukxvhs4"]
 
-[ext_resource type="Script" path="res://items/item_data.gd" id="1"]
-[ext_resource type="Script" path="res://items/item_effect.gd" id="2"]
-[ext_resource type="Texture2D" path="res://assets/sprites/items/placeholder_eye_of_giant_newt.png" id="3"]
+[ext_resource type="Script" uid="uid://7dc7skt1h77k" path="res://items/item_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://bhhnmuuadul8h" path="res://items/item_effect.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://dk7pelrfeyjk0" path="res://assets/sprites/items/placeholder_eye_of_giant_newt.png" id="3"]
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
 effect_type = 4
-magnitude = 1.0
 
 [sub_resource type="Resource" id="e2"]
 script = ExtResource("2")
