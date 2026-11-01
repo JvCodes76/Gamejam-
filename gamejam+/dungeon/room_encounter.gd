@@ -1,7 +1,7 @@
 class_name RoomEncounter
 extends Node
 ## Behavior of a room when the player first enters:
-## cauldron (swarm + 1 elite), elite (3 random elites, locks), horde (timer, locks) and boss (locks; placeholder).
+## cauldron (swarm + 1 elite, locks), elite (3 random elites, locks), horde (timer, locks) and boss (locks; placeholder).
 ## In infinite mode enemies gain health, damage, speed and count every loop (see DungeonLevel).
 
 enum Kind { SWARM, ELITE, BOSS }
@@ -32,6 +32,7 @@ func on_player_entered() -> void:
 	print("[Dungeon] - room %s entered" % RoomData.Type.keys()[room.type])
 	match room.type:
 		RoomData.Type.CAULDRON:
+			_lock()
 			_spawn_swarm(_level.loop_count(_level.cauldron_swarm_count))
 			_spawn_elites(1)
 		RoomData.Type.ELITE:
@@ -58,9 +59,8 @@ func _process(delta: float) -> void:
 	if _timer_left <= 0.0:
 		_timer_active = false
 		set_process(false)
-		print("[Dungeon] - horde: time ran out, doors open")
+		print("[Dungeon] - horde: time ran out, doors stay closed until the room is cleared")
 		EventBus.horde_timer_changed.emit(-1.0)
-		_unlock()
 
 
 # Creates "count" weak enemies at free points in the room.

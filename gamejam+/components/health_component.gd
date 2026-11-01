@@ -10,6 +10,8 @@ signal dot_damaged(source: StringName, amount: int)  # emitted on every tick, ev
 signal damage_negated(amount: int)
 
 @export var max_health: int = 75
+## [DEBUG] Ignores all damage (hits, DoT and kill()); used by the main_level test scene
+@export var invincible: bool = false
 
 var current_health: int
 var _is_dead: bool = false
@@ -53,7 +55,7 @@ func take_damage(amount: int) -> void:
 
 # Applies the damage (negation and multiplier) and returns the damage actually dealt.
 func _apply_damage(amount: int) -> int:
-	if _is_dead:
+	if _is_dead or invincible:
 		return 0
 	if negate_chance > 0.0 and randf() < negate_chance:
 		damage_negated.emit(amount)
@@ -81,7 +83,7 @@ func _apply_damage(amount: int) -> int:
 
 # Kills instantly, ignoring negation and multipliers.
 func kill() -> void:
-	if _is_dead:
+	if _is_dead or invincible:
 		return
 	var lost: int = current_health
 	current_health = 0

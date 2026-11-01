@@ -868,6 +868,10 @@ script = ExtResource("3_tc8q2")
 
 [node name="Player" parent="." unique_id=736624525 instance=ExtResource("1_player")]
 
+; [DEBUG] Test: the player cannot take damage in this scene
+[node name="HealthComponent" parent="Player" index="7"]
+invincible = true
+
 [node name="Cauldron" parent="." unique_id=2107533240 instance=ExtResource("7_cauldron")]
 position = Vector2(120, -47)
 
