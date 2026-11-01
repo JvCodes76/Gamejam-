@@ -1,7 +1,7 @@
 class_name HitFeedback
 extends Node
-## Feedback de acerto reutilizável: escuta o HealthComponent e a Hurtbox do dono e aplica flash (shader),
-## squash do sprite, knockback (se o dono tiver apply_knockback) e pede os números de dano no EventBus.
+## Reusable hit feedback: listens to the owner's HealthComponent and Hurtbox and applies flash (shader),
+## sprite squash, knockback (if the owner has apply_knockback) and requests the damage numbers on the EventBus.
 
 const FLASH_SHADER: Shader = preload("res://assets/shaders/flash.gdshader")
 
@@ -39,7 +39,7 @@ func _ready() -> void:
 		_hurtbox.hit_received.connect(_on_hit_received)
 
 
-## Cria um material de flash próprio (cada sprite precisa do seu, o uniform é por material).
+## Creates its own flash material (each sprite needs its own, the uniform is per material).
 static func make_flash_material(color: Color) -> ShaderMaterial:
 	var mat: ShaderMaterial = ShaderMaterial.new()
 	mat.shader = FLASH_SHADER
@@ -48,12 +48,12 @@ static func make_flash_material(color: Color) -> ShaderMaterial:
 	return mat
 
 
-## Escala base do sprite (sem squash); útil para quem anima o sprite por fora (spawn).
+## Base scale of the sprite (without squash); useful for whoever animates the sprite from outside (spawn).
 func base_scale() -> Vector2:
 	return _base_scale
 
 
-## Pisca o sprite na cor de flash (ou em "color", se dada).
+## Flashes the sprite in the flash color (or in "color", if given).
 func flash(color: Color = flash_color, duration: float = flash_time) -> void:
 	if _material == null:
 		return
@@ -65,7 +65,7 @@ func flash(color: Color = flash_color, duration: float = flash_time) -> void:
 	_flash_tween.tween_method(_set_flash, 1.0, 0.0, duration).set_delay(duration * 0.5)
 
 
-## Achata o sprite e volta com um tween elástico.
+## Squashes the sprite and returns with an elastic tween.
 func squash() -> void:
 	if _sprite == null:
 		return
@@ -76,7 +76,7 @@ func squash() -> void:
 	_squash_tween.tween_property(_sprite, "scale", _base_scale, squash_time).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 
 
-## Ponto acima da cabeça do sprite (em coordenadas globais).
+## Point above the sprite's head (in global coordinates).
 func head_position() -> Vector2:
 	if _sprite == null:
 		return (get_parent() as Node2D).global_position
@@ -88,14 +88,14 @@ func _set_flash(value: float) -> void:
 	_material.set_shader_parameter("flash", value)
 
 
-# Golpe direto: knockback na direção do golpe
+# Direct hit: knockback in the direction of the hit
 func _on_hit_received(direction: Vector2, _is_crit: bool) -> void:
 	var owner_node: Node = get_parent()
 	if direction != Vector2.ZERO and owner_node.has_method("apply_knockback"):
 		owner_node.call("apply_knockback", direction * knockback_impulse)
 
 
-# Dano real: flash, squash e número de dano (ticks de DoT só piscam de leve, o número vem do enemy_dot_ticked)
+# Real damage: flash, squash and damage number (DoT ticks only flash lightly, the number comes from enemy_dot_ticked)
 func _on_damaged(amount: int) -> void:
 	if _health.applying_dot:
 		flash(flash_color, flash_time * 0.5)

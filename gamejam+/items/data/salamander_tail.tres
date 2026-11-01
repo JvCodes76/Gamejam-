@@ -16,6 +16,7 @@ effect_type = 2
 script = ExtResource("1")
 id = &"salamander_tail"
 display_name = "Salamander Tail"
+description = "This belonged to a member of the local species Pledothon Magnus Assinius, until it got spooked"
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([4, 4])

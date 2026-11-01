@@ -1,10 +1,10 @@
 class_name PotionSlot
 extends Control
-## Slot de poção: líquido colorido (máscara do interior) atrás do sprite do frasco.
+## Potion slot: colored liquid (interior mask) behind the flask sprite.
 
 const FLASK: Texture2D = preload("res://assets/sprites/ui/Flask.png")
 const LIQUID_MASK: Texture2D = preload("res://assets/sprites/ui/potion_flask_liquid_mask.png")
-## Linhas do topo do frasco (gargalo e rolha) que ficam sem líquido
+## Rows at the top of the flask (neck and cork) that stay without liquid
 const LIQUID_TOP_SKIP: int = 7
 
 @export var label_text: String = "1"
@@ -16,7 +16,7 @@ const LIQUID_TOP_SKIP: int = 7
 var liquid_color: Color = Color.WHITE
 var filled: bool = false
 var active: bool = false
-# Anel de brilho ao virar o frasco ativo (0 = sem anel, 0..1 = expansão)
+# Glow ring when the flask becomes active (0 = no ring, 0..1 = expansion)
 var _ring_t: float = 0.0
 var _scale_tween: Tween
 
@@ -28,7 +28,7 @@ func _ready() -> void:
 	pivot_offset = size * 0.5
 
 
-## Atualiza o estado visual do frasco.
+## Updates the flask's visual state.
 func set_state(new_filled: bool, new_color: Color, new_active: bool) -> void:
 	var became_active: bool = new_active and not active
 	filled = new_filled
@@ -37,7 +37,7 @@ func set_state(new_filled: bool, new_color: Color, new_active: bool) -> void:
 	if _scale_tween != null:
 		_scale_tween.kill()
 	if became_active and is_inside_tree():
-		# Cresce além do tamanho ativo e volta com bounce, mais um anel de brilho
+		# Grows beyond the active size and returns with a bounce, plus a glow ring
 		scale = Vector2.ONE * (active_scale + 0.25)
 		_scale_tween = create_tween().set_parallel()
 		_scale_tween.tween_property(self, "scale", Vector2.ONE * active_scale, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -52,7 +52,7 @@ func _set_ring(value: float) -> void:
 	queue_redraw()
 
 
-## Desenha borda de destaque, líquido, frasco por cima e rótulo.
+## Draws highlight border, liquid, flask on top and label.
 func _draw() -> void:
 	var s: float = float(pixel_scale)
 	if active:

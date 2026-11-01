@@ -4,11 +4,11 @@ extends Area2D
 signal hit_landed()
 signal hurtbox_hit(hurtbox: Hurtbox)
 
-@export var damage: int = 1
+@export var damage: int = 15
 
-# Quando true, não causa dano (ex.: dono atordoado)
+# When true, deals no damage (e.g. owner stunned)
 var suppressed: bool = false
-# Multiplicador do dono (ex.: weakened); a fração é acumulada
+# Owner multiplier (e.g. weakened); the fraction is accumulated
 var damage_scale: float = 1.0
 var _scale_carry: float = 0.0
 
@@ -17,12 +17,12 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 
 
-# Aplica dano se a area atingida for uma Hurtbox.
+# Applies damage if the area hit is a Hurtbox.
 func _on_area_entered(area: Area2D) -> void:
 	apply_hit(area)
 
 
-# Aplica dano a uma area, se for Hurtbox de outro dono.
+# Applies damage to an area, if it is another owner's Hurtbox.
 func apply_hit(area: Area2D) -> void:
 	if suppressed or not area is Hurtbox or area.get_parent() == get_parent():
 		return

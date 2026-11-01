@@ -1,6 +1,6 @@
 class_name InventoryScreen
 extends CanvasLayer
-## Tela do inventário físico: mostra a bolsa e o chão; o jogo continua rodando.
+## Physical inventory screen: shows the bag and the ground; the game keeps running.
 
 @export var spawn_area: Rect2 = Rect2(400, 40, 190, 80)
 @export var drop_scatter: float = 24.0
@@ -9,7 +9,7 @@ extends CanvasLayer
 @export var spawn_columns: int = 4
 @export var spawn_row_step: float = 50.0
 
-# Modo caldeirão
+# Cauldron mode
 @export var cauldron_vessel_scene: PackedScene = preload("res://cauldron/cauldron_vessel.tscn")
 @export var cauldron_spawn_area: Rect2 = Rect2(274, 0, 100, 200)
 @export var cauldron_spawn_columns: int = 2
@@ -17,21 +17,23 @@ extends CanvasLayer
 @export var bag_position_normal: Vector2 = Vector2(200, 200)
 @export var bag_position_cauldron: Vector2 = Vector2(160, 200)
 @export var vessel_position: Vector2 = Vector2(470, 210)
+# Visual and physical size of the cauldron in the brewing menu (multiplies the cauldron's size_multiplier)
+@export var vessel_scale: float = 1.2
 @export var brew_time: float = 3.0
-# Quantas vezes mais rápido o progresso decai ao soltar o brew
+# How many times faster the progress decays when releasing brew
 @export var brew_decay_speed: float = 3.0
 @export var melt_time: float = 0.4
 @export var wobble_interval: float = 0.15
 @export var wobble_impulse: float = 22.0
 @export var toast_time: float = 1.6
-# Distância do player ao caldeirão aberto a partir da qual o menu fecha sozinho
+# Distance from the player to the open cauldron beyond which the menu closes on its own
 @export var cauldron_leave_distance: float = 72.0
 @export var hint_time: float = 2.0
 @export var hint_text: String = "Time keeps running"
 @export var trash_position: Vector2 = Vector2(560, 230)
 @export var picker_slot_gap: float = 48.0
 @export var picker_dim_color: Color = Color(0, 0, 0, 0.6)
-# Máximo de itens lendários por poção
+# Maximum legendary items per potion
 @export var max_legendary_per_potion: int = 1
 @export var sticking_tolerance: float = 1.5
 @export var warning_hold_time: float = 1.0
@@ -42,7 +44,7 @@ extends CanvasLayer
 
 var _prev_mouse_mode: Input.MouseMode = Input.MOUSE_MODE_VISIBLE
 var _open: bool = false
-# Item físico -> posição original no mundo (itens vindos do chão)
+# Physical item -> original position in the world (items coming from the ground)
 var _origins: Dictionary = {}
 var _spawn_index: int = 0
 var _cauldron: Cauldron = null
@@ -60,7 +62,7 @@ var _warn_timer: float = 0.0
 var _warn_active: bool = false
 var _highlight_timer: float = 0.0
 var _tinted: Array[PhysicalItem] = []
-# CanvasLayer acima do inventário para o anúncio das sinergias especiais
+# CanvasLayer above the inventory for the special synergy announcement
 var _announce_layer: CanvasLayer = null
 
 @onready var _viewport: SubViewport = $ViewportContainer/SubViewport
@@ -81,9 +83,9 @@ func _ready() -> void:
 	_announce_layer.layer = layer + 1
 	_announce_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_announce_layer)
-	print("[Inventory] - Tela de inventário pronta")
+	print("[Inventory] - Inventory screen ready")
 
-# Alterna com a ação "inventory"; Esc fecha
+# Toggles with the "inventory" action; Esc closes
 func _unhandled_input(event: InputEvent) -> void:
 	if _picker != null:
 		if event.is_action_pressed("ui_cancel"):
@@ -107,7 +109,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		bottle()
 		get_viewport().set_input_as_handled()
 
-# Paredes invisíveis nas bordas do SubViewport
+# Invisible walls on the SubViewport edges
 func _build_screen_walls() -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
@@ -131,12 +133,12 @@ func _on_cauldron_open_requested(cauldron: Node) -> void:
 	open_cauldron(cauldron as Cauldron)
 
 
-# Abre a tela (ignorado se já aberta ou se o jogo já está pausado)
+# Opens the screen (ignored if already open or if the game is already paused)
 func open() -> void:
 	_begin_open(null)
 
 
-# Abre a tela em modo caldeirão
+# Opens the screen in cauldron mode
 func open_cauldron(cauldron: Cauldron) -> void:
 	if cauldron == null:
 		return
@@ -169,9 +171,9 @@ func _begin_open(cauldron: Cauldron) -> void:
 	ItemManager.pending_items.clear()
 	visible = true
 	_toast_message(hint_text, hint_time)
-	print("[Inventory] - Aberto (%d na bolsa%s)" % [ItemManager.bag_entries.size(), ", modo caldeirão" if _cauldron != null else ""])
+	print("[Inventory] - Opened (%d in the bag%s)" % [ItemManager.bag_entries.size(), ", cauldron mode" if _cauldron != null else ""])
 
-# Fecha: salva a bolsa (e o caldeirão) e derruba o resto no chão do mundo
+# Closes: saves the bag (and the cauldron) and drops the rest on the world ground
 func close() -> void:
 	if not _open:
 		return
@@ -209,24 +211,24 @@ func close() -> void:
 	Input.mouse_mode = _prev_mouse_mode
 	ItemManager.inventory_open = false
 	EventBus.inventory_closed.emit()
-	print("[Inventory] - Fechado (%d na bolsa, %d no chão)" % [kept.size(), dropped])
+	print("[Inventory] - Closed (%d in the bag, %d on the ground)" % [kept.size(), dropped])
 
-# Fecha ao morrer para restaurar cursor e flags
+# Closes on death to restore the cursor and flags
 func _on_player_died() -> void:
 	close()
 
 
-# Se sair da árvore aberta (level descarregado), libera o estado preso
+# If it leaves the tree while open (level unloaded), releases the stuck state
 func _exit_tree() -> void:
 	if not _open:
 		return
 	_open = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	ItemManager.inventory_open = false
-	print("[Inventory] - Descarregado com a tela aberta")
+	print("[Inventory] - Unloaded with the screen open")
 
 
-# Entradas do chão dentro do raio do player, as mais próximas primeiro
+# Ground entries within the player's radius, closest first
 func _nearby_ground_entries() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
@@ -239,10 +241,10 @@ func _nearby_ground_entries() -> Array[Dictionary]:
 		return player.global_position.distance_squared_to(x["position"]) < player.global_position.distance_squared_to(y["position"]))
 	if out.size() > max_nearby_items:
 		out.resize(max_nearby_items)
-	print("[Inventory] - %d itens do chão por perto" % out.size())
+	print("[Inventory] - %d ground items nearby" % out.size())
 	return out
 
-# Spawna um item na spawn_area, escalonado em grade para não sobrepor
+# Spawns an item in the spawn_area, staggered on a grid to avoid overlap
 func _spawn_in_area(data: ItemData) -> PhysicalItem:
 	var area: Rect2 = spawn_area if _cauldron == null else cauldron_spawn_area
 	var cols: int = maxi(spawn_columns if _cauldron == null else cauldron_spawn_columns, 1)
@@ -260,16 +262,16 @@ func _spawn_in_area(data: ItemData) -> PhysicalItem:
 func _track(item: PhysicalItem) -> void:
 	_tooltip.watch(item)
 
-# Converte coordenada do SubViewport para o espaço global dele
+# Converts a SubViewport coordinate to its global space
 func _viewport_to_global(p: Vector2) -> Vector2:
 	return p
 
 
-# Cria o caldeirão físico e restaura itens e líquido do estado
+# Creates the physical cauldron and restores the state's items and liquid
 func _open_vessel() -> void:
 	var state: CauldronState = _cauldron.state
 	_vessel = cauldron_vessel_scene.instantiate() as CauldronVessel
-	_vessel.size_multiplier = state.size_multiplier
+	_vessel.size_multiplier = state.size_multiplier * vessel_scale
 	_vessel.position = vessel_position
 	_viewport.add_child(_vessel)
 	for entry: Dictionary in state.entries:
@@ -281,7 +283,7 @@ func _open_vessel() -> void:
 	_refresh_brew_ui()
 
 
-# Todos os itens vivos nas duas bolsas (inclui os que estão derretendo)
+# All live items in both bags (includes the ones that are melting)
 func _all_items(include_melting: bool = true) -> Array[PhysicalItem]:
 	var out: Array[PhysicalItem] = []
 	var holders: Array[Node] = [_bag]
@@ -302,7 +304,7 @@ func _in_vessel(item: PhysicalItem) -> bool:
 	return _vessel != null and _vessel.is_inside(item)
 
 
-# Entradas de persistência dos itens (não derretendo) cujo centro está no recipiente
+# Persistence entries of the items (not melting) whose center is in the vessel
 func _entries_in(container: Bag) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for item: PhysicalItem in _all_items(false):
@@ -316,7 +318,7 @@ func _process(delta: float) -> void:
 		return
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
 	if player != null and player.global_position.distance_to(_cauldron.global_position) > cauldron_leave_distance:
-		print("[Inventory] - Player se afastou do caldeirão")
+		print("[Inventory] - Player moved away from the cauldron")
 		close()
 		return
 	var state: CauldronState = _cauldron.state
@@ -348,7 +350,7 @@ func _process(delta: float) -> void:
 	_refresh_brew_ui()
 
 
-# Motivo que impede o preparo ("" se livre); itens para fora têm prioridade
+# Reason that prevents brewing ("" if free); items outside take priority
 func _brew_blocker(items: Array[PhysicalItem]) -> String:
 	if not _sticking_items().is_empty():
 		return "Items sticking out of the cauldron can't be brewed"
@@ -357,7 +359,7 @@ func _brew_blocker(items: Array[PhysicalItem]) -> String:
 	return ""
 
 
-# Itens lendários no caldeirão se excederem o limite (senão vazio)
+# Legendary items in the cauldron if they exceed the limit (otherwise empty)
 func _legendary_items(items: Array[PhysicalItem]) -> Array[PhysicalItem]:
 	var out: Array[PhysicalItem] = []
 	for item: PhysicalItem in items:
@@ -368,7 +370,7 @@ func _legendary_items(items: Array[PhysicalItem]) -> Array[PhysicalItem]:
 	return out
 
 
-## Itens no caldeirão (centro dentro, ou contorno sobreposto ao interior) cujo contorno sai do interior.
+## Items in the cauldron (center inside, or outline overlapping the interior) whose outline leaves the interior.
 func _sticking_items() -> Array[PhysicalItem]:
 	var out: Array[PhysicalItem] = []
 	if _vessel == null:
@@ -393,7 +395,7 @@ func _sticking_items() -> Array[PhysicalItem]:
 	return out
 
 
-# Interior do vaso expandido pela tolerância
+# Vessel interior expanded by the tolerance
 func _expanded_interior() -> PackedVector2Array:
 	var res: Array[PackedVector2Array] = Geometry2D.offset_polygon(_vessel.interior, sticking_tolerance)
 	return res[0] if not res.is_empty() else _vessel.interior
@@ -406,12 +408,12 @@ static func _area_sum(polys: Array[PackedVector2Array]) -> float:
 	return sum
 
 
-# Mostra/limpa o aviso: aparece ao apertar brew com bloqueio e fica 1 s após soltar
+# Shows/clears the warning: appears when pressing brew while blocked and stays 1 s after releasing
 func _update_warning(pressed: bool, blocker: String, delta: float) -> void:
 	if pressed:
 		if blocker != "":
 			if not _warn_active:
-				print("[Cauldron] - Preparo bloqueado: %s" % blocker)
+				print("[Cauldron] - Brewing blocked: %s" % blocker)
 			_show_warning(blocker)
 		elif _warn_active:
 			_clear_warning()
@@ -437,7 +439,7 @@ func _clear_warning() -> void:
 	_toast.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
 
 
-# Avermelha itens em conflito (para fora ou lendários em excesso); restaura os demais
+# Turns conflicting items red (outside or excess legendaries); restores the rest
 func _update_highlight(items: Array[PhysicalItem]) -> void:
 	var bad: Array[PhysicalItem] = _sticking_items()
 	for item: PhysicalItem in _legendary_items(items):
@@ -451,7 +453,7 @@ func _update_highlight(items: Array[PhysicalItem]) -> void:
 	_tinted = bad
 
 
-# Derrete os itens e cria a poção
+# Melts the items and creates the potion
 func _complete_brew(items: Array[PhysicalItem]) -> void:
 	var datas: Array[ItemData] = []
 	var scales: Array[float] = []
@@ -467,11 +469,11 @@ func _complete_brew(items: Array[PhysicalItem]) -> void:
 	_vessel.set_brewing(false)
 	_toast_message("Potion brewed! Press F to bottle")
 	EventBus.potion_brewed.emit(state.potion.color, _cauldron.global_position)
-	print("[Cauldron] - Preparo concluído (%d itens, volume %.1f)" % [datas.size(), state.potion.volume])
+	print("[Cauldron] - Brewing finished (%d items, volume %.1f)" % [datas.size(), state.potion.volume])
 	_announce_special_synergies(state.potion)
 
 
-## Explosão no caldeirão e nomes das receitas especiais subindo até o topo (não bloqueia a interação).
+## Explosion at the cauldron and special recipe names rising to the top (does not block interaction).
 func _announce_special_synergies(potion: PotionData) -> void:
 	var recipes: Array[Dictionary] = SpecialSynergies.recipes_for(potion.special_synergies)
 	if recipes.is_empty() or _vessel == null:
@@ -480,7 +482,7 @@ func _announce_special_synergies(potion: PotionData) -> void:
 	SynergyAnnouncement.play(_announce_layer, origin, potion.color, recipes)
 
 
-# Anima o item sumindo e o libera
+# Animates the item disappearing and frees it
 func _melt(item: PhysicalItem) -> void:
 	item.set_meta("melting", true)
 	item.freeze = true
@@ -492,34 +494,34 @@ func _melt(item: PhysicalItem) -> void:
 	tween.chain().tween_callback(item.queue_free)
 
 
-## Abre o seletor de slots com a poção pronta (ação "bottle").
+## Opens the slot selector with the finished potion ("bottle" action).
 func bottle() -> void:
 	if _cauldron == null or _picker != null:
 		return
 	if _cauldron.state.potion == null:
 		_toast_message("Nothing to bottle yet")
-		print("[Cauldron] - Nada para engarrafar")
+		print("[Cauldron] - Nothing to bottle")
 		return
 	_open_picker()
 
 
-## Guarda a poção pronta no slot escolhido e limpa o caldeirão.
+## Stores the finished potion in the chosen slot and clears the cauldron.
 func _store_in_slot(index: int) -> void:
 	var replaced: bool = ItemManager.potion_slots[index] != null
 	ItemManager.set_potion_slot(index, _cauldron.state.potion)
 	_clear_cauldron_potion()
 	_close_picker()
 	_toast_message(("Replaced potion in slot %d" if replaced else "Potion stored in slot %d") % (index + 1))
-	print("[Cauldron] - Poção guardada no slot %d (substituiu: %s)" % [index, str(replaced)])
+	print("[Cauldron] - Potion stored in slot %d (replaced: %s)" % [index, str(replaced)])
 
 
-## Descarta a poção pronta (os itens já foram derretidos).
+## Discards the finished potion (the items have already been melted).
 func discard_potion() -> void:
 	if _cauldron == null or _picker != null or _cauldron.state.potion == null:
 		return
 	_clear_cauldron_potion()
 	_toast_message("Potion discarded")
-	print("[Cauldron] - Poção descartada")
+	print("[Cauldron] - Potion discarded")
 
 
 func _clear_cauldron_potion() -> void:
@@ -531,7 +533,7 @@ func _clear_cauldron_potion() -> void:
 	_refresh_brew_ui()
 
 
-## Cria o seletor central com os slots de poção.
+## Creates the central selector with the potion slots.
 func _open_picker() -> void:
 	_picker = ColorRect.new()
 	(_picker as ColorRect).color = picker_dim_color
@@ -558,7 +560,7 @@ func _open_picker() -> void:
 		_picker.add_child(slot)
 		_picker_slots.append(slot)
 	_refresh_picker(-1)
-	print("[Cauldron] - Seletor de slots aberto")
+	print("[Cauldron] - Slot selector opened")
 
 
 func _make_label(text: String, font_size: int, pos: Vector2) -> Label:
@@ -572,7 +574,7 @@ func _make_label(text: String, font_size: int, pos: Vector2) -> Label:
 	return label
 
 
-# Destaca o slot sob o mouse (hovered) e marca o slot ativo com "*"
+# Highlights the slot under the mouse (hovered) and marks the active slot with "*"
 func _refresh_picker(hovered: int) -> void:
 	for i: int in _picker_slots.size():
 		var potion: PotionData = ItemManager.potion_slots[i]
@@ -592,7 +594,7 @@ func _on_picker_backdrop_input(event: InputEvent) -> void:
 	var mb := event as InputEventMouseButton
 	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
 		_close_picker()
-		print("[Cauldron] - Seletor cancelado")
+		print("[Cauldron] - Selector cancelled")
 
 
 func _picker_accept() -> void:
@@ -608,7 +610,7 @@ func _close_picker() -> void:
 	_viewport.get_parent().mouse_filter = Control.MOUSE_FILTER_STOP
 
 
-# Cria a barra de progresso, o rótulo e a mensagem (fora do SubViewport)
+# Creates the progress bar, the label and the message (outside the SubViewport)
 func _build_brew_ui() -> void:
 	_brew_bar = ProgressBar.new()
 	_brew_bar.max_value = 1.0
@@ -646,9 +648,9 @@ func _set_brew_ui_visible(value: bool) -> void:
 	_trash.visible = false
 
 
-# Posiciona a barra embaixo do caldeirão
+# Positions the bar below the cauldron
 func _layout_brew_ui() -> void:
-	var bottom: float = vessel_position.y + 55.0 * _cauldron.state.size_multiplier + CauldronLayout.WALL_THICKNESS + 6.0
+	var bottom: float = vessel_position.y + 55.0 * _cauldron.state.size_multiplier * vessel_scale + CauldronLayout.WALL_THICKNESS + 6.0
 	_brew_bar.position = Vector2(vessel_position.x - 60.0, bottom)
 	_brew_label.position = Vector2(vessel_position.x - 80.0, bottom + 8.0)
 
@@ -660,7 +662,7 @@ func _refresh_brew_ui() -> void:
 	_trash.visible = state.potion != null
 
 
-# Mensagem curta no topo que some sozinha
+# Short message at the top that disappears on its own
 func _toast_message(text: String, time: float = -1.0) -> void:
 	_warn_active = false
 	_toast.add_theme_color_override("font_color", Color(1, 0.9, 0.5))

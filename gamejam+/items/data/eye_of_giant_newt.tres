@@ -11,14 +11,18 @@ effect_type = 4
 [sub_resource type="Resource" id="e2"]
 script = ExtResource("2")
 effect_type = 5
-magnitude = 2
+
+[sub_resource type="Resource" id="e3"]
+script = ExtResource("2")
+effect_type = 16
 
 [resource]
 script = ExtResource("1")
 id = &"eye_of_giant_newt"
 display_name = "Eye of Giant Newt"
+description = "Looking at this makes me uncomfortable."
 icon = ExtResource("3")
 rarity = 2
-aspects = Array[int]([4, 5, 8])
-effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])
+aspects = Array[int]([4, 4, 8])
+effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2"), SubResource("e3")])
 color = Color(0.9882, 0.9882, 0.8706, 1)

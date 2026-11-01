@@ -13,6 +13,7 @@ magnitude = 2
 script = ExtResource("1")
 id = &"poisonous_mushroom"
 display_name = "Poisonous Mushroom"
+description = "DOES NOT make you have visions. Just kills you."
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([1, 1])

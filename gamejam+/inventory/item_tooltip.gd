@@ -38,6 +38,9 @@ const EFFECT_NAMES: Dictionary = {
 	ItemEffect.EffectType.EXPLOSIVE: "Explosive",
 	ItemEffect.EffectType.FIRE_BREATH: "Fire breath",
 	ItemEffect.EffectType.REAL_BULLETS: "Real bullets",
+	ItemEffect.EffectType.SPLIT: "+Split",
+	ItemEffect.EffectType.BOUNCE: "+Bounce",
+	ItemEffect.EffectType.POISON_CLOUD: "Poison cloud",
 }
 
 var _item: PhysicalItem
@@ -52,13 +55,13 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 
-# Conecta os sinais de hover/grab de um item
+# Connects the hover/grab signals of an item
 func watch(item: PhysicalItem) -> void:
 	item.hovered.connect(_on_hovered)
 	item.unhovered.connect(_on_unhovered)
 	item.released.connect(_on_released)
 
-# Esconde e esquece o item atual
+# Hides and forgets the current item
 func clear() -> void:
 	_item = null
 	visible = false
@@ -84,7 +87,7 @@ func _process(_delta: float) -> void:
 			return
 		_follow_mouse()
 
-# Posiciona perto do mouse, mantendo dentro da tela
+# Positions near the mouse, keeping it inside the screen
 func _follow_mouse() -> void:
 	reset_size()
 	var vp: Vector2 = get_viewport().get_visible_rect().size
@@ -105,7 +108,7 @@ func _fill(data: ItemData) -> void:
 	_desc_label.text = data.description
 	_desc_label.visible = data.description.strip_edges() != ""
 
-# Agrupa aspectos repetidos, cada um na sua cor (BBCode): "Animal x2, Plant"
+# Groups repeated aspects, each in its own color (BBCode): "Animal x2, Plant"
 func _aspects_text(data: ItemData) -> String:
 	var counts: Dictionary = {}
 	for a: ItemEnums.Aspect in data.aspects:
@@ -118,7 +121,7 @@ func _aspects_text(data: ItemData) -> String:
 		parts.append("[color=#%s]%s[/color]" % [color.to_html(false), text])
 	return ", ".join(parts)
 
-# Uma linha por efeito; magnitude diferente de 1 vira "xN"
+# One line per effect; a magnitude other than 1 becomes "xN"
 func _effects_text(data: ItemData) -> String:
 	var lines: PackedStringArray = []
 	for e: ItemEffect in data.effects:

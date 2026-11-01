@@ -1,6 +1,6 @@
-## Gerador one-off do cenario estatico do main_level (Ground + Props).
-## Uso: godot --headless --script res://tools/generate_level_tiles.gd
-## Recria os nos "Ground" e "Props" (e remove o antigo "Floor") em levels/main_level.tscn.
+## One-off generator of the static scenery of main_level (Ground + Props).
+## Usage: godot --headless --script res://tools/generate_level_tiles.gd
+## Recreates the "Ground" and "Props" nodes (and removes the old "Floor") in levels/main_level.tscn.
 extends SceneTree
 
 const LEVEL_PATH: String = "res://levels/main_level.tscn"
@@ -10,7 +10,7 @@ const PROP_SCENE: PackedScene = preload("res://levels/props/prop.tscn")
 const DEBUG_COMMENT: String = "; [DEBUG] Teste: todos os itens espalhados no chao e raio maior\n"
 
 const TILE: int = 16
-# Celulas: x de -40 a 39; y de -23 a 21 com a camada deslocada em +8 px (arena -640..640 x -360..360).
+# Cells: x from -40 to 39; y from -23 to 21 with the layer shifted by +8 px (arena -640..640 x -360..360).
 const CELL_MIN: Vector2i = Vector2i(-40, -23)
 const CELL_MAX: Vector2i = Vector2i(39, 21)
 const LAYER_OFFSET: Vector2 = Vector2(0, 8)
@@ -19,28 +19,28 @@ const CENTER_CLEAR_RADIUS: float = 150.0
 const CAULDRON_POS: Vector2 = Vector2(120, -60)
 const CAULDRON_CLEAR_RADIUS: float = 72.0
 const ARENA: Rect2 = Rect2(-640, -372, 1280, 732)
-# Parede de cima da arena (centro; 32 px de altura): a face interna fica em y=-322, assim os pes do player param
-# a tempo da cabeca (47 px acima) nao sair do chao (que termina em y=-360).
+# Top wall of the arena (center; 32 px tall): the inner face sits at y=-322, so the player's feet stop
+# in time for the head (47 px above) not to leave the ground (which ends at y=-360).
 const TOP_WALL_Y: float = -338.0
-# Origem do caldeirao nos pes: o desenho (centro em (120,-60)) sobe 13 px em relacao a origem
+# Cauldron origin at the feet: the drawing (center at (120,-60)) rises 13 px relative to the origin
 const CAULDRON_FEET_POS: Vector2 = Vector2(120, -47)
 
-# Blocos 2x2 de chao laranja (origem em celulas) e peso.
+# 2x2 orange floor blocks (origin in cells) and weight.
 const ORANGE_BLOCKS: Array = [
 	[Vector2i(0, 0), 4], [Vector2i(0, 2), 3], [Vector2i(2, 0), 1], [Vector2i(2, 2), 1],
 	[Vector2i(4, 0), 1], [Vector2i(4, 2), 1], [Vector2i(16, 0), 1],
 ]
-# Bordas da mancha laranja por posicao na grade 3x3 de blocos (ver tools/generate_tileset.gd).
+# Orange patch edges by position in the 3x3 block grid (see tools/generate_tileset.gd).
 const PATCH_PIECES: Dictionary = {
 	Vector2i(0, 0): Vector2i(14, 8), Vector2i(1, 0): Vector2i(12, 8), Vector2i(2, 0): Vector2i(10, 8),
 	Vector2i(0, 1): Vector2i(16, 2), Vector2i(2, 1): Vector2i(8, 2),
 	Vector2i(0, 2): Vector2i(14, 0), Vector2i(1, 2): Vector2i(12, 0), Vector2i(2, 2): Vector2i(10, 0),
 }
-# Retangulos (celulas do atlas) de onde saem as celulas de chao azul.
+# Rectangles (atlas cells) the blue floor cells come from.
 const BLUE_SOURCE_RECTS: Array = [
 	Rect2i(6, 2, 2, 2), Rect2i(2, 4, 3, 1), Rect2i(6, 7, 2, 1), Rect2i(10, 2, 6, 2),
 ]
-# Decalques azuis: [origem no atlas, tamanho em celulas, quantidade, raio minimo ate o centro]
+# Blue decals: [atlas origin, size in cells, count, minimum radius to the center]
 const DECALS: Array = [
 	[Vector2i(6, 0), Vector2i(2, 2), 7, 160.0],
 	[Vector2i(8, 0), Vector2i(2, 2), 7, 160.0],
@@ -48,7 +48,7 @@ const DECALS: Array = [
 	[Vector2i(10, 2), Vector2i(6, 6), 3, 260.0],
 	[Vector2i(16, 4), Vector2i(4, 4), 4, 200.0],
 ]
-# Manchas de grama laranja (mundo px: x, y, largura, altura), alinhadas a blocos de 32 px.
+# Orange grass patches (world px: x, y, width, height), aligned to 32 px blocks.
 const PATCHES: Array = [
 	Rect2(-620, -330, 160, 96), Rect2(300, -260, 128, 128), Rect2(-250, 130, 128, 96),
 	Rect2(200, 140, 160, 96), Rect2(-570, 150, 128, 128), Rect2(440, 150, 128, 96),
@@ -87,13 +87,13 @@ func _initialize() -> void:
 	var out: PackedScene = PackedScene.new()
 	var pack_err: Error = out.pack(root)
 	var save_err: Error = ResourceSaver.save(out, LEVEL_PATH)
-	print("[Level] - cena salva (pack=%d, save=%d, props=%d)" % [pack_err, save_err, _prop_count])
+	print("[Level] - scene saved (pack=%d, save=%d, props=%d)" % [pack_err, save_err, _prop_count])
 	_restore_debug_comment()
 	root.free()
 	quit()
 
 
-# Regras de camadas/ordenacao do level: spawner de inimigos y-sorted, parede de cima, caldeirao com origem nos pes.
+# Level layer/sorting rules: y-sorted enemy spawner, top wall, cauldron with origin at the feet.
 func _apply_scene_rules(root: Node2D) -> void:
 	var spawner: Node2D = root.get_node("EnemySpawner") as Node2D
 	spawner.y_sort_enabled = true
@@ -101,10 +101,10 @@ func _apply_scene_rules(root: Node2D) -> void:
 	(root.get_node("Cauldron") as Node2D).position = CAULDRON_FEET_POS
 	var items: Node2D = root.get_node("GroundItemSpawner") as Node2D
 	items.y_sort_enabled = false
-	print("[Level] - regras de camadas aplicadas (EnemySpawner y-sort, parede de cima, caldeirao)")
+	print("[Level] - layer rules applied (EnemySpawner y-sort, top wall, cauldron)")
 
 
-# Cria a TileMapLayer "Ground" com base azul, remendos laranja, decalques e caminho de pedra.
+# Creates the "Ground" TileMapLayer with a blue base, orange patches, decals and a stone path.
 func _build_ground(root: Node2D) -> void:
 	_ground = TileMapLayer.new()
 	_ground.name = "Ground"
@@ -125,10 +125,10 @@ func _build_ground(root: Node2D) -> void:
 	for rect: Rect2 in PATCHES:
 		_place_patch(rect)
 	_scatter_decals()
-	print("[Level] - ground: %d celulas" % _ground.get_used_cells().size())
+	print("[Level] - ground: %d cells" % _ground.get_used_cells().size())
 
 
-# Lista celulas azuis limpas (sem detalhe) e quase limpas do atlas.
+# Lists clean blue cells (no detail) and nearly clean ones from the atlas.
 func _collect_blue_cells() -> void:
 	var base: Color = _image.get_pixel(6 * TILE, 2 * TILE)
 	for rect: Rect2i in BLUE_SOURCE_RECTS:
@@ -139,10 +139,10 @@ func _collect_blue_cells() -> void:
 					_plain_blue.append(Vector2i(cx, cy))
 				elif detail <= 6:
 					_light_blue.append(Vector2i(cx, cy))
-	print("[Level] - azul limpo: %d, azul leve: %d" % [_plain_blue.size(), _light_blue.size()])
+	print("[Level] - clean blue: %d, light blue: %d" % [_plain_blue.size(), _light_blue.size()])
 
 
-# Conta pixels que diferem da cor base na celula do atlas.
+# Counts pixels that differ from the base color in the atlas cell.
 func _detail_pixels(cell: Vector2i, base: Color) -> int:
 	var count: int = 0
 	for y: int in TILE:
@@ -153,33 +153,33 @@ func _detail_pixels(cell: Vector2i, base: Color) -> int:
 	return count
 
 
-# Escolhe uma celula de chao azul (88% limpa, 12% com leve detalhe).
+# Picks a blue floor cell (88% clean, 12% with slight detail).
 func _pick_blue() -> Vector2i:
 	if not _light_blue.is_empty() and _rng.randf() < 0.12:
 		return _light_blue[_rng.randi() % _light_blue.size()]
 	return _plain_blue[_rng.randi() % _plain_blue.size()]
 
 
-# Converte posicao do mundo (px) em celula da camada Ground.
+# Converts a world position (px) to a Ground layer cell.
 func _world_to_cell(pos: Vector2) -> Vector2i:
 	return Vector2i(floori(pos.x / TILE), floori((pos.y - LAYER_OFFSET.y) / TILE))
 
 
-# Marca celulas ocupadas (com margem) para os decalques nao sobreporem.
+# Marks occupied cells (with margin) so decals do not overlap.
 func _claim(origin: Vector2i, size: Vector2i, margin: int = 0) -> void:
 	for y: int in range(origin.y - margin, origin.y + size.y + margin):
 		for x: int in range(origin.x - margin, origin.x + size.x + margin):
 			_occupied[Vector2i(x, y)] = true
 
 
-# Copia um bloco do atlas para a camada (tamanho em celulas).
+# Copies a block from the atlas to the layer (size in cells).
 func _stamp(atlas_origin: Vector2i, size: Vector2i, cell_origin: Vector2i) -> void:
 	for j: int in size.y:
 		for i: int in size.x:
 			_ground.set_cell(cell_origin + Vector2i(i, j), 0, atlas_origin + Vector2i(i, j))
 
 
-# Escolhe um bloco de chao laranja pelo peso.
+# Picks an orange floor block by weight.
 func _pick_orange_block() -> Vector2i:
 	var total: int = 0
 	for entry: Array in ORANGE_BLOCKS:
@@ -192,7 +192,7 @@ func _pick_orange_block() -> Vector2i:
 	return ORANGE_BLOCKS[0][0]
 
 
-# Monta uma mancha laranja retangular de blocos 32x32 com as bordas do artista.
+# Builds a rectangular orange patch of 32x32 blocks with the artist's edges.
 func _place_patch(world_rect: Rect2) -> void:
 	var block0: Vector2i = Vector2i(roundi(world_rect.position.x / 32.0), roundi((world_rect.position.y - LAYER_OFFSET.y) / 32.0))
 	var size: Vector2i = Vector2i(roundi(world_rect.size.x / 32.0), roundi(world_rect.size.y / 32.0))
@@ -204,10 +204,10 @@ func _place_patch(world_rect: Rect2) -> void:
 			_stamp(atlas, Vector2i(2, 2), (block0 + Vector2i(i, j)) * 2)
 	_claim(block0 * 2, size * 2, 1)
 	_keep_out.append(Rect2(world_rect.position, world_rect.size))
-	print("[Level] - mancha laranja %s (%dx%d blocos)" % [world_rect.position, size.x, size.y])
+	print("[Level] - orange patch %s (%dx%d blocks)" % [world_rect.position, size.x, size.y])
 
 
-# Espalha decalques escuros/rachaduras no chao azul livre.
+# Scatters dark decals/cracks on the free blue floor.
 func _scatter_decals() -> void:
 	for decal: Array in DECALS:
 		var atlas: Vector2i = decal[0]
@@ -225,10 +225,10 @@ func _scatter_decals() -> void:
 			_stamp(atlas, size, cell)
 			_claim(cell, size, 1)
 			placed += 1
-		print("[Level] - decalque %s: %d/%d" % [atlas, placed, wanted])
+		print("[Level] - decal %s: %d/%d" % [atlas, placed, wanted])
 
 
-# Retorna true se todas as celulas da area estao livres.
+# Returns true if all cells in the area are free.
 func _cells_free(origin: Vector2i, size: Vector2i) -> bool:
 	for y: int in size.y:
 		for x: int in size.x:
@@ -237,21 +237,21 @@ func _cells_free(origin: Vector2i, size: Vector2i) -> bool:
 	return true
 
 
-# Caminho de pedra: bloco central (6,4) lado a lado, com tampas de ponta (celulas 1x2 / 2x1).
+# Stone path: center block (6,4) side by side, with end caps (1x2 / 2x1 cells).
 func _build_paths() -> void:
-	# Leste-oeste: da base do cercado ate o desvio da saida norte (x=496)
+	# East-west: from the base of the enclosure to the north exit detour (x=496)
 	_path_h(-20, 32, -1, false, true)
-	# Saida norte: ate o arco aberto (o arco abre para o sul, entao o caminho chega por baixo dele)
+	# North exit: to the open arch (the arch opens to the south, so the path arrives from below it)
 	_path_v(30, -19, -1, true, false)
-	# Sul: do spawn ate o portao fechado
+	# South: from the spawn to the closed gate
 	_path_v(-1, 1, 21, false, false)
-	# Norte, ate o portao do cercado (x=-304)
+	# North, to the enclosure gate (x=-304)
 	_path_v(-20, -5, -1, true, false)
-	# Desvio ate o caldeirao
+	# Detour to the cauldron
 	_path_v(6, -5, -1, true, false)
 
 
-# Faixa horizontal de 2 celulas de altura de cx0 ate cx1 (exclusivo).
+# Horizontal strip 2 cells tall from cx0 to cx1 (exclusive).
 func _path_h(cx0: int, cx1: int, cy: int, cap_start: bool, cap_end: bool) -> void:
 	for cx: int in range(cx0, cx1, 2):
 		_stamp(Vector2i(6, 4), Vector2i(2, 2), Vector2i(cx, cy))
@@ -263,7 +263,7 @@ func _path_h(cx0: int, cx1: int, cy: int, cap_start: bool, cap_end: bool) -> voi
 	_path_rects.append(Rect2(Vector2(cx0, cy) * TILE + LAYER_OFFSET, Vector2(cx1 - cx0, 2) * TILE))
 
 
-# Faixa vertical de 2 celulas de largura de cy0 ate cy1 (exclusivo).
+# Vertical strip 2 cells wide from cy0 to cy1 (exclusive).
 func _path_v(cx: int, cy0: int, cy1: int, cap_start: bool, cap_end: bool) -> void:
 	for cy: int in range(cy0, cy1, 2):
 		_stamp(Vector2i(6, 4), Vector2i(2, 2), Vector2i(cx, cy))
@@ -275,7 +275,7 @@ func _path_v(cx: int, cy0: int, cy1: int, cap_start: bool, cap_end: bool) -> voi
 	_path_rects.append(Rect2(Vector2(cx, cy0) * TILE + LAYER_OFFSET, Vector2(2, cy1 - cy0) * TILE))
 
 
-# Cria o no "Props" (y-sort) com o cemiterio, postes, abobras, arvores de borda e folhas.
+# Creates the "Props" node (y-sort) with the graveyard, posts, pumpkins, border trees and leaves.
 func _build_props(root: Node2D) -> void:
 	_props_root = Node2D.new()
 	_props_root.name = "Props"
@@ -294,7 +294,7 @@ func _build_props(root: Node2D) -> void:
 	print("[Level] - props: %d" % _prop_count)
 
 
-# Avisa se algum prop solido invade o centro livre ou a area do caldeirao.
+# Warns if any solid prop invades the free center or the cauldron area.
 func _validate_props() -> void:
 	var warnings: int = 0
 	for entry: Dictionary in _placed:
@@ -307,11 +307,11 @@ func _validate_props() -> void:
 			var world: Rect2 = Rect2((entry["pos"] as Vector2) - origin + bounds.position, bounds.size)
 			if _distance_to_rect(Vector2.ZERO, world) < CENTER_CLEAR_RADIUS - 10.0 or _distance_to_rect(CAULDRON_POS, world) < 40.0:
 				warnings += 1
-				print("[Level] - AVISO: colisao de %s em %s invade a area livre" % [Prop.Kind.keys()[kind], entry["pos"]])
-	print("[Level] - validacao dos props: %d avisos" % warnings)
+				print("[Level] - WARNING: collision of %s at %s invades the free area" % [Prop.Kind.keys()[kind], entry["pos"]])
+	print("[Level] - props validation: %d warnings" % warnings)
 
 
-# Retangulo que envolve uma lista de pontos.
+# Rectangle that encloses a list of points.
 func _bounds_of(points: PackedVector2Array) -> Rect2:
 	var bounds: Rect2 = Rect2(points[0], Vector2.ZERO)
 	for point: Vector2 in points:
@@ -319,7 +319,7 @@ func _bounds_of(points: PackedVector2Array) -> Rect2:
 	return bounds
 
 
-# Instancia um prop e registra o retangulo ocupado.
+# Instantiates a prop and records the occupied rectangle.
 func _place(kind: Prop.Kind, pos: Vector2) -> void:
 	var prop: Prop = PROP_SCENE.instantiate() as Prop
 	prop.kind = kind
@@ -332,7 +332,7 @@ func _place(kind: Prop.Kind, pos: Vector2) -> void:
 	_placed.append({"kind": kind, "pos": pos, "rect": Rect2(pos + local.position, local.size)})
 
 
-# Cercado octogonal em 3 pecas (base_center = centro da frente); o vao de 32 px e a entrada.
+# Octagonal enclosure in 3 pieces (base_center = center of the front); the 32 px gap is the entrance.
 func _build_enclosure(base_center: Vector2) -> void:
 	_place(Prop.Kind.FENCE_TOP, base_center + Vector2(0, -128))
 	_place(Prop.Kind.FENCE_BOTTOM_LEFT, base_center + Vector2(-32, 0))
@@ -346,7 +346,7 @@ func _build_enclosure(base_center: Vector2) -> void:
 	_place(Prop.Kind.PUMPKIN_SMILE, base_center + Vector2(0, -92))
 
 
-# Arco aberto na saida norte e arco com portao fechado no fim do caminho sul.
+# Open arch at the north exit and arch with a closed gate at the end of the south path.
 func _build_arches() -> void:
 	_place(Prop.Kind.ARCH_OPEN, Vector2(496, -290))
 	_place(Prop.Kind.ARCH_GATE, Vector2(0, 346))
@@ -356,10 +356,10 @@ func _build_arches() -> void:
 	_place(Prop.Kind.PUMPKIN_PLAIN, Vector2(52, 334))
 
 
-# Fileiras de tumulos e grupos de decoracao.
+# Rows of tombs and decoration groups.
 func _build_graveyards() -> void:
 	var kinds: Array = [Prop.Kind.GRAVE_CROSS, Prop.Kind.GRAVE_ROUND, Prop.Kind.GRAVE_BROKEN]
-	# Cemiterio oeste: duas fileiras
+	# West graveyard: two rows
 	for row: int in 2:
 		for col: int in 4:
 			var pos: Vector2 = Vector2(-560 + col * 52, 36 + row * 52) + Vector2(_rng.randf_range(-3, 3), 0)
@@ -369,13 +369,13 @@ func _build_graveyards() -> void:
 	_place(Prop.Kind.CANDLES, Vector2(-376, 52))
 	_place(Prop.Kind.CANDLES, Vector2(-584, 12))
 	_place(Prop.Kind.PUMPKIN_SMILE, Vector2(-380, 100))
-	# Cemiterio sudeste
+	# Southeast graveyard
 	for col: int in 3:
 		_place(kinds[(col + 1) % 3], Vector2(300 + col * 56, 215))
 		_place(kinds[col % 3], Vector2(320 + col * 56, 168))
 	_place(Prop.Kind.CANDLES, Vector2(268, 190))
 	_place(Prop.Kind.PUMPKIN_GRIN, Vector2(480, 220))
-	# Grupo nordeste
+	# Northeast group
 	_place(Prop.Kind.GRAVE_ROUND, Vector2(330, -190))
 	_place(Prop.Kind.GRAVE_CROSS, Vector2(376, -170))
 	_place(Prop.Kind.GRAVE_BROKEN, Vector2(420, -196))
@@ -386,7 +386,7 @@ func _build_graveyards() -> void:
 	_place(Prop.Kind.BENCH, Vector2(150, 110))
 
 
-# Postes de lanterna ao longo dos caminhos (fora da area central).
+# Lantern posts along the paths (outside the central area).
 func _build_lamps() -> void:
 	for x: int in [200, 340, 540]:
 		_place(Prop.Kind.LAMP_POST, Vector2(x, -14))
@@ -398,7 +398,7 @@ func _build_lamps() -> void:
 	_place(Prop.Kind.LAMP_POST, Vector2(172, -126))
 
 
-# Arvores ocas e arbustos formando a borda visual da arena.
+# Hollow trees and bushes forming the visual border of the arena.
 func _build_edge_trees() -> void:
 	var tree_kinds: Array = [Prop.Kind.HOLLOW_TREE_A, Prop.Kind.HOLLOW_TREE_B]
 	var x: float = -600.0
@@ -411,7 +411,7 @@ func _build_edge_trees() -> void:
 		_try_place(tree_kinds[_rng.randi() % 2], Vector2(-616 + _rng.randf_range(-3, 3), y))
 		_try_place(tree_kinds[_rng.randi() % 2], Vector2(616 + _rng.randf_range(-3, 3), y))
 		y += _rng.randf_range(70, 100)
-	# Arbustos encostados nas arvores
+	# Bushes next to the trees
 	for i: int in 16:
 		var pos: Vector2 = Vector2.ZERO
 		if _rng.randf() < 0.5:
@@ -421,7 +421,7 @@ func _build_edge_trees() -> void:
 		_try_place(Prop.Kind.BUSH_A if _rng.randf() < 0.5 else Prop.Kind.BUSH_B, pos)
 
 
-# Decoracao espalhada: abobras, velas, folhas, arbustos e algumas arvores internas.
+# Scattered decoration: pumpkins, candles, leaves, bushes and a few inner trees.
 func _build_filler() -> void:
 	var area: Rect2 = Rect2(-590, -290, 1180, 620)
 	_scatter([Prop.Kind.PUMPKIN_PLAIN, Prop.Kind.PUMPKIN_SMILE, Prop.Kind.PUMPKIN_GRIN], 14, area)
@@ -432,7 +432,7 @@ func _build_filler() -> void:
 	_scatter([Prop.Kind.GRAVE_CROSS, Prop.Kind.GRAVE_ROUND, Prop.Kind.GRAVE_BROKEN], 6, area)
 
 
-# Tenta colocar "count" props sorteados dentro da area, respeitando as regras de colocacao.
+# Tries to place "count" random props inside the area, respecting the placement rules.
 func _scatter(kinds: Array, count: int, area: Rect2) -> void:
 	var placed: int = 0
 	var tries: int = 0
@@ -443,7 +443,7 @@ func _scatter(kinds: Array, count: int, area: Rect2) -> void:
 			placed += 1
 
 
-# Coloca o prop se a posicao respeita centro livre, caldeirao, caminhos e outros props.
+# Places the prop if the position respects the free center, cauldron, paths and other props.
 func _try_place(kind: Prop.Kind, pos: Vector2) -> bool:
 	var local: Rect2 = Prop.local_rect(kind)
 	var rect: Rect2 = Rect2(pos + local.position, local.size)
@@ -474,13 +474,13 @@ func _try_place(kind: Prop.Kind, pos: Vector2) -> bool:
 	return true
 
 
-# Distancia de um ponto ate o retangulo mais proximo (0 se estiver dentro).
+# Distance from a point to the nearest rectangle (0 if inside).
 func _distance_to_rect(point: Vector2, rect: Rect2) -> float:
 	var nearest: Vector2 = Vector2(clampf(point.x, rect.position.x, rect.end.x), clampf(point.y, rect.position.y, rect.end.y))
 	return point.distance_to(nearest)
 
 
-# O Godot descarta comentarios ao salvar; recoloca o comentario [DEBUG] do GroundItemSpawner.
+# Godot discards comments when saving; re-adds the [DEBUG] comment of the GroundItemSpawner.
 func _restore_debug_comment() -> void:
 	var path: String = ProjectSettings.globalize_path(LEVEL_PATH)
 	var text: String = FileAccess.get_file_as_string(path)

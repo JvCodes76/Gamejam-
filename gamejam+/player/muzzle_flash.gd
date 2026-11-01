@@ -1,7 +1,7 @@
 class_name MuzzleFlash
 extends Node2D
-## Clarão do cano desenhado por _draw() (círculo + estrela de 4 pontas) por poucos quadros.
-## Fase 2: troca para um sprite branco animado, tingido com a mesma cor.
+## Muzzle flash drawn by _draw() (circle + 4-point star) for a few frames.
+## Phase 2: swaps to an animated white sprite, tinted with the same color.
 
 var color: Color = Color.WHITE
 var _frames_left: int = 0
@@ -12,7 +12,7 @@ func _ready() -> void:
 	visible = false
 
 
-## Mostra o clarão na cor da poção por MUZZLE_FLASH_FRAMES quadros.
+## Shows the flash in the potion color for MUZZLE_FLASH_FRAMES frames.
 func flash(new_color: Color) -> void:
 	color = new_color
 	_frames_left = FeelConstants.MUZZLE_FLASH_FRAMES

@@ -5,14 +5,14 @@ const GRID_STEP: float = 6.0
 const ROTATIONS: Array[float] = [0.0, PI * 0.5, PI, PI * 1.5]
 
 
-# Procura a primeira posição livre (com margem) dentro da bolsa; null se não couber
+# Looks for the first free position (with margin) inside the bag; null if it does not fit
 static func find_free_position(item: ItemData, entries: Array[Dictionary], shrink_scale: float, margin: float = 3.0, interior: PackedVector2Array = BagLayout.INTERIOR) -> Variant:
 	if item == null or item.icon == null:
 		return null
 	var hull: PackedVector2Array = ColliderBuilder.build_hull(item.icon, shrink_scale)
 	if hull.size() < 3:
 		return null
-	# Hulls já ocupados, inflados pela margem
+	# Hulls already occupied, inflated by the margin
 	var occupied: Array[PackedVector2Array] = []
 	for e: Dictionary in entries:
 		var other: ItemData = e["item"]
@@ -38,7 +38,7 @@ static func find_free_position(item: ItemData, entries: Array[Dictionary], shrin
 
 
 static func _is_valid(candidate: PackedVector2Array, occupied: Array[PackedVector2Array], interior: PackedVector2Array = BagLayout.INTERIOR) -> bool:
-	# Contido no interior: nada sobra ao subtrair o interior
+	# Contained in the interior: nothing is left when subtracting the interior
 	if not Geometry2D.clip_polygons(candidate, interior).is_empty():
 		return false
 	for other: PackedVector2Array in occupied:

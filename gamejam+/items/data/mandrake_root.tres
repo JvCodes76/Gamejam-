@@ -17,6 +17,7 @@ effect_type = 10
 script = ExtResource("1")
 id = &"mandrake_root"
 display_name = "Mandrake Root"
+description = "Getting this without falling asleep is a pain in the ASS"
 icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([2, 7, 0])

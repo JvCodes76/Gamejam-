@@ -1,7 +1,7 @@
 class_name DungeonHud
 extends CanvasLayer
-## Textos do dungeon: cemitério atual, contagem regressiva da sala de horda (pulsa e fica vermelha no fim)
-## e o aviso "SALA LIMPA" com flash suave quando uma sala é limpa.
+## Dungeon texts: current graveyard, horde room countdown (pulses and turns red at the end)
+## and the "ROOM CLEARED" notice with a soft flash when a room is cleared.
 
 const CLEAR_COLOR: Color = Color(1.0, 0.9, 0.55)
 const TIMER_COLOR: Color = Color.WHITE
@@ -27,17 +27,17 @@ func _make_label(pos: Vector2) -> Label:
 	return label
 
 
-# Mostra o cemitério atual e, no modo infinito, o loop
+# Shows the current graveyard and, in infinite mode, the loop
 func _on_cemetery_changed(index: int, total: int) -> void:
-	_label_cemetery.text = tr("Cemitério %d/%d") % [index, total]
+	_label_cemetery.text = tr("Graveyard %d/%d") % [index, total]
 	if GameManager.loop_index > 0:
 		_label_cemetery.text += "  " + tr("Loop %d") % (GameManager.loop_index + 1)
 
 
-# Valor negativo esconde o timer; nos últimos segundos o texto pulsa a cada segundo e fica vermelho
+# A negative value hides the timer; in the last seconds the text pulses every second and turns red
 func _on_horde_timer_changed(seconds_left: float) -> void:
 	_label_timer.visible = seconds_left >= 0.0
-	_label_timer.text = "Horda: %.1fs" % seconds_left
+	_label_timer.text = "Horde: %.1fs" % seconds_left
 	_label_timer.pivot_offset = _label_timer.size * 0.5
 	if seconds_left >= 0.0 and seconds_left <= FeelConstants.HORDE_WARNING_SECONDS:
 		var beat: float = 1.0 - fmod(seconds_left, 1.0)
@@ -49,7 +49,7 @@ func _on_horde_timer_changed(seconds_left: float) -> void:
 		_label_timer.modulate = TIMER_COLOR
 
 
-# Flash suave na tela e "SALA LIMPA" subindo e sumindo
+# Soft screen flash and "ROOM CLEARED" rising and fading
 func _on_room_cleared() -> void:
 	var screen: Vector2 = get_viewport().get_visible_rect().size
 	var flash: ColorRect = ColorRect.new()
@@ -62,7 +62,7 @@ func _on_room_cleared() -> void:
 	flash_tween.tween_callback(flash.queue_free)
 
 	var label: Label = Label.new()
-	label.text = tr("SALA LIMPA")
+	label.text = tr("ROOM CLEARED")
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override("font_size", 22)
 	label.add_theme_color_override("font_color", CLEAR_COLOR)

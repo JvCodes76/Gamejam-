@@ -23,7 +23,7 @@ collision_mask = 33
 motion_mode = 1
 script = ExtResource("1")
 
-; A origem do no fica nos PES (y-sort); o colisor de movimento e uma capsula horizontal curta na base da capa
+; The node origin is at the FEET (y-sort); the movement collider is a short horizontal capsule at the base of the cape
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1440187493]
 position = Vector2(0, -5)
 rotation = 1.5707964
@@ -41,7 +41,7 @@ position = Vector2(0, -33)
 texture = ExtResource("2")
 hframes = 8
 
-; Centro do corpo (25 px acima dos pes): a mira, o muzzle e a camera partem daqui
+; Body center (25 px above the feet): the aim, the muzzle and the camera originate here
 [node name="BodyCenter" type="Marker2D" parent="."]
 position = Vector2(0, -25)
 

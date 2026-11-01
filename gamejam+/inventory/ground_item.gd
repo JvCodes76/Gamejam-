@@ -21,7 +21,7 @@ func _ready() -> void:
 	tween.tween_property(_sprite, "position:y", base_y, bob_time).set_trans(Tween.TRANS_SINE)
 
 
-## Guarda a entry (mesma referência do ItemManager) e mostra o ícone com seu contorno.
+## Stores the entry (same reference as the ItemManager) and shows the icon with its outline.
 func setup(new_entry: Dictionary) -> void:
 	entry = new_entry
 	position = new_entry["position"]
@@ -34,20 +34,20 @@ func setup(new_entry: Dictionary) -> void:
 	_start_glow()
 
 
-# Brilho pulsante: o ícone fica mais claro e volta (Fase 2 pode trocar por shader com brilho)
+# Pulsing glow: the icon gets lighter and returns (Phase 2 may swap it for a glow shader)
 func _start_glow() -> void:
 	var glow: Tween = create_tween().set_loops()
 	glow.tween_property(_sprite, "self_modulate", Color(1.45, 1.45, 1.45, 1.0), 0.6).set_trans(Tween.TRANS_SINE)
 	glow.tween_property(_sprite, "self_modulate", Color.WHITE, 0.6).set_trans(Tween.TRANS_SINE)
 
 
-## Mostra ou esconde o contorno na cor da raridade (item ao alcance do player).
+## Shows or hides the outline in the rarity color (item within the player's reach).
 func set_highlighted(value: bool) -> void:
 	for line: Line2D in _outlines:
 		line.visible = value
 
 
-# Cria um Line2D por polígono do sprite, filho do Sprite2D (acompanha escala e oscilação).
+# Creates a Line2D per sprite polygon, child of the Sprite2D (follows scale and bobbing).
 func _build_outline(item: ItemData) -> void:
 	var color: Color = ItemEnums.RARITY_COLORS.get(item.rarity, Color.WHITE)
 	for polygon: PackedVector2Array in ColliderBuilder.build_polygons(item.icon):

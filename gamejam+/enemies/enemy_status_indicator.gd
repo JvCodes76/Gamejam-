@@ -1,8 +1,8 @@
 class_name EnemyStatusIndicator
 extends Node2D
-## Indicadores de status desenhados por código sobre o inimigo (Fase 2: viram ícones 8x8).
-## Stun: estrelas em órbita. Slow: gotas azuis caindo. Marked: losango vermelho pulsando.
-## Veneno/DoT: bolhas subindo. Raiz: linhas marrons no pé. Charm: coraçõezinhos.
+## Status indicators drawn by code over the enemy (Phase 2: become 8x8 icons).
+## Stun: orbiting stars. Slow: falling blue drops. Marked: pulsing red diamond.
+## Poison/DoT: rising bubbles. Root: brown lines at the feet. Charm: little hearts.
 
 const STUN_COLOR: Color = Color(1.0, 0.95, 0.4)
 const SLOW_COLOR: Color = Color(0.5, 0.75, 1.0, 0.9)
@@ -38,7 +38,7 @@ func _has_anything() -> bool:
 	return _effects.has_any() or (_health != null and not _health.active_dot_sources().is_empty())
 
 
-# Topo da cabeça em coordenadas locais (o nó fica na origem do inimigo, nos pés)
+# Top of the head in local coordinates (the node sits at the enemy's origin, at the feet)
 func _head_y() -> float:
 	if _sprite == null:
 		return -32.0
@@ -72,7 +72,7 @@ func _draw() -> void:
 			_draw_bubbles(color, float(i) * 1.7)
 
 
-# 3 estrelinhas girando numa órbita achatada sobre a cabeça
+# 3 little stars spinning in a flattened orbit over the head
 func _draw_stun(y: float) -> void:
 	for i: int in 3:
 		var a: float = _time * 6.0 + TAU * float(i) / 3.0
@@ -81,7 +81,7 @@ func _draw_stun(y: float) -> void:
 		draw_line(p + Vector2(0, -1.5), p + Vector2(0, 1.5), STUN_COLOR, 1.0)
 
 
-# Losango vermelho pulsando acima da cabeça
+# Pulsing red diamond above the head
 func _draw_marked(y: float) -> void:
 	var s: float = 3.0 * (1.0 + 0.2 * sin(_time * 8.0))
 	var c: Vector2 = Vector2(0.0, y)
@@ -91,7 +91,7 @@ func _draw_marked(y: float) -> void:
 	draw_polyline(points, Color(1, 1, 1, 0.8), 1.0)
 
 
-# Gotas azuis caindo da cabeça até o meio do corpo
+# Blue drops falling from the head to the middle of the body
 func _draw_slow(head: float) -> void:
 	var span: float = maxf(_body_y() - head, 8.0)
 	for i: int in 3:
@@ -100,7 +100,7 @@ func _draw_slow(head: float) -> void:
 		draw_rect(Rect2(x, y, 1.0, 2.0), SLOW_COLOR)
 
 
-# Bolhas subindo pelo corpo (veneno, fogo, raiz, lama: cor da fonte)
+# Bubbles rising along the body (poison, fire, root, mud: source color)
 func _draw_bubbles(color: Color, phase: float) -> void:
 	var bottom: float = -2.0
 	var top: float = _head_y()
@@ -112,7 +112,7 @@ func _draw_bubbles(color: Color, phase: float) -> void:
 		draw_circle(Vector2(x, y), 1.0 + (1.0 - t) * 0.5, Color(color, 1.0 - t * 0.7))
 
 
-# Linhas marrons saindo do chão em volta dos pés
+# Brown lines coming out of the ground around the feet
 func _draw_roots() -> void:
 	for i: int in 5:
 		var x: float = (float(i) - 2.0) * 3.0
@@ -120,7 +120,7 @@ func _draw_roots() -> void:
 		draw_line(Vector2(x, 1.0), Vector2(x + (1.0 if i % 2 == 0 else -1.0) * 2.0, 1.0 - h), ROOTS_COLOR, 1.0)
 
 
-# Coraçõezinhos (2 círculos + triângulo) flutuando
+# Little hearts (2 circles + triangle) floating
 func _draw_hearts(y: float) -> void:
 	for i: int in 2:
 		var x: float = (float(i) - 0.5) * 8.0

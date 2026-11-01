@@ -1,6 +1,6 @@
 class_name StatusEffects
 extends Node
-## Status temporários de um inimigo (roots, slow, stun, marked, charmed, weakened) com timers próprios.
+## Temporary statuses of an enemy (roots, slow, stun, marked, charmed, weakened) with their own timers.
 
 signal changed(status: StringName, active: bool)
 
@@ -11,34 +11,34 @@ const MARKED: StringName = &"marked"
 const CHARMED: StringName = &"charmed"
 const WEAKENED: StringName = &"weakened"
 
-# Indicadores visuais (preload direto: não depende do cache de class_name do editor)
+# Visual indicators (direct preload: does not depend on the editor's class_name cache)
 const INDICATOR_SCRIPT: GDScript = preload("res://enemies/enemy_status_indicator.gd")
 
-# Fonte padrão de slow quando apply(SLOW) é chamado sem fonte
+# Default slow source when apply(SLOW) is called without a source
 const DEFAULT_SLOW_SOURCE: StringName = &"default"
 
-# Bônus de dano recebido por atordoados (Crunchy!); definido pelo SynergyDirector, vale para todos os inimigos
+# Bonus damage taken by stunned enemies (Crunchy!); set by the SynergyDirector, applies to all enemies
 static var stun_damage_bonus: float = 0.0
 
 # status -> { "time": float, "power": float }
 var _active: Dictionary = {}
-# Slow por fonte: fonte -> { "time": float, "power": float }; fontes diferentes multiplicam
+# Slow per source: source -> { "time": float, "power": float }; different sources multiply
 var _slows: Dictionary = {}
 
 
-## Duração do stun: min(teto, STUN_BASE + 0.1 * nível + extra); o teto padrão é STUN_MAX.
+## Stun duration: min(cap, STUN_BASE + 0.1 * level + extra); the default cap is STUN_MAX.
 static func stun_duration(level: float = 0.0, extra: float = 0.0, cap: float = CombatConstants.STUN_MAX) -> float:
 	return minf(maxf(cap, CombatConstants.STUN_MAX), CombatConstants.STUN_BASE + CombatConstants.STUN_PER_LEVEL * level + extra)
 
 
-## Potência de slow que equivale a reduzir a velocidade em "fraction" (0.4 = -40%).
+## Slow power equivalent to reducing speed by "fraction" (0.4 = -40%).
 static func slow_power(fraction: float) -> float:
 	return fraction / CombatConstants.SLOW_FACTOR
 
 
 func _ready() -> void:
 	set_process(false)
-	# Indicadores visuais desenhados sobre o dono (irmão do sprite)
+	# Visual indicators drawn over the owner (sibling of the sprite)
 	var owner_node: Node2D = get_parent() as Node2D
 	if owner_node != null:
 		var indicator: Node2D = INDICATOR_SCRIPT.new()
@@ -47,12 +47,12 @@ func _ready() -> void:
 		owner_node.add_child.call_deferred(indicator)
 
 
-## Retorna true se algum status está ativo.
+## Returns true if any status is active.
 func has_any() -> bool:
 	return not _active.is_empty()
 
 
-## Aplica (ou renova) um status; mantém a maior duração e potência.
+## Applies (or renews) a status; keeps the longest duration and highest power.
 func apply(status: StringName, duration: float, power: float = 1.0) -> void:
 	if duration <= 0.0:
 		return
@@ -66,11 +66,11 @@ func apply(status: StringName, duration: float, power: float = 1.0) -> void:
 	_active[status] = entry
 	set_process(true)
 	if not was_active:
-		print("[Combat] - status %s aplicado (%.2f s)" % [status, duration])
+		print("[Combat] - status %s applied (%.2f s)" % [status, duration])
 		changed.emit(status, true)
 
 
-## Aplica (ou renova) uma lentidão de uma fonte; na mesma fonte mantém a maior duração/potência, em fontes diferentes multiplica.
+## Applies (or renews) a slow from a source; within the same source keeps the longest duration/power, across different sources multiplies.
 func apply_slow(source: StringName, duration: float, power: float = 1.0) -> void:
 	if duration <= 0.0:
 		return
@@ -82,11 +82,11 @@ func apply_slow(source: StringName, duration: float, power: float = 1.0) -> void
 	_sync_slow()
 	set_process(true)
 	if not was_active:
-		print("[Combat] - status %s aplicado (%.2f s)" % [SLOW, duration])
+		print("[Combat] - status %s applied (%.2f s)" % [SLOW, duration])
 		changed.emit(SLOW, true)
 
 
-## Atualiza a entrada agregada de SLOW (maior tempo e potência entre as fontes) ou a remove se não há fontes.
+## Updates the aggregated SLOW entry (longest time and highest power among the sources) or removes it if there are no sources.
 func _sync_slow() -> void:
 	if _slows.is_empty():
 		_active.erase(SLOW)
@@ -99,12 +99,12 @@ func _sync_slow() -> void:
 	_active[SLOW] = {"time": time, "power": power}
 
 
-## Aplica stun com duração baseada no nível.
+## Applies stun with a duration based on the level.
 func apply_stun(level: float = 0.0) -> void:
 	apply(STUN, stun_duration(level))
 
 
-## Remove um status imediatamente.
+## Removes a status immediately.
 func clear(status: StringName) -> void:
 	if status == SLOW:
 		_slows.clear()
@@ -112,17 +112,17 @@ func clear(status: StringName) -> void:
 		changed.emit(status, false)
 
 
-## Retorna true se o status está ativo.
+## Returns true if the status is active.
 func has(status: StringName) -> bool:
 	return _active.has(status)
 
 
-## Tempo restante de um status (0 se inativo).
+## Remaining time of a status (0 if inactive).
 func time_left(status: StringName) -> float:
 	return float(_active[status]["time"]) if _active.has(status) else 0.0
 
 
-## Multiplicador de velocidade: produto dos slows de cada fonte (cada um reduz em SLOW_FACTOR * potência), mínimo 0.1.
+## Speed multiplier: product of each source's slows (each reduces by SLOW_FACTOR * power), minimum 0.1.
 func speed_multiplier() -> float:
 	if _slows.is_empty():
 		return 1.0
@@ -132,24 +132,24 @@ func speed_multiplier() -> float:
 	return clampf(mult, 0.1, 1.0)
 
 
-## Pode se mover (roots e stun impedem).
+## Can move (roots and stun prevent it).
 func can_move() -> bool:
 	return not has(ROOTS) and not has(STUN)
 
 
-## Pode agir: causar dano de contato e atacar (stun impede; roots não).
+## Can act: deal contact damage and attack (stun prevents it; roots do not).
 func can_act() -> bool:
 	return not has(STUN)
 
 
-## Multiplicador de dano causado (weakened reduz pela potência, 0.25 = -25%).
+## Damage dealt multiplier (weakened reduces by the power, 0.25 = -25%).
 func damage_dealt_multiplier() -> float:
 	if not has(WEAKENED):
 		return 1.0
 	return clampf(1.0 - float(_active[WEAKENED]["power"]), 0.0, 1.0)
 
 
-## Multiplicador de dano recebido: marked (+50%) e, com Crunchy!, stun (+10%); os bônus multiplicam.
+## Damage taken multiplier: marked (+50%) and, with Crunchy!, stun (+10%); the bonuses multiply.
 func damage_taken_multiplier() -> float:
 	var mult: float = 1.0 + CombatConstants.MARKED_DAMAGE_BONUS if has(MARKED) else 1.0
 	if has(STUN) and stun_damage_bonus > 0.0:

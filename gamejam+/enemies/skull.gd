@@ -1,7 +1,7 @@
 class_name Skull
 extends EnemyBase
-## Caveira: inimigo que persegue o player, mais rápido e frágil que o inimigo base.
-## A folha tem 16 quadros de 32x32 que giram em loop (hframes na Sprite2D).
+## Skull: enemy that chases the player, faster and more fragile than the base enemy.
+## The sheet has 16 frames of 32x32 that loop (hframes on the Sprite2D).
 
 @export var anim_fps: float = 10.0
 

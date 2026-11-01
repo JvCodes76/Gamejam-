@@ -42,7 +42,7 @@ func _physics_process(_delta: float) -> void:
 	_set_highlight(_target, true)
 
 
-# Liga ou desliga o destaque do alvo (item do chão ou caldeirão)
+# Turns the target highlight on or off (ground item or cauldron)
 func _set_highlight(node: Node2D, value: bool) -> void:
 	if is_instance_valid(node) and node.has_method("set_highlighted"):
 		node.call("set_highlighted", value)

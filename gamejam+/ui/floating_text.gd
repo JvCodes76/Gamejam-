@@ -1,13 +1,13 @@
 class_name FloatingText
 extends Label
-## Texto curto no mundo que sobe e some (nome de item, "!" do mímico). Para números de dano use DamageNumbers (pool).
+## Short text in the world that rises and fades (item name, the mimic's "!"). For damage numbers use DamageNumbers (pool).
 
 var _velocity: Vector2 = Vector2.ZERO
 var _lifetime: float = 0.8
 var _age: float = 0.0
 
 
-## Cria o texto centralizado em "world_position" (adição deferida).
+## Creates the text centered at "world_position" (deferred add).
 static func spawn(parent: Node, world_position: Vector2, text_value: String, color: Color, font_size: int = 8, lifetime: float = 0.8, rise_speed: float = 30.0) -> FloatingText:
 	var label: FloatingText = FloatingText.new()
 	label.text = text_value

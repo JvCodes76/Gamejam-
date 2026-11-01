@@ -1,21 +1,21 @@
 class_name PotionData
 extends Resource
 
-# Itens usados na poção
+# Items used in the potion
 var items: Array[ItemData] = []
-# Cor do líquido: média das cores dos itens ponderada por área*escala²
+# Liquid color: average of the item colors weighted by area*scale²
 var color: Color = Color.WHITE
-# Soma das áreas dos hulls dos itens (px², na escala de cada item)
+# Sum of the item hull areas (px², at each item's scale)
 var volume: float = 0.0
-# EffectType -> float, já com sinergias e bônus de aspecto
+# EffectType -> float, already including synergies and aspect bonuses
 var effect_totals: Dictionary = {}
 # Aspect -> int
 var aspect_counts: Dictionary = {}
-# Ids das receitas especiais ativas (SpecialSynergies)
+# Ids of the active special recipes (SpecialSynergies)
 var special_synergies: Array[StringName] = []
 
 
-# Monta a poção; scales[i] é a escala do item i (mesmo tamanho de items)
+# Builds the potion; scales[i] is the scale of item i (same size as items)
 static func from_items(new_items: Array[ItemData], scales: Array[float]) -> PotionData:
 	var potion: PotionData = PotionData.new()
 	potion.items = new_items.duplicate()
@@ -34,12 +34,12 @@ static func from_items(new_items: Array[ItemData], scales: Array[float]) -> Poti
 	potion.aspect_counts = ItemManager.count_aspects(new_items)
 	potion.special_synergies = SpecialSynergies.find_ids(new_items)
 	if not potion.special_synergies.is_empty():
-		print("[Synergy] - receitas especiais na poção: %s" % ", ".join(potion.special_synergies))
-	print("[Items] - Poção: %d itens, volume %.1f" % [new_items.size(), total])
+		print("[Synergy] - special recipes in the potion: %s" % ", ".join(potion.special_synergies))
+	print("[Items] - Potion: %d items, volume %.1f" % [new_items.size(), total])
 	return potion
 
 
-# Área de um polígono (fórmula do cadarço)
+# Area of a polygon (shoelace formula)
 static func _polygon_area(poly: PackedVector2Array) -> float:
 	var sum: float = 0.0
 	for i: int in poly.size():

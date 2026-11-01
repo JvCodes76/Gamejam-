@@ -6,7 +6,7 @@
 
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
-effect_type = 1
+effect_type = 3
 
 [sub_resource type="Resource" id="e2"]
 script = ExtResource("2")
@@ -20,6 +20,7 @@ effect_type = 9
 script = ExtResource("1")
 id = &"wolfsbane"
 display_name = "Wolfsbane"
+description = "Very pretty! Also very deadly."
 icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([0, 5, 8])

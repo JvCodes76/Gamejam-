@@ -22,7 +22,7 @@ collision_mask = 33
 motion_mode = 1
 script = ExtResource("1")
 
-; A origem do no fica nos PES (y-sort): colisor de movimento pequeno na base, hurtbox/hitbox cobrem o corpo
+; The node origin is at the FEET (y-sort): small movement collider at the base, hurtbox/hitbox cover the body
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -8)
 shape = SubResource("1")
@@ -35,7 +35,7 @@ texture = ExtResource("2")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("3")
-max_health = 2
+max_health = 30
 
 [node name="StatusEffects" type="Node" parent="."]
 script = ExtResource("6")
@@ -54,12 +54,12 @@ shape = SubResource("2")
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("5")
-damage = 1
+damage = 15
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
 position = Vector2(0, -14)
 shape = SubResource("2")
 
-; Flash, squash, knockback e números de dano ao levar golpe
+; Flash, squash, knockback and damage numbers when hit
 [node name="HitFeedback" type="Node" parent="."]
 script = ExtResource("7")

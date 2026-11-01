@@ -1,249 +1,249 @@
 class_name SynergyConstants
 extends RefCounted
-## Constantes de balanceamento das sinergias de aspecto. Valores marcados [N] foram inventados e podem ser ajustados.
+## Balancing constants for the aspect synergies. Values marked [N] were made up and can be adjusted.
 
-# --- Tiers: quantidade de aspectos do mesmo tipo para cada nível (cumulativos) ---
+# --- Tiers: number of aspects of the same type for each level (cumulative) ---
 const TIER_THRESHOLDS: Array[int] = [3, 6, 9, 12]
 
 # --- PLANT ---
-# Chance de enraizar ao acertar (tier 3)
+# Chance to root on hit (tier 3)
 const PLANT_ROOT_CHANCE: float = 0.15
-# Chance de enraizar com tier 9
+# Chance to root at tier 9
 const PLANT_ROOT_CHANCE_T9: float = 0.30
-# Duração das raízes em segundos
+# Root duration in seconds
 const PLANT_ROOT_DURATION: float = 2.0
-# [N] DoT das raízes (tier 6): fração do dano da arma por segundo
+# [N] Root DoT (tier 6): fraction of the weapon damage per second
 const PLANT_ROOT_DOT_FRACTION: float = 0.5
-# Tick do DoT das raízes
+# Root DoT tick
 const PLANT_ROOT_DOT_TICK: float = 0.5
-# Tier 12: fração do dano de raiz causado que cura o player
+# Tier 12: fraction of the root damage dealt that heals the player
 const PLANT_ROOT_HEAL_FRACTION: float = 0.2
 
 # --- POISON ---
-# Tier 3: redução de velocidade do inimigo envenenado
+# Tier 3: speed reduction of the poisoned enemy
 const POISON_SLOW_FRACTION: float = 0.2
-# Tier 6: bônus no DoT de veneno
+# Tier 6: bonus to the poison DoT
 const POISON_DPS_BONUS: float = 0.5
-# [N] Tier 9: redução do dano causado pelo inimigo envenenado
+# [N] Tier 9: reduction of the damage dealt by the poisoned enemy
 const POISON_WEAKEN_FRACTION: float = 0.25
-# Tier 12: chance por tick de veneno de matar um inimigo básico na hora
+# Tier 12: chance per poison tick of instantly killing a basic enemy
 const POISON_INSTAKILL_CHANCE: float = 0.02
 
 # --- EARTH ---
-# Tier 3: redução de velocidade dentro da lama
+# Tier 3: speed reduction inside the mud
 const EARTH_MUD_SLOW: float = 0.4
-# Tier 9: redução de velocidade maior
+# Tier 9: larger speed reduction
 const EARTH_MUD_SLOW_T9: float = 0.6
-# Tier 6: dano da lama (fração do dano da arma por segundo)
+# Tier 6: mud damage (fraction of the weapon damage per second)
 const EARTH_MUD_DPS_FRACTION: float = 1.0
-# Tick de dano da lama
+# Mud damage tick
 const EARTH_MUD_TICK: float = 0.5
-# Distância entre poças ao longo da trajetória da bala (px)
+# Distance between puddles along the bullet path (px)
 const EARTH_TRAIL_SPACING: float = 14.0
-# Duração de cada poça do rastro (s)
+# Duration of each trail puddle (s)
 const EARTH_TRAIL_LIFETIME: float = 3.0
-# Raio de cada poça do rastro (px)
+# Radius of each trail puddle (px)
 const EARTH_TRAIL_RADIUS: float = 10.0
-# Tier 12: poça grande ao morrer (raio px e duração s)
+# Tier 12: large puddle on death (radius px and duration s)
 const EARTH_DEATH_POOL_RADIUS: float = 40.0
 const EARTH_DEATH_POOL_LIFETIME: float = 4.0
-# Intervalo de atualização da lama (aplica slow/dano a quem está dentro)
+# Mud update interval (applies slow/damage to anyone inside)
 const EARTH_MUD_REFRESH: float = 0.2
-# Cor da lama (marrom escuro semitransparente)
+# Mud color (semi-transparent dark brown)
 const EARTH_MUD_COLOR: Color = Color(0.25, 0.15, 0.07, 0.55)
 
 # --- ROCK ---
-# Chance de stun ao acertar (tier 3)
+# Chance to stun on hit (tier 3)
 const ROCK_STUN_CHANCE: float = 0.10
 # Tier 9
 const ROCK_STUN_CHANCE_T9: float = 0.20
 # Tier 12
 const ROCK_STUN_CHANCE_T12: float = 0.30
-# Tier 6: duração extra do stun (s)
+# Tier 6: extra stun duration (s)
 const ROCK_STUN_EXTRA: float = 0.2
-# Tier 6: novo teto do stun (s)
+# Tier 6: new stun cap (s)
 const ROCK_STUN_MAX: float = 1.0
 
 # --- ANIMAL ---
-# Intervalo de reavaliação do inimigo mais forte (s)
+# Re-evaluation interval of the strongest enemy (s)
 const ANIMAL_REEVALUATE: float = 1.0
-# Duração da marca aplicada pela sinergia (renovada a cada reavaliação)
+# Duration of the mark applied by the synergy (renewed on every re-evaluation)
 const ANIMAL_MARK_DURATION: float = 1.5
-# [N] Tier 6: redução de dano dos inimigos marcados
+# [N] Tier 6: damage reduction of marked enemies
 const ANIMAL_MARKED_WEAKEN: float = 0.3
-# Quantidade de marcados no tier 9
+# Number of marked enemies at tier 9
 const ANIMAL_MARK_COUNT_T9: int = 2
-# Tier 12: raio da explosão do marcado (px) e fração do dano da arma
+# Tier 12: explosion radius of the marked enemy (px) and fraction of the weapon damage
 const ANIMAL_EXPLOSION_RADIUS: float = 36.0
 const ANIMAL_EXPLOSION_FRACTION: float = 1.0
 const ANIMAL_EXPLOSION_COLOR: Color = Color(0.92, 0.28, 0.28)
 
 # --- DARKNESS ---
-# Chance de negar dano recebido (tier 3)
+# Chance to negate incoming damage (tier 3)
 const DARKNESS_NEGATE_CHANCE: float = 0.10
 # Tier 9
 const DARKNESS_NEGATE_CHANCE_T9: float = 0.20
-# Tier 6: explosão sombria ao negar
+# Tier 6: dark explosion on negation
 const DARKNESS_BLAST_RADIUS: float = 48.0
 const DARKNESS_BLAST_FRACTION: float = 1.0
 const DARKNESS_COLOR: Color = Color(0.25, 0.12, 0.45)
-# Cor e duração do flash do player ao negar
+# Color and duration of the player's flash on negation
 const DARKNESS_FLASH_COLOR: Color = Color(0.25, 0.2, 0.45)
 const DARKNESS_FLASH_TIME: float = 0.2
 
 # --- LIGHT ---
-# Chance por tiro de bala santa (tier 3)
+# Chance per shot of a holy bullet (tier 3)
 const LIGHT_HOLY_CHANCE: float = 0.20
 # Tier 9
 const LIGHT_HOLY_CHANCE_T9: float = 0.35
-# Dano extra da bala santa (+100%)
+# Extra damage of the holy bullet (+100%)
 const LIGHT_HOLY_BONUS: float = 1.0
-# Tier 6: chance por hit de bala santa de matar básicos na hora
+# Tier 6: chance per holy bullet hit of instantly killing basic enemies
 const LIGHT_INSTAKILL_CHANCE: float = 0.15
-# Cor da bala santa e da rajada de luz
+# Color of the holy bullet and the light burst
 const LIGHT_HOLY_COLOR: Color = Color(1.0, 0.88, 0.35)
-# Raio visual da rajada de luz (px)
+# Visual radius of the light burst (px)
 const LIGHT_BURST_RADIUS: float = 26.0
 
 # --- MAGIC ---
-# Distância máxima do salto do raio (px)
+# Maximum jump distance of the bolt (px)
 const MAGIC_ARC_RANGE: float = 70.0
-# Fração do dano da arma causada pelo raio
+# Fraction of the weapon damage dealt by the bolt
 const MAGIC_ARC_FRACTION: float = 1.0
-# Duração visual do raio (s)
+# Visual duration of the bolt (s)
 const MAGIC_ARC_TIME: float = 0.15
-# Cor base do raio (misturada com a cor da poção)
+# Base color of the bolt (blended with the potion color)
 const MAGIC_ARC_COLOR: Color = Color(0.7, 0.35, 1.0)
 const MAGIC_ARC_WIDTH: float = 2.0
 
 # --- EVIL ---
-# Bônus de dano por inimigo morto (+0.5%)
+# Damage bonus per enemy killed (+0.5%)
 const EVIL_RAGE_PER_KILL: float = 0.005
 
-# ===== SINERGIAS ESPECIAIS (receitas por ingredientes). Valores marcados [N] foram inventados. =====
+# ===== SPECIAL SYNERGIES (ingredient recipes). Values marked [N] were made up. =====
 
-# --- Salad!: bônus somado à chance de lifesteal (vale mesmo sem pontos de lifesteal) ---
+# --- Salad!: bonus added to the lifesteal chance (applies even without lifesteal points) ---
 const SALAD_LIFESTEAL_CHANCE: float = 0.04
 
-# --- EVIL Salad!!: bônus somado à chance base de veneno (20%) ---
+# --- EVIL Salad!!: bonus added to the base poison chance (20%) ---
 const EVIL_SALAD_POISON_CHANCE: float = 0.10
 
-# --- Spice bag: rastro de nuvem que reduz a velocidade ---
-# [N] Redução de velocidade dentro da nuvem (0.15 = -15%)
+# --- Spice bag: cloud trail that reduces speed ---
+# [N] Speed reduction inside the cloud (0.15 = -15%)
 const CLOUD_SLOW: float = 0.15
-# Distância entre nuvens ao longo da trajetória da bala (px)
+# Distance between clouds along the bullet path (px)
 const CLOUD_TRAIL_SPACING: float = 12.0
-# Duração de cada nuvem (s)
+# Duration of each cloud (s)
 const CLOUD_TRAIL_LIFETIME: float = 2.0
-# Raio de cada nuvem (px)
+# Radius of each cloud (px)
 const CLOUD_TRAIL_RADIUS: float = 9.0
-# Intervalo de atualização da nuvem (aplica o slow a quem está dentro)
+# Cloud update interval (applies the slow to anyone inside)
 const CLOUD_REFRESH: float = 0.2
-# Cor da nuvem (cinza-claro translúcido)
+# Cloud color (translucent light gray)
 const CLOUD_COLOR: Color = Color(0.82, 0.82, 0.85, 0.4)
 
-# --- Unethical Butcher :( : orbe de cura dropada por inimigo marcado ---
-# [N] Chance de dropar a orbe ao morrer marcado
-const BUTCHER_ORB_CHANCE: float = 0.25
-# Vida curada ao coletar a orbe
-const BUTCHER_ORB_HEAL: int = 1
-# [N] Raio em que a orbe atrai o player (px)
+# --- Unethical Butcher :( : higher chance of enemies dropping items and healing orbs ---
+# [N] Chance of any dying enemy dropping the orb
+const BUTCHER_ORB_CHANCE: float = 0.15
+# [N] Multiplier on the item drop chance of regular and elite enemies
+const BUTCHER_DROP_CHANCE_MULT: float = 1.5
+# Health healed on collecting the orb
+const BUTCHER_ORB_HEAL: int = 15
+# [N] Radius at which the orb attracts the player (px)
 const BUTCHER_ORB_ATTRACT_RADIUS: float = 40.0
-# Velocidade da orbe ao ser atraída (px/s)
+# Orb speed when attracted (px/s)
 const BUTCHER_ORB_ATTRACT_SPEED: float = 90.0
-# Tempo de vida da orbe (s)
+# Orb lifetime (s)
 const BUTCHER_ORB_LIFETIME: float = 8.0
-# Raio de coleta (px)
+# Collection radius (px)
 const BUTCHER_ORB_PICKUP_RADIUS: float = 7.0
-# Cores do brilho da orbe (verde e vermelho)
+# Orb glow colors (green and red)
 const BUTCHER_ORB_COLOR_A: Color = Color(0.35, 1.0, 0.5)
 const BUTCHER_ORB_COLOR_B: Color = Color(1.0, 0.3, 0.3)
 
-# --- Crunchy!: bônus de dano recebido por inimigos atordoados ---
-# [N] +10% de dano recebido
+# --- Crunchy!: bonus damage taken by stunned enemies ---
+# [N] +10% damage taken
 const CRUNCHY_STUN_DAMAGE_BONUS: float = 0.10
 
-# --- Press F to pay respects: fantasma de inimigo enfeitiçado ---
-# [N] Velocidade do fantasma (px/s)
+# --- Press F to pay respects: ghost of a charmed enemy ---
+# [N] Ghost speed (px/s)
 const GHOST_SPEED: float = 55.0
-# [N] Dano de contato do fantasma
-const GHOST_DAMAGE: int = 1
-# [N] Intervalo entre golpes do mesmo fantasma (s)
+# [N] Ghost contact damage
+const GHOST_DAMAGE: int = 15
+# [N] Interval between hits from the same ghost (s)
 const GHOST_HIT_COOLDOWN: float = 0.5
-# Raio de contato do fantasma (px)
+# Ghost contact radius (px)
 const GHOST_RADIUS: float = 10.0
-# Cor/transparência do fantasma (azulado translúcido)
+# Ghost color/transparency (translucent bluish)
 const GHOST_COLOR: Color = Color(0.55, 0.75, 1.0, 0.55)
-# Tempo do fade final (s)
+# Final fade time (s)
 const GHOST_FADE_TIME: float = 0.5
-# Tempo mínimo de charm restante para surgir um fantasma (s)
+# Minimum remaining charm time for a ghost to appear (s)
 const GHOST_MIN_TIME: float = 0.1
 
-# --- RAINBOWS!!!: bônus de charm, ricochete e cores ---
-# [N] Bônus somado à chance de charm
+# --- RAINBOWS!!!: charm bonus, bounce and colors ---
+# [N] Bonus added to the charm chance
 const RAINBOW_CHARM_CHANCE: float = 0.10
-# Ricochetes extras por projétil
+# Extra bounces per projectile
 const RAINBOW_BOUNCE_COUNT: int = 1
-# Cores do arco-íris em ordem (vermelho, laranja, amarelo, verde, azul, violeta)
+# Rainbow colors in order (red, orange, yellow, green, blue, violet)
 const RAINBOW_COLORS: Array[Color] = [
 	Color(1.0, 0.15, 0.15), Color(1.0, 0.55, 0.1), Color(1.0, 0.95, 0.2),
 	Color(0.2, 0.9, 0.3), Color(0.2, 0.5, 1.0), Color(0.6, 0.25, 0.9),
 ]
-# Folga ao recuar a bala da parede após o ricochete (px)
-const BOUNCE_PUSH_OUT: float = 4.0
 
-# --- Do NOT make this tea.: ao atravessar um básico (precisa de pierce) ---
-# [N] Chance de o básico perder vida na hora
+# --- Do NOT make this tea.: when piercing a basic enemy (needs pierce) ---
+# [N] Chance of the basic enemy losing health instantly
 const TEA_CHANCE: float = 0.10
-# Fração da vida máxima perdida
+# Fraction of max health lost
 const TEA_HEALTH_FRACTION: float = 0.20
 
-# --- Weird Eye Drops.: bala se divide ao acertar ---
-# Ângulo das balas filhas em relação à direção (graus)
+# --- Weird Eye Drops.: bullet splits on hit ---
+# Angle of the child bullets relative to the direction (degrees)
 const SPLIT_ANGLE_DEG: float = 35.0
-# [N] Fração do dano das filhas
+# [N] Fraction of the children's damage
 const SPLIT_DAMAGE_FRACTION: float = 0.5
-# Fração do lifetime das filhas
+# Fraction of the children's lifetime
 const SPLIT_LIFETIME_FRACTION: float = 0.5
 
-# --- Magical Potentializer: explosões maiores e mais fortes ---
-# Multiplicador do raio das explosões
+# --- Magical Potentializer: bigger and stronger explosions ---
+# Explosion radius multiplier
 const POTENTIALIZER_RADIUS_MULT: float = 1.2
-# Multiplicador do dano das explosões
+# Explosion damage multiplier
 const POTENTIALIZER_DAMAGE_MULT: float = 1.2
 
-# ===== ANÚNCIO AO PREPARAR A POÇÃO (no caldeirão) =====
-# Partículas da explosão do caldeirão (o impacto normal usa 16)
+# ===== ANNOUNCEMENT WHEN BREWING THE POTION (in the cauldron) =====
+# Cauldron explosion particles (the normal impact uses 16)
 const ANNOUNCE_BURST_PARTICLES: int = 40
-# Raio visual do anel da explosão (px)
+# Visual radius of the explosion ring (px)
 const ANNOUNCE_BURST_RADIUS: float = 54.0
-# Espessura do anel expansivo (px)
+# Thickness of the expanding ring (px)
 const ANNOUNCE_RING_WIDTH: float = 3.0
-# Tempo de expansão do anel (s)
+# Ring expansion time (s)
 const ANNOUNCE_RING_GROW_TIME: float = 0.45
-# Multiplicador da velocidade das partículas da explosão
+# Explosion particle speed multiplier
 const ANNOUNCE_BURST_SPEED_SCALE: float = 2.5
-# Duração das partículas da explosão (s)
+# Explosion particle duration (s)
 const ANNOUNCE_BURST_LIFETIME: float = 0.9
-# Alfa e duração do flash branco
+# Alpha and duration of the white flash
 const ANNOUNCE_FLASH_ALPHA: float = 0.35
 const ANNOUNCE_FLASH_TIME: float = 0.1
-# Duração da subida do nome até o topo da tela (s)
+# Duration of the name rising to the top of the screen (s)
 const ANNOUNCE_FLOAT_TIME: float = 5.0
-# Curva de aceleração da subida (1 = linear; maior = acelera mais)
+# Acceleration curve of the rise (1 = linear; higher = accelerates more)
 const ANNOUNCE_ACCEL_CURVE: float = 1.4
-# Fração final da subida em que o nome some (fade)
+# Final fraction of the rise during which the name fades out
 const ANNOUNCE_FADE_FRACTION: float = 0.3
-# Oscilação lateral: amplitude (px) e ciclos durante a subida
+# Lateral wobble: amplitude (px) and cycles during the rise
 const ANNOUNCE_WOBBLE_AMPLITUDE: float = 5.0
 const ANNOUNCE_WOBBLE_CYCLES: float = 2.0
-# Atraso entre uma sinergia e a próxima (s) e deslocamento lateral por sinergia (px)
+# Delay between one synergy and the next (s) and lateral offset per synergy (px)
 const ANNOUNCE_STAGGER: float = 0.35
 const ANNOUNCE_X_STEP: float = 70.0
-# Tamanho da fonte do nome, da descrição e espessura do contorno
+# Font size of the name and description, and outline thickness
 const ANNOUNCE_NAME_FONT_SIZE: int = 18
 const ANNOUNCE_DESC_FONT_SIZE: int = 9
 const ANNOUNCE_OUTLINE_SIZE: int = 5
-# Cor dourada do nome (misturada com a cor da poção)
+# Golden name color (blended with the potion color)
 const ANNOUNCE_GOLD: Color = Color(1.0, 0.85, 0.3)
 const ANNOUNCE_COLOR_MIX: float = 0.35

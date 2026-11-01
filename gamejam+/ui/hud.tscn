@@ -9,7 +9,7 @@
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
 
-; Vida desenhada em blocos (estoura, treme e pisca ao perder vida)
+; Health drawn as blocks (bursts, shakes and flashes when losing health)
 [node name="HealthDisplay" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
@@ -25,7 +25,7 @@ offset_left = 8.0
 offset_top = 28.0
 offset_right = 120.0
 offset_bottom = 51.0
-text = "Pontos: 0"
+text = "Score: 0"
 
 [node name="LabelRage" type="Label" parent="."]
 visible = false

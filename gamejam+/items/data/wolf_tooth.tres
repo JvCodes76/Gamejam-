@@ -12,6 +12,7 @@ effect_type = 5
 script = ExtResource("1")
 id = &"wolf_tooth"
 display_name = "Wolf Tooth"
+description = "Poor doggy :("
 icon = ExtResource("3")
 aspects = Array[int]([4])
 effects = Array[ExtResource("2")]([SubResource("e1")])

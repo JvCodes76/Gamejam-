@@ -11,13 +11,21 @@ const BULLET_SCENE: PackedScene = preload("res://projectiles/bullet.tscn")
 @export var gamepad_crosshair_distance: float = 60.0
 @export var walk_frame_time: float = 0.18
 @export var cape_frame_time: float = 0.12
-# Pixels que a cabeça sobe nos quadros "andando"
+# Pixels the head rises in the "walking" frames
 @export var head_bob: float = 1.0
-## Invencibilidade após levar dano (s)
+## Invincibility after taking damage (s)
 @export var invulnerability_time: float = 0.8
 @export var knockback_impulse: float = FeelConstants.PLAYER_KNOCKBACK_IMPULSE
 
 var _fire_timer: float = 0.0
+# Gun (real bullets): rounds left and remaining reload time (> 0 = reloading)
+var _ammo: int = CombatConstants.MAGAZINE_SIZE
+var _reload_left: float = 0.0
+# Brimstone (laser): charge time held, active beam and Dragon's Blood shot counter (sfx/camera only every few flames)
+var _laser_charge: float = 0.0
+var _laser: LaserBeam = null
+var _flame_shots: int = 0
+var _ammo_indicator: AmmoIndicator = null
 var _aim_direction: Vector2 = Vector2.RIGHT
 var _use_gamepad: bool = false
 var _mods: ProjectileModifiers = ProjectileModifiers.new()
@@ -27,9 +35,9 @@ var _walk_frame: int = 0
 var _cape_timer: float = 0.0
 var _cape_frame: int = 0
 var _head_base_y: float = 0.0
-# Posição no ciclo de cores do arco-íris (receita RAINBOWS!!!)
+# Position in the rainbow color cycle (RAINBOWS!!! recipe)
 var _rainbow_index: int = 0
-# Game feel: recuo do sprite no tiro, knockback, piscar dos i-frames e morte
+# Game feel: sprite recoil on shots, knockback, i-frame blinking and death
 var _recoil_offset: Vector2 = Vector2.ZERO
 var _cape_base_position: Vector2 = Vector2.ZERO
 var _knockback: Vector2 = Vector2.ZERO
@@ -38,7 +46,7 @@ var _dead: bool = false
 var _flash_materials: Array[ShaderMaterial] = []
 var _flash_tween: Tween
 
-# Folha com 4 direções x 2 quadros (parado/andando): baixo, direita, esquerda, cima
+# Sheet with 4 directions x 2 frames (idle/walking): down, right, left, up
 const FRAMES_PER_DIRECTION: int = 2
 enum Facing { DOWN, RIGHT, LEFT, UP }
 
@@ -54,8 +62,8 @@ enum Facing { DOWN, RIGHT, LEFT, UP }
 @onready var _muzzle_flash: MuzzleFlash = $Pivot/Muzzle/MuzzleFlash
 
 
-## Centro do corpo no mundo. A origem do nó fica nos pés (y-sort e colisão);
-## a mira, o muzzle e as sinergias "do corpo" partem daqui.
+## Body center in the world. The node origin is at the feet (y-sort and collision);
+## the aim, the muzzle and the "body" synergies originate here.
 var aim_origin: Vector2:
 	get:
 		return _body_center.global_position
@@ -72,11 +80,14 @@ func _ready() -> void:
 	_health.health_changed.connect(_on_health_changed)
 	_health.damaged.connect(_on_damaged)
 	_health.died.connect(_on_died)
+	_ammo_indicator = AmmoIndicator.new()
+	_ammo_indicator.position = Vector2(0.0, -48.0)
+	add_child(_ammo_indicator)
 	_director = SynergyDirector.new()
 	_director.name = "SynergyDirector"
 	add_child(_director)
 	_director.setup(self, _health)
-	# Adiado para o HUD (que vem depois na árvore) já estar conectado
+	# Deferred so the HUD (which comes later in the tree) is already connected
 	EventBus.player_health_changed.emit.call_deferred(_health.current_health, _health.max_health)
 	EventBus.game_paused.connect(_on_game_paused)
 	EventBus.potion_selected.connect(_on_potion_selected)
@@ -84,23 +95,28 @@ func _ready() -> void:
 	EventBus.active_effects_changed.connect(_recalculate_modifiers)
 	_recalculate_modifiers()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	print("[Player] - pronto")
+	print("[Player] - ready")
 
 
-## Restaura o cursor do sistema ao sair da cena.
+## Restores the system cursor when leaving the scene.
 func _exit_tree() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
-## Volta a mirar com o mouse quando ele se move.
+## Goes back to aiming with the mouse when it moves.
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_use_gamepad = false
 
 
-## Alterna a poção ativa com o scroll do mouse.
+## Switches the active potion with the mouse scroll.
 func _unhandled_input(event: InputEvent) -> void:
-	if _dead or ItemManager.inventory_open or not event is InputEventMouseButton:
+	if _dead or ItemManager.inventory_open:
+		return
+	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_R:
+		_start_reload()
+		return
+	if not event is InputEventMouseButton:
 		return
 	var mouse: InputEventMouseButton = event as InputEventMouseButton
 	if not mouse.pressed:
@@ -117,11 +133,15 @@ func _physics_process(delta: float) -> void:
 	_update_sprite(delta)
 	_update_blink(delta)
 	_fire_timer -= delta
-	if Input.is_action_pressed("shoot") and _fire_timer <= 0.0 and not ItemManager.inventory_open:
+	_update_reload(delta)
+	var wants_fire: bool = Input.is_action_pressed("shoot") and not ItemManager.inventory_open
+	if _mods.laser:
+		_update_laser(delta, wants_fire)
+	elif wants_fire and _fire_timer <= 0.0 and _reload_left <= 0.0:
 		_shoot()
 
 
-## Move o jogador em 8 direções com aceleração e atrito.
+## Moves the player in 8 directions with acceleration and friction.
 func _handle_movement(delta: float) -> void:
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if input_dir != Vector2.ZERO:
@@ -131,7 +151,7 @@ func _handle_movement(delta: float) -> void:
 	if _knockback == Vector2.ZERO:
 		move_and_slide()
 		return
-	# Knockback soma só neste passo; a velocidade de caminhada continua a mesma
+	# Knockback is added only in this step; the walking speed stays the same
 	var walk_velocity: Vector2 = velocity
 	velocity += _knockback
 	move_and_slide()
@@ -139,9 +159,9 @@ func _handle_movement(delta: float) -> void:
 	_knockback = _knockback.move_toward(Vector2.ZERO, FeelConstants.KNOCKBACK_FRICTION * delta)
 
 
-## Atualiza a mira (analógico ou mouse), gira o Pivot e posiciona o crosshair.
+## Updates the aim (analog stick or mouse), rotates the Pivot and positions the crosshair.
 func _update_aim() -> void:
-	# Com o inventário aberto a mira fica congelada e o crosshair some
+	# With the inventory open the aim is frozen and the crosshair disappears
 	if ItemManager.inventory_open:
 		_crosshair.visible = false
 		return
@@ -163,7 +183,7 @@ func _update_aim() -> void:
 	_camera.look_target = _crosshair.global_position
 
 
-## Escolhe a direção do sprite pela mira e alterna os 2 quadros enquanto anda.
+## Picks the sprite direction from the aim and alternates the 2 frames while walking.
 func _update_sprite(delta: float) -> void:
 	var facing: Facing = _facing_from(_aim_direction)
 	if velocity.length() > 5.0:
@@ -181,7 +201,7 @@ func _update_sprite(delta: float) -> void:
 	_sprite.frame = facing * FRAMES_PER_DIRECTION + _walk_frame
 
 
-## Anima a capa: parada no quadro 0, cicla os 4 quadros ao andar.
+## Animates the cape: idle on frame 0, cycles the 4 frames while walking.
 func _update_cape(delta: float, walking: bool) -> void:
 	if walking:
 		_cape_timer += delta
@@ -194,38 +214,123 @@ func _update_cape(delta: float, walking: bool) -> void:
 	_cape.frame = _cape_frame
 
 
-## Converte a direção da mira em uma das 4 direções da folha.
+## Converts the aim direction into one of the sheet's 4 directions.
 func _facing_from(direction: Vector2) -> Facing:
 	if absf(direction.x) > absf(direction.y):
 		return Facing.RIGHT if direction.x > 0.0 else Facing.LEFT
 	return Facing.DOWN if direction.y > 0.0 else Facing.UP
 
 
-## Dispara uma bala na direção da mira.
-func _shoot() -> void:
-	_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
-	var bullet: Bullet = BULLET_SCENE.instantiate() as Bullet
-	bullet.global_position = _muzzle.global_position
-	var shot_dir: Vector2 = _aim_direction
+## Direction of the shot: from the muzzle to the mouse (or the stick's aim).
+func _shot_direction() -> Vector2:
 	if not _use_gamepad:
 		var to_mouse: Vector2 = get_global_mouse_position() - _muzzle.global_position
 		if to_mouse.length() > 1.0:
-			shot_dir = to_mouse.normalized()
+			return to_mouse.normalized()
+	return _aim_direction
+
+
+## Fires a bullet in the aim direction (a flame with Dragon's Blood, a real bullet with the Gun).
+func _shoot() -> void:
+	var shot_dir: Vector2 = _shot_direction()
+	var bullet: Bullet = BULLET_SCENE.instantiate() as Bullet
+	bullet.global_position = _muzzle.global_position
 	bullet.damage = CombatConstants.WEAPON_BASE_DAMAGE
 	bullet.setup(shot_dir)
 	bullet.apply_modifiers(_mods, _health)
-	if _mods.synergy.rainbow_colors:
-		if not bullet.is_holy():
-			bullet.set_tint(SynergyConstants.RAINBOW_COLORS[_rainbow_index % SynergyConstants.RAINBOW_COLORS.size()])
-		_rainbow_index += 1
+	var loud: bool = true
+	if _mods.fire_breath:
+		_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier / CombatConstants.FLAME_RATE_DIVISOR
+		bullet.setup_flame(shot_dir.rotated(deg_to_rad(randf_range(-CombatConstants.FLAME_SPREAD_DEG, CombatConstants.FLAME_SPREAD_DEG))))
+		_flame_shots += 1
+		loud = _flame_shots % 3 == 1
+	else:
+		_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
+		if _mods.real_bullets:
+			bullet.speed *= CombatConstants.REAL_BULLET_SPEED_MULT
+		if _mods.synergy.rainbow_colors:
+			if not bullet.is_holy():
+				bullet.set_tint(SynergyConstants.RAINBOW_COLORS[_rainbow_index % SynergyConstants.RAINBOW_COLORS.size()])
+			_rainbow_index += 1
 	get_tree().current_scene.add_child(bullet)
 	_muzzle_flash.flash(bullet.get_tint())
-	_recoil_offset = -shot_dir * FeelConstants.SPRITE_RECOIL
-	_camera.kick(shot_dir)
-	EventBus.play_sfx_requested.emit("shoot")
+	_recoil_offset = -shot_dir * FeelConstants.SPRITE_RECOIL * (1.0 if loud else 0.4)
+	if loud:
+		_camera.kick(shot_dir)
+		EventBus.play_sfx_requested.emit("shoot")
+	if _mods.real_bullets:
+		_ammo -= 1
+		if _ammo <= 0:
+			_start_reload()
+		else:
+			_refresh_ammo_indicator()
 
 
-## Recalcula os modificadores a partir da poção ativa e tinge o crosshair.
+## Gun: starts the reload (also with R); ignored without a magazine, with a full one or already reloading.
+func _start_reload() -> void:
+	if not _mods.real_bullets or _reload_left > 0.0 or _ammo >= CombatConstants.MAGAZINE_SIZE:
+		return
+	_reload_left = CombatConstants.RELOAD_TIME
+	print("[Combat] - reloading")
+	_refresh_ammo_indicator()
+
+
+func _update_reload(delta: float) -> void:
+	if _reload_left <= 0.0:
+		return
+	_reload_left -= delta
+	if _reload_left <= 0.0:
+		_reload_left = 0.0
+		_ammo = CombatConstants.MAGAZINE_SIZE
+		print("[Combat] - reloaded")
+	_refresh_ammo_indicator()
+
+
+func _refresh_ammo_indicator() -> void:
+	if _ammo_indicator == null:
+		return
+	if not _mods.real_bullets:
+		_ammo_indicator.show_state(0, 0, -1.0, _mods.color)
+		return
+	var ratio: float = 1.0 - _reload_left / CombatConstants.RELOAD_TIME if _reload_left > 0.0 else -1.0
+	_ammo_indicator.show_state(_ammo, CombatConstants.MAGAZINE_SIZE, ratio, _mods.color)
+
+
+## Brimstone: holding the button charges the laser; once charged the beam fires, then the cooldown starts.
+func _update_laser(delta: float, wants_fire: bool) -> void:
+	if _laser != null and is_instance_valid(_laser):
+		return
+	if not wants_fire or _fire_timer > 0.0:
+		_cancel_laser()
+		return
+	if _laser == null:
+		_laser = LaserBeam.new()
+		_laser.setup(_mods, CombatConstants.WEAPON_BASE_DAMAGE, _health)
+		_muzzle.add_child(_laser)
+	_laser_charge += delta * _mods.fire_rate_multiplier
+	_laser.set_charge(_laser_charge / CombatConstants.LASER_CHARGE_TIME)
+	if _laser_charge >= CombatConstants.LASER_CHARGE_TIME:
+		_laser.finished.connect(_on_laser_finished)
+		_laser.fire()
+		_muzzle_flash.flash(_mods.color)
+		_recoil_offset = -_shot_direction() * FeelConstants.SPRITE_RECOIL
+
+
+func _on_laser_finished() -> void:
+	_laser = null
+	_laser_charge = 0.0
+	_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
+
+
+## Drops the charge (button released, potion swapped, death).
+func _cancel_laser() -> void:
+	_laser_charge = 0.0
+	if _laser != null and is_instance_valid(_laser):
+		_laser.queue_free()
+	_laser = null
+
+
+## Recomputes the modifiers from the active potion and tints the crosshair.
 func _recalculate_modifiers() -> void:
 	var potion: PotionData = ItemManager.get_active_potion()
 	var specials: Array[StringName] = potion.special_synergies if potion != null else ([] as Array[StringName])
@@ -233,20 +338,23 @@ func _recalculate_modifiers() -> void:
 	if potion != null:
 		_mods.color = potion.color
 		_mods.source_items = potion.items
+	_cancel_laser()
+	_ammo = CombatConstants.MAGAZINE_SIZE
+	_reload_left = 0.0
+	_refresh_ammo_indicator()
 	_director.configure(_mods, potion.aspect_counts if potion != null else {})
 	_crosshair.color = Color(_mods.color, 0.9)
 	_crosshair.queue_redraw()
 	_crosshair.pulse()
-	print("[Potion] - modificadores: dano x%.2f, alcance x%.2f, cadência x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])
+	print("[Potion] - modifiers: damage x%.2f, range x%.2f, fire rate x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])
 
 
-## Avisa uma vez dos efeitos não implementados ao trocar de poção.
-func _on_potion_selected(index: int) -> void:
+## Recomputes the modifiers when swapping potions.
+func _on_potion_selected(_index: int) -> void:
 	_recalculate_modifiers()
-	_mods.print_unimplemented()
 
 
-## Alterna cursor do sistema e crosshair conforme a pausa.
+## Toggles the system cursor and crosshair according to the pause.
 func _on_game_paused(paused: bool) -> void:
 	if ItemManager.inventory_open:
 		return
@@ -254,12 +362,12 @@ func _on_game_paused(paused: bool) -> void:
 	_crosshair.visible = not paused
 
 
-## Repassa a mudança de vida ao EventBus.
+## Forwards the health change to the EventBus.
 func _on_health_changed(current: int, max_value: int) -> void:
 	EventBus.player_health_changed.emit(current, max_value)
 
 
-## Dano: flash vermelho, tremida, hitstop, knockback e aviso no EventBus (os i-frames ficam na Hurtbox).
+## Damage: red flash, shake, hitstop, knockback and notice on the EventBus (the i-frames live in the Hurtbox).
 func _on_damaged(_amount: int) -> void:
 	if _health.is_dead():
 		return
@@ -274,7 +382,7 @@ func _on_damaged(_amount: int) -> void:
 	EventBus.play_sfx_requested.emit("player_hurt")
 
 
-## Pisca alternando a transparência durante os i-frames.
+## Blinks by alternating transparency during the i-frames.
 func _update_blink(delta: float) -> void:
 	if _hurtbox.is_invulnerable():
 		_blink_time += delta
@@ -287,7 +395,7 @@ func _update_blink(delta: float) -> void:
 		_cape.modulate.a = 1.0
 
 
-## Pisca o sprite e a capa numa cor (shader de flash).
+## Flashes the sprite and cape in a color (flash shader).
 func _flash(color: Color, duration: float) -> void:
 	if _flash_tween != null:
 		_flash_tween.kill()
@@ -303,13 +411,14 @@ func _set_flash(value: float) -> void:
 		mat.set_shader_parameter("flash", value)
 
 
-## Trata a morte do jogador: player_died sai na hora; o corpo fica como "cadáver" visual até a troca de cena.
+## Handles the player's death: player_died is emitted right away; the body stays as a visual "corpse" until the scene change.
 func _on_died() -> void:
-	print("[Player] - morreu")
+	print("[Player] - died")
 	_dead = true
 	EventBus.player_died.emit()
 	remove_from_group("player")
 	set_physics_process(false)
+	_cancel_laser()
 	set_process_unhandled_input(false)
 	_hurtbox.set_deferred("monitorable", false)
 	_crosshair.visible = false

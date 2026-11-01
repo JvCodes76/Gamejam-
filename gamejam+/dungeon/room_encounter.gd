@@ -1,8 +1,8 @@
 class_name RoomEncounter
 extends Node
-## Comportamento de uma sala quando o player entra pela primeira vez:
-## caldeirão (enxame + 1 elite), elite (3 elites sorteados, tranca), horda (timer, tranca) e boss (tranca; placeholder).
-## No modo infinito os inimigos ganham vida, dano, velocidade e quantidade a cada loop (ver DungeonLevel).
+## Behavior of a room when the player first enters:
+## cauldron (swarm + 1 elite, locks), elite (3 random elites, locks), horde (timer, locks) and boss (locks; placeholder).
+## In infinite mode enemies gain health, damage, speed and count every loop (see DungeonLevel).
 
 enum Kind { SWARM, ELITE, BOSS }
 
@@ -13,7 +13,7 @@ var _alive: int = 0
 var _started: bool = false
 var _timer_left: float = 0.0
 var _timer_active: bool = false
-# Momento (ms) da última tremida de spawn: um lote de spawns treme a tela uma vez só
+# Time (ms) of the last spawn shake: a batch of spawns shakes the screen only once
 var _last_spawn_shake: int = -100000
 
 
@@ -23,15 +23,16 @@ func setup(new_room: RoomData, level: DungeonLevel) -> void:
 	set_process(false)
 
 
-## Chamado uma vez, quando o player entra na sala.
+## Called once, when the player enters the room.
 func on_player_entered() -> void:
 	if _started:
 		return
 	_started = true
 	room.visited = true
-	print("[Dungeon] - sala %s entrada" % RoomData.Type.keys()[room.type])
+	print("[Dungeon] - room %s entered" % RoomData.Type.keys()[room.type])
 	match room.type:
 		RoomData.Type.CAULDRON:
+			_lock()
 			_spawn_swarm(_level.loop_count(_level.cauldron_swarm_count))
 			_spawn_elites(1)
 		RoomData.Type.ELITE:
@@ -58,31 +59,30 @@ func _process(delta: float) -> void:
 	if _timer_left <= 0.0:
 		_timer_active = false
 		set_process(false)
-		print("[Dungeon] - horda: tempo esgotado, portas abertas")
+		print("[Dungeon] - horde: time ran out, doors stay closed until the room is cleared")
 		EventBus.horde_timer_changed.emit(-1.0)
-		_unlock()
 
 
-# Cria "count" inimigos fracos em pontos livres da sala.
+# Creates "count" weak enemies at free points in the room.
 func _spawn_swarm(count: int) -> void:
 	for i: int in count:
 		_spawn(_level.swarm_scenes.pick_random(), Kind.SWARM)
 
 
-# Cria "count" elites sorteados de elite_scenes (sem elites próprios, usa o placeholder elite_scene).
+# Creates "count" elites rolled from elite_scenes (without its own elites, uses the elite_scene placeholder).
 func _spawn_elites(count: int) -> void:
 	for i: int in count:
 		var scene: PackedScene = _level.elite_scenes.pick_random() if not _level.elite_scenes.is_empty() else _level.elite_scene
 		_spawn(scene, Kind.ELITE)
 
 
-# Cria o boss no centro da sala (sem boss_scene, usa o elite_scene bem maior e avermelhado como placeholder).
+# Creates the boss at the center of the room (without boss_scene, uses a much larger, reddish elite_scene as a placeholder).
 func _spawn_boss() -> void:
 	var scene: PackedScene = _level.boss_scene if _level.boss_scene != null else _level.elite_scene
 	_spawn(scene, Kind.BOSS, room.center())
 
 
-# Marca o ponto no chão e só cria o inimigo quando o aviso termina (o inimigo já conta como vivo).
+# Marks the spot on the ground and only creates the enemy when the warning ends (the enemy already counts as alive).
 func _spawn(scene: PackedScene, kind: Kind, point: Vector2 = Vector2.INF) -> void:
 	if scene == null:
 		return
@@ -101,12 +101,13 @@ func _spawn_now(point: Vector2, scene: PackedScene, kind: Kind) -> void:
 	match kind:
 		Kind.ELITE:
 			health.max_health = roundi(health.max_health * _level.elite_health_multiplier)
-			# Elites com arte própria já vêm no tamanho e cor certos
+			# Elites with their own art already come in the right size and color
 			if not enemy.has_elite_art:
 				sprite.scale *= _level.elite_scale
 				sprite.modulate = _level.elite_tint
 			enemy.is_basic = false
-			enemy.knockback_resistance = FeelConstants.ELITE_KNOCKBACK_RESISTANCE
+			# Keeps a higher resistance from the scene (e.g. the static mushroom is immovable)
+			enemy.knockback_resistance = maxf(enemy.knockback_resistance, FeelConstants.ELITE_KNOCKBACK_RESISTANCE)
 			enemy.add_to_group("elite")
 		Kind.BOSS:
 			health.max_health = roundi(health.max_health * _level.boss_health_multiplier)
@@ -115,7 +116,7 @@ func _spawn_now(point: Vector2, scene: PackedScene, kind: Kind) -> void:
 			enemy.is_basic = false
 			enemy.knockback_resistance = 1.0
 			enemy.add_to_group("boss")
-			# Só o placeholder (sem cena própria) é ampliado e tingido; a cena do boss já vem no tamanho certo
+			# Only the placeholder (without its own scene) is enlarged and tinted; the boss scene already comes in the right size
 			if _level.boss_scene == null:
 				sprite.scale *= _level.boss_scale
 				sprite.modulate = _level.boss_tint
@@ -136,7 +137,7 @@ func _spawn_now(point: Vector2, scene: PackedScene, kind: Kind) -> void:
 		EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_SPAWN)
 
 
-# Modo infinito: vida, dano de contato, velocidade e pontos crescem a cada loop completado.
+# Infinite mode: health, contact damage, speed and points grow with every completed loop.
 func _apply_loop_scaling(enemy: EnemyBase, health: HealthComponent) -> void:
 	if GameManager.loop_index <= 0:
 		return
@@ -148,7 +149,7 @@ func _apply_loop_scaling(enemy: EnemyBase, health: HealthComponent) -> void:
 	enemy.points = roundi(enemy.points * _level.loop_points_multiplier())
 
 
-# Ponto livre aleatório dentro da sala, longe do player.
+# Random free point inside the room, away from the player.
 func _random_point() -> Vector2:
 	var area: Rect2 = room.rect.grow(-48.0)
 	area.position.y += 40.0
@@ -164,22 +165,22 @@ func _random_point() -> Vector2:
 
 
 func _on_enemy_gone() -> void:
-	# Ignora a limpeza da árvore (troca de cemitério ou saída ao menu)
+	# Ignored when the tree is being cleaned up (graveyard change or exit to the menu)
 	if not is_inside_tree():
 		return
 	_alive -= 1
 	if _alive > 0 or room.cleared:
 		return
 	room.cleared = true
-	print("[Dungeon] - sala %s limpa" % RoomData.Type.keys()[room.type])
+	print("[Dungeon] - room %s cleared" % RoomData.Type.keys()[room.type])
 	EventBus.slowmo_requested.emit(FeelConstants.ROOM_CLEAR_SLOWMO, FeelConstants.ROOM_CLEAR_SLOWMO_TIME)
 	EventBus.play_sfx_requested.emit("room_clear")
 	EventBus.room_cleared.emit()
-	# Timer ainda correndo = sala de horda limpa a tempo: recompensa com item
+	# Timer still running = horde room cleared in time: rewards an item
 	if room.type == RoomData.Type.HORDE and _timer_active:
 		EventBus.item_drop_requested.emit(LootManager.Source.HORDE_CLEAR, room.center())
 	if room.type == RoomData.Type.BOSS:
-		# Fim do conjunto de cemitérios: lendário garantido na arena
+		# End of the set of graveyards: guaranteed legendary in the arena
 		EventBus.item_drop_requested.emit(LootManager.Source.BOSS_REWARD, room.center())
 		EventBus.boss_defeated.emit()
 	if _timer_active:
@@ -202,7 +203,7 @@ func _unlock() -> void:
 	_animate_doors(false)
 
 
-# Portões caem com bounce ao trancar e dão um pulinho ao abrir (Fase 2: sprite de grade/lápide)
+# Gates drop with a bounce when locking and hop when opening (Phase 2: fence/tombstone sprite)
 func _animate_doors(closing: bool) -> void:
 	for door: RoomData.Door in room.doors:
 		if door.arch == null:

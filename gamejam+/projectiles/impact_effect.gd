@@ -1,7 +1,7 @@
 class_name ImpactEffect
 extends Node2D
 
-@export var splash_damage_fraction: float = 0.5
+@export var splash_damage_fraction: float = CombatConstants.EXPLOSIVE_FRACTION
 @export var particle_count: int = 16
 @export var particle_lifetime: float = 0.6
 @export var ring_alpha: float = 0.25
@@ -14,25 +14,27 @@ var modifiers: ProjectileModifiers = null
 var base_damage: int = 1
 var impact_radius: float = CombatConstants.IMPACT_RADIUS_BASE
 var excluded: Array[Hurtbox] = []
-# Quando false, só o visual (ex.: rajada de luz sem dano de área)
+# When false, visual only (e.g. light burst with no area damage)
 var splash_enabled: bool = true
-# Espessura do anel (0 = disco preenchido) e multiplicador da velocidade das partículas
+# Ring thickness (0 = filled disc) and particle speed multiplier
 var ring_width: float = 0.0
 var speed_scale: float = 1.0
-# Tempo de expansão do anel (s)
+# Ring expansion time (s)
 var ring_grow_time: float = 0.15
 
 var _ring_scale: float = 0.2
 
 
-## Cria o efeito na cena atual (adicionado de forma deferida, seguro dentro de callbacks de física).
-static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, mods: ProjectileModifiers, new_base_damage: int, skip: Array[Hurtbox]) -> ImpactEffect:
+## Creates the effect in the current scene (added deferred, safe inside physics callbacks).
+## "explode" turns on the area damage (Explosive: 40% of the bullet damage); without it, the impact is only visual.
+static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, mods: ProjectileModifiers, new_base_damage: int, skip: Array[Hurtbox], explode: bool = false) -> ImpactEffect:
 	var fx: ImpactEffect = (load("res://projectiles/impact_effect.tscn") as PackedScene).instantiate() as ImpactEffect
 	fx.global_position = pos
 	fx.impact_damage = damage
 	fx.tint = color
 	fx.modifiers = mods
 	fx.base_damage = new_base_damage
+	fx.splash_enabled = explode
 	if mods != null:
 		fx.impact_radius = mods.impact_radius()
 	fx.excluded = skip
@@ -40,7 +42,7 @@ static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, mods: Pr
 	return fx
 
 
-## Explosão parametrizada das sinergias: raio, dano exato (0 = só visual) e cor; sem crit nem efeitos de poção.
+## Parameterized synergy explosion: radius, exact damage (0 = visual only) and color; no crit or potion effects.
 static func spawn_blast(scene: Node, pos: Vector2, radius: float, damage: int, color: Color, particles: int = 16) -> ImpactEffect:
 	var fx: ImpactEffect = (load("res://projectiles/impact_effect.tscn") as PackedScene).instantiate() as ImpactEffect
 	fx.global_position = pos
@@ -55,7 +57,7 @@ static func spawn_blast(scene: Node, pos: Vector2, radius: float, damage: int, c
 	return fx
 
 
-## Só visual (sem dano): burst de partículas e anel expansivo, maior que o impacto normal (ex.: anúncio no caldeirão).
+## Visual only (no damage): particle burst and expanding ring, bigger than the normal impact (e.g. cauldron announcement).
 static func spawn_burst(parent: Node, pos: Vector2, radius: float, color: Color, particles: int, lifetime: float, new_ring_width: float, new_speed_scale: float) -> ImpactEffect:
 	var fx: ImpactEffect = (load("res://projectiles/impact_effect.tscn") as PackedScene).instantiate() as ImpactEffect
 	fx.position = pos
@@ -83,7 +85,7 @@ func _ready() -> void:
 	tween.tween_property(self, "_ring_scale", 1.0, ring_grow_time)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, particle_lifetime)
 	tween.tween_callback(queue_free)
-	print("[Combat] - impacto em %s (dano de área %d)" % [global_position, _splash_damage() if splash_enabled else 0])
+	print("[Combat] - impact at %s (area damage %d)" % [global_position, _splash_damage() if splash_enabled else 0])
 
 
 func _draw() -> void:
@@ -97,13 +99,13 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 
 
-## Dano de área (mínimo 1), com o multiplicador de dano das explosões (Magical Potentializer).
+## Area damage (minimum 1), with the explosion damage multiplier (Magical Potentializer).
 func _splash_damage() -> int:
 	var mult: float = modifiers.synergy.explosion_damage_mult if modifiers != null else 1.0
 	return maxi(roundi(impact_damage * splash_damage_fraction * mult), 1)
 
 
-## Aplica dano e efeitos (sem crit/lifesteal) às Hurtbox de inimigos no raio, exceto as já atingidas.
+## Applies damage and effects (no crit/lifesteal) to enemy Hurtboxes in the radius, except those already hit.
 func _apply_splash() -> void:
 	var shape: CircleShape2D = CircleShape2D.new()
 	shape.radius = impact_radius
@@ -125,7 +127,7 @@ func _apply_splash() -> void:
 			mods.apply_on_hit_effects(hurtbox, base_damage)
 
 
-## Burst de partículas quadradas (pixel art) na cor da poção.
+## Burst of square particles (pixel art) in the potion color.
 func _spawn_particles() -> void:
 	var img: Image = Image.create(2, 2, false, Image.FORMAT_RGBA8)
 	img.fill(Color.WHITE)

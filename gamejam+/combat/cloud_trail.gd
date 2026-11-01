@@ -1,19 +1,19 @@
 class_name CloudTrail
 extends Area2D
-## Nuvem temporária (receita Spice bag): reduz levemente a velocidade de quem está dentro; empilha com a lama.
+## Temporary cloud (Spice bag recipe): slightly reduces the speed of anyone inside; stacks with mud.
 
 var radius: float = SynergyConstants.CLOUD_TRAIL_RADIUS
 var lifetime: float = SynergyConstants.CLOUD_TRAIL_LIFETIME
-# Redução de velocidade (0.15 = -15%)
+# Speed reduction (0.15 = -15%)
 var slow_fraction: float = SynergyConstants.CLOUD_SLOW
 
 var _age: float = 0.0
 var _refresh_left: float = 0.0
-# Pequenos "puffs" (posição, raio) que dão aspecto de fumaça
+# Small "puffs" (position, radius) that give a smoke look
 var _puffs: Array[Vector3] = []
 
 
-## Cria uma nuvem na cena (adição deferida, segura dentro de callbacks de física).
+## Creates a cloud in the scene (deferred add, safe inside physics callbacks).
 static func spawn(scene: Node, pos: Vector2, new_radius: float, new_lifetime: float, new_slow: float) -> CloudTrail:
 	var cloud: CloudTrail = (load("res://combat/cloud_trail.tscn") as PackedScene).instantiate() as CloudTrail
 	cloud.global_position = pos
@@ -54,7 +54,7 @@ func _physics_process(delta: float) -> void:
 		_affect_overlapping()
 
 
-## Renova a lentidão (fonte "cloud") em quem está dentro.
+## Renews the slow (source "cloud") on anyone inside.
 func _affect_overlapping() -> void:
 	var span: float = SynergyConstants.CLOUD_REFRESH * 2.5
 	for area: Area2D in get_overlapping_areas():

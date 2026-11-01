@@ -1,5 +1,5 @@
-## Gerador one-off do TileSet do Halloween Tileset.
-## Uso: godot --headless --script res://tools/generate_tileset.gd
+## One-off generator of the Halloween Tileset's TileSet.
+## Usage: godot --headless --script res://tools/generate_tileset.gd
 extends SceneTree
 
 const TEXTURE_PATH: String = "res://assets/tilesets/halloween/halloween_tileset.png"
@@ -7,7 +7,7 @@ const OUTPUT_PATH: String = "res://assets/tilesets/halloween/halloween_tileset.t
 const TILE: int = 16
 const WORLD_LAYER_BIT: int = 1
 
-# Origem (em celulas) de cada bloco 32x32 de borda da mancha laranja, por posicao na grade 3x3.
+# Origin (in cells) of each 32x32 border block of the orange patch, by position in the 3x3 grid.
 const PATCH_PIECES: Dictionary = {
 	Vector2i(0, 0): Vector2i(14, 8), # TL
 	Vector2i(1, 0): Vector2i(12, 8), # T
@@ -25,7 +25,7 @@ const NEIGHBORS: Array = [
 	[TileSet.CELL_NEIGHBOR_LEFT_SIDE, Vector2i(-1, 0)],
 	[TileSet.CELL_NEIGHBOR_TOP_SIDE, Vector2i(0, -1)],
 ]
-# [bit, lado A, lado B, diagonal]
+# [bit, side A, side B, diagonal]
 const CORNERS: Array = [
 	[TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER, Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)],
 	[TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER, Vector2i(-1, 0), Vector2i(0, 1), Vector2i(-1, 1)],
@@ -33,12 +33,12 @@ const CORNERS: Array = [
 	[TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER, Vector2i(1, 0), Vector2i(0, -1), Vector2i(1, -1)],
 ]
 
-# Colisoes (em px dentro da celula 16x16): [coluna_ini, coluna_fim, linha_ini, linha_fim, Rect2]
+# Collisions (in px within the 16x16 cell): [start_column, end_column, start_row, end_row, Rect2]
 const SOLID_CELLS: Array = [
-	[1, 4, 11, 11, Rect2(0, 4, 16, 12)], # muro de tras
-	[0, 0, 12, 16, Rect2(2, 0, 6, 16)], # mourao esquerdo
-	[5, 5, 12, 16, Rect2(10, 0, 6, 16)], # mourao direito
-	[1, 5, 19, 19, Rect2(0, 3, 16, 12)], # muro da frente
+	[1, 4, 11, 11, Rect2(0, 4, 16, 12)], # back wall
+	[0, 0, 12, 16, Rect2(2, 0, 6, 16)], # left gatepost
+	[5, 5, 12, 16, Rect2(10, 0, 6, 16)], # right gatepost
+	[1, 5, 19, 19, Rect2(0, 3, 16, 12)], # front wall
 ]
 
 
@@ -76,11 +76,11 @@ func _init() -> void:
 	_setup_collisions(source)
 
 	var err: Error = ResourceSaver.save(tile_set, OUTPUT_PATH)
-	print("[Level] - TileSet salvo (%d tiles, erro=%d): %s" % [count, err, OUTPUT_PATH])
+	print("[Level] - TileSet saved (%d tiles, error=%d): %s" % [count, err, OUTPUT_PATH])
 	quit()
 
 
-# Retorna true se a celula tem algum pixel nao transparente.
+# Returns true if the cell has any non-transparent pixel.
 func _cell_has_pixels(image: Image, cell: Vector2i) -> bool:
 	for y: int in TILE:
 		for x: int in TILE:
@@ -89,7 +89,7 @@ func _cell_has_pixels(image: Image, cell: Vector2i) -> bool:
 	return false
 
 
-# Conta pixels diferentes da cor base dentro da celula (a cor base e o pixel [0,0] da celula de referencia).
+# Counts pixels different from the base color inside the cell (the base color is the pixel [0,0] of the reference cell).
 func _detail_pixels(image: Image, cell: Vector2i, base: Color) -> int:
 	var count: int = 0
 	for y: int in TILE:
@@ -100,7 +100,7 @@ func _detail_pixels(image: Image, cell: Vector2i, base: Color) -> int:
 	return count
 
 
-# Variacoes de chao azul recebem probabilidade proporcional a "limpeza" da celula.
+# Blue floor variations get a probability proportional to the cell's "cleanliness".
 func _setup_blue_probabilities(source: TileSetAtlasSource, image: Image) -> void:
 	var base: Color = image.get_pixel(6 * TILE, 2 * TILE)
 	for row: int in range(2, 8):
@@ -113,7 +113,7 @@ func _setup_blue_probabilities(source: TileSetAtlasSource, image: Image) -> void
 			data.probability = 4.0 if detail == 0 else (0.5 if detail <= 12 else 0.05)
 
 
-# Chao laranja (6x4 celulas + mancha decorativa) como terreno "Orange Grass" com todos os bits.
+# Orange floor (6x4 cells + decorative patch) as an "Orange Grass" terrain with all bits.
 func _setup_orange_terrain(source: TileSetAtlasSource, image: Image) -> void:
 	var base: Color = image.get_pixel(0, 0)
 	var cells: Array[Vector2i] = []
@@ -135,7 +135,7 @@ func _setup_orange_terrain(source: TileSetAtlasSource, image: Image) -> void:
 		data.probability = 4.0 if detail == 0 else (1.0 if detail <= 12 else 0.3)
 
 
-# Pecas de borda da mancha: bits "laranja" so nos vizinhos internos de um remendo 6x6 (3x3 blocos).
+# Patch edge pieces: "orange" bits only on the inner neighbors of a 6x6 patch (3x3 blocks).
 func _setup_patch_terrain(source: TileSetAtlasSource) -> void:
 	for block: Vector2i in PATCH_PIECES:
 		var origin: Vector2i = PATCH_PIECES[block]
@@ -154,12 +154,12 @@ func _setup_patch_terrain(source: TileSetAtlasSource) -> void:
 				data.probability = 1.0
 
 
-# Retorna true se a celula do remendo 6x6 esta dentro da mancha.
+# Returns true if the cell of the 6x6 patch is inside the patch.
 func _inside_patch(cell: Vector2i) -> bool:
 	return cell.x >= 0 and cell.x < 6 and cell.y >= 0 and cell.y < 6
 
 
-# Poligonos de colisao (layer world) nas celulas de muro/mourao do cercado.
+# Collision polygons (world layer) on the wall/gatepost cells of the enclosure.
 func _setup_collisions(source: TileSetAtlasSource) -> void:
 	for entry: Array in SOLID_CELLS:
 		for row: int in range(entry[2], entry[3] + 1):

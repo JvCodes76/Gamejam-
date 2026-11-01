@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://enemies/boss.gd" id="2_boss"]
 [ext_resource type="Texture2D" uid="uid://bgpcsw5j6rhvu" path="res://assets/sprites/Enemies/Boss_FallenAngel-Idle-Sheet.png" id="3_idle"]
 [ext_resource type="Texture2D" uid="uid://cayoo53mtiftb" path="res://assets/sprites/Enemies/Boss_FallenAngel-ExplosionAttack-Sheet.png" id="4_wings"]
+[ext_resource type="Texture2D" uid="uid://c0qanf1dn5xuy" path="res://assets/sprites/Enemies/Boss_FallenAngel-LaserAttack-Sheet.png" id="5_laser"]
 
 [sub_resource type="CircleShape2D" id="body_shape"]
 radius = 18.0
@@ -16,12 +17,13 @@ height = 96.0
 radius = 26.0
 height = 80.0
 
-; Anjo caído: voa perseguindo o player e se adapta às poções (ver boss.gd)
+; Fallen angel: flies chasing the player and adapts to potions (see boss.gd)
 [node name="BossFallenAngel" instance=ExtResource("1_base")]
 script = ExtResource("2_boss")
 idle_texture = ExtResource("3_idle")
 wings_texture = ExtResource("4_wings")
-move_speed = 45.0
+laser_texture = ExtResource("5_laser")
+move_speed = 60.0
 
 [node name="CollisionShape2D" parent="." index="0"]
 position = Vector2(0, -10)

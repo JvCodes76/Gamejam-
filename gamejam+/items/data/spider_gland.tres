@@ -13,6 +13,7 @@ magnitude = 2
 script = ExtResource("1")
 id = &"spider_gland"
 display_name = "Spider Gland"
+description = "Don't eat this. Even if you'd Starve otherwise."
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([4, 1])

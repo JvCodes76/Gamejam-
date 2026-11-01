@@ -1,15 +1,15 @@
 class_name EnemyDeathFx
 extends Node2D
-## "Cadáver" visual de um inimigo: cópia do sprite que pisca branco, cresce e some, mais um burst de partículas
-## na cor do inimigo e alguns pedaços do próprio sprite. A lógica de morte (enemy_died) já rodou; isto é só visual.
+## Visual "corpse" of an enemy: a sprite copy that flashes white, grows and disappears, plus a particle burst
+## in the enemy's color and a few pieces of the sprite itself. The death logic (enemy_died) has already run; this is visual only.
 
 const PARTICLE_LIFETIME: float = 0.5
 
-# Cor média (pixels opacos) de cada textura, calculada uma vez
+# Average color (opaque pixels) of each texture, computed once
 static var _color_cache: Dictionary = {}
 
 
-## Cria o efeito a partir do sprite do inimigo (adição deferida: seguro dentro de callbacks de física).
+## Creates the effect from the enemy's sprite (deferred add: safe inside physics callbacks).
 static func spawn(scene: Node, sprite: Sprite2D, world_position: Vector2) -> EnemyDeathFx:
 	var fx: EnemyDeathFx = EnemyDeathFx.new()
 	fx.name = "EnemyDeathFx"
@@ -46,7 +46,7 @@ func _build(source: Sprite2D) -> void:
 	tween.chain().tween_callback(queue_free)
 
 
-## Cor média dos pixels opacos da textura (cache por textura).
+## Average color of the texture's opaque pixels (cached per texture).
 static func average_color(texture: Texture2D) -> Color:
 	if texture == null:
 		return Color.WHITE
@@ -73,7 +73,7 @@ static func average_color(texture: Texture2D) -> Color:
 	return result
 
 
-# Burst de partículas quadradas (pixel art) na cor do inimigo
+# Burst of square particles (pixel art) in the enemy's color
 func _add_burst(center: Vector2, color: Color) -> void:
 	var img: Image = Image.create(2, 2, false, Image.FORMAT_RGBA8)
 	img.fill(Color.WHITE)
@@ -88,7 +88,7 @@ func _add_burst(center: Vector2, color: Color) -> void:
 	p.color_ramp = fade
 
 
-# Pedaços do próprio sprite voando (2 emissores, cada um com um recorte diferente do quadro atual)
+# Pieces of the sprite itself flying (2 emitters, each with a different crop of the current frame)
 func _add_chunks(source: Sprite2D, center: Vector2) -> void:
 	var texture: Texture2D = source.texture
 	if texture == null:

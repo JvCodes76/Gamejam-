@@ -1,12 +1,12 @@
 class_name SpawnCheck
 extends RefCounted
-## Checagem de ponto livre de colisoes solidas (altas e baixas) para spawners.
+## Free-point check against solid collisions (tall and low) for spawners.
 
 const CLEARANCE: float = 8.0
 
 
-## Retorna true se um circulo de "radius" em torno do ponto nao toca nenhum obstaculo solido (layers world e low_obstacle).
-## O ponto e o chao (pes), igual ao colisor pequeno de player e inimigos.
+## Returns true if a circle of "radius" around the point touches no solid obstacle (world and low_obstacle layers).
+## The point is the ground (feet), same as the small collider of the player and enemies.
 static func is_free(context: Node2D, point: Vector2, radius: float = CLEARANCE) -> bool:
 	var space: PhysicsDirectSpaceState2D = context.get_world_2d().direct_space_state
 	var shape: CircleShape2D = CircleShape2D.new()

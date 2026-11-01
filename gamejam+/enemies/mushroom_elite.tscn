@@ -14,7 +14,8 @@ script = ExtResource("2_script")
 has_elite_art = true
 idle_texture = ExtResource("tex_0")
 attack_texture = ExtResource("tex_1")
-move_speed = 30.0
+move_speed = 0.0
+knockback_resistance = 1.0
 points = 60
 
 [node name="Sprite2D" parent="." index="1"]
@@ -25,7 +26,7 @@ texture = ExtResource("tex_0")
 hframes = 4
 
 [node name="HealthComponent" parent="." index="2"]
-max_health = 3
+max_health = 80
 
 [node name="CollisionShape2D" parent="Hurtbox" index="0"]
 position = Vector2(0, -26)

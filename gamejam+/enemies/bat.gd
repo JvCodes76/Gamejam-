@@ -1,7 +1,7 @@
 class_name Bat
 extends EnemyBase
-## Morcego: voa rápido e é frágil. Passa por cima dos obstáculos baixos (só colide com o mundo alto).
-## A folha idle tem 8 quadros de 32x32 (hframes na Sprite2D).
+## Bat: flies fast and is fragile. Passes over low obstacles (only collides with the tall world).
+## The idle sheet has 8 frames of 32x32 (hframes on the Sprite2D).
 
 @export var anim_fps: float = 12.0
 

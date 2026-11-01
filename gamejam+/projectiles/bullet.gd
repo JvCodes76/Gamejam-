@@ -9,25 +9,29 @@ const BULLET_SCENE_PATH: String = "res://projectiles/bullet.tscn"
 var direction: Vector2 = Vector2.RIGHT
 var modifiers: ProjectileModifiers = null
 var shooter_health: HealthComponent = null
-# Ricochetes restantes nas paredes (0 = a parede destrói a bala); inimigos nunca causam ricochete
+# Remaining bounces: after a hit (with no pierce left) the bullet jumps to another enemy; walls always destroy it
 var bounce_count: int = 0
-# Bala filha da Weird Eye Drops: não se divide de novo, não dá crit nem lifesteal
+# Child bullet of Weird Eye Drops: does not split again, no crit or lifesteal
 var split_child: bool = false
-# Fração do dano da bala (filhas usam SPLIT_DAMAGE_FRACTION)
+# Fraction of the bullet's damage (children use SPLIT_DAMAGE_FRACTION)
 var damage_factor: float = 1.0
 
 var _spent: bool = false
 var _age: float = 0.0
 var _pierce_left: int = 0
+# Homing steering level (0 = off) and AOE aura (radius px, 0 = off) with its tick timer
+var _homing: float = 0.0
+var _aoe_radius: float = 0.0
+var _aoe_left: float = 0.0
 var _hit_hurtboxes: Array[Hurtbox] = []
-# Hurtboxes que a bala filha ignora (já atingidas pela mãe)
+# Hurtboxes the child bullet ignores (already hit by the parent)
 var _ignored: Array[Hurtbox] = []
-# Bala santa (sinergia Light), cor da bala e distâncias desde o último rastro (lama e nuvem)
+# Holy bullet (Light synergy), bullet color and distances since the last trail (mud and cloud)
 var _holy: bool = false
 var _tint: Color = Color.WHITE
 var _mud_distance: float = 0.0
 var _cloud_distance: float = 0.0
-# Rastro (Line2D em coordenadas globais) com os últimos pontos da bala
+# Trail (Line2D in global coordinates) with the bullet's latest points
 var _trail: Line2D
 
 
@@ -35,14 +39,14 @@ func _ready() -> void:
 	super()
 	body_entered.connect(_on_body_entered)
 	_build_trail()
-	# Nasce maior e encolhe para a escala normal
+	# Spawns bigger and shrinks to the normal scale
 	var sprite: Sprite2D = $Sprite2D as Sprite2D
 	var target_scale: Vector2 = sprite.scale
 	sprite.scale = target_scale * FeelConstants.BULLET_SPAWN_SCALE
 	create_tween().tween_property(sprite, "scale", target_scale, FeelConstants.BULLET_SPAWN_TIME)
 
 
-## Rastro curto na cor da bala, com alpha caindo até a cauda.
+## Short trail in the bullet's color, with alpha falling off toward the tail.
 func _build_trail() -> void:
 	_trail = Line2D.new()
 	_trail.top_level = true
@@ -72,8 +76,15 @@ func _physics_process(delta: float) -> void:
 	if _age >= lifetime:
 		_impact(_roll_impact_damage())
 		return
+	if _homing > 0.0:
+		_steer_toward_enemy(delta)
 	global_position += direction * speed * delta
 	_update_trail()
+	if _aoe_radius > 0.0:
+		_aoe_left -= delta
+		if _aoe_left <= 0.0:
+			_aoe_left += CombatConstants.AOE_TICK
+			_aoe_tick()
 	if modifiers != null:
 		if modifiers.synergy.mud_enabled:
 			_drop_mud(speed * delta)
@@ -81,47 +92,117 @@ func _physics_process(delta: float) -> void:
 			_drop_cloud(speed * delta)
 
 
-## Define a direção do projétil e gira o sprite.
+## Sets the projectile direction and rotates the sprite.
 func setup(new_direction: Vector2) -> void:
 	direction = new_direction.normalized()
 	rotation = direction.angle()
 
 
-## Aplica os modificadores da poção: cor, alcance, pierce, ricochete, dano, lifesteal e DoTs.
+## Applies the potion modifiers: color, range, pierce, bounce, damage, lifesteal and DoTs.
 func apply_modifiers(mods: ProjectileModifiers, shooter: HealthComponent = null) -> void:
 	modifiers = mods
 	shooter_health = shooter
 	lifetime *= mods.range_multiplier
 	_pierce_left = mods.pierce_count
-	bounce_count = mods.synergy.bounce_count
+	bounce_count = mods.bounce_count
+	_homing = mods.homing_level
+	_aoe_radius = CombatConstants.AOE_RADIUS_PER_POINT * mods.aoe_level
 	set_tint(mods.color)
 	_holy = mods.roll_holy()
 	if _holy:
 		set_tint(SynergyConstants.LIGHT_HOLY_COLOR)
 		($Sprite2D as Sprite2D).scale *= 1.4
-		print("[Synergy] - bala santa disparada")
+		print("[Synergy] - holy bullet fired")
+	if _aoe_radius > 0.0:
+		queue_redraw()
 
 
-## Define a cor da bala (sprite e partículas do impacto).
+func _draw() -> void:
+	if _aoe_radius > 0.0:
+		draw_circle(Vector2.ZERO, _aoe_radius, Color(_tint, 0.16))
+		draw_arc(Vector2.ZERO, _aoe_radius, 0.0, TAU, 32, Color(_tint, 0.45), 1.0)
+
+
+## Flame of the Dragon's Blood fire breath: short-lived, pierces everything, a fraction of the damage per flame.
+func setup_flame(new_direction: Vector2) -> void:
+	speed = CombatConstants.FLAME_SPEED
+	lifetime = CombatConstants.FLAME_LIFETIME * modifiers.range_multiplier
+	damage_factor = 1.0 / CombatConstants.FLAME_RATE_DIVISOR
+	_pierce_left = CombatConstants.FLAME_PIERCE
+	bounce_count = 0
+	_holy = false
+	set_tint(CombatConstants.FLAME_COLOR)
+	($Sprite2D as Sprite2D).scale *= 1.3
+	setup(new_direction)
+
+
+## Nearest living enemy not yet hit, within the homing range; null if none.
+func _nearest_enemy(max_range: float) -> EnemyBase:
+	var best: EnemyBase = null
+	var best_dist: float = max_range * max_range
+	for node: Node in get_tree().get_nodes_in_group("enemy"):
+		var enemy: EnemyBase = node as EnemyBase
+		if enemy == null or not enemy.is_alive() or enemy.get_hurtbox() in _hit_hurtboxes:
+			continue
+		var dist: float = global_position.distance_squared_to(enemy.global_position + CombatConstants.ENEMY_BODY_OFFSET)
+		if dist <= best_dist:
+			best_dist = dist
+			best = enemy
+	return best
+
+
+## Homing: turns the direction toward the nearest enemy, limited by the turn rate.
+func _steer_toward_enemy(delta: float) -> void:
+	var target: EnemyBase = _nearest_enemy(CombatConstants.HOMING_RANGE)
+	if target == null:
+		return
+	var wanted: Vector2 = (target.global_position + CombatConstants.ENEMY_BODY_OFFSET - global_position).normalized()
+	var max_turn: float = CombatConstants.HOMING_TURN_RATE_PER_POINT * _homing * delta
+	direction = direction.rotated(clampf(direction.angle_to(wanted), -max_turn, max_turn))
+	rotation = direction.angle()
+
+
+## AOE aura: damages every enemy inside the radius with a fraction of the weapon damage.
+func _aoe_tick() -> void:
+	if modifiers == null:
+		return
+	var shape: CircleShape2D = CircleShape2D.new()
+	shape.radius = _aoe_radius
+	var query: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+	query.shape = shape
+	query.transform = Transform2D(0.0, global_position)
+	query.collision_mask = PhysicsLayers.ENEMY
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	for hit: Dictionary in get_world_2d().direct_space_state.intersect_shape(query, 32):
+		var hurtbox: Hurtbox = hit["collider"] as Hurtbox
+		if hurtbox == null or hurtbox in _ignored:
+			continue
+		var mods: ProjectileModifiers = modifiers.for_target(hurtbox)
+		hurtbox.receive_hit(mods.roll_secondary_damage(damage, CombatConstants.AOE_TICK_FRACTION * damage_factor), (hurtbox.global_position - global_position).normalized())
+
+
+## Sets the bullet color (sprite and impact particles).
 func set_tint(color: Color) -> void:
 	_tint = color
 	($Sprite2D as Sprite2D).modulate = color
 	if _trail != null:
 		_trail.gradient.set_color(0, Color(color, 0.0))
 		_trail.gradient.set_color(1, Color(color, 0.7))
+	queue_redraw()
 
 
-## Cor atual da bala.
+## Current bullet color.
 func get_tint() -> Color:
 	return _tint
 
 
-## Retorna true se a bala é santa (sinergia Light).
+## Returns true if the bullet is holy (Light synergy).
 func is_holy() -> bool:
 	return _holy
 
 
-## Configura esta bala como filha da Weird Eye Drops: herda cor, efeitos e dano reduzido, sem se dividir de novo.
+## Configures this bullet as a child of Weird Eye Drops: inherits color, effects and reduced damage, without splitting again.
 func setup_child(parent: Bullet, new_direction: Vector2) -> void:
 	split_child = true
 	damage = parent.damage
@@ -132,6 +213,7 @@ func setup_child(parent: Bullet, new_direction: Vector2) -> void:
 	_holy = parent._holy
 	_pierce_left = 0
 	bounce_count = 0
+	_homing = parent._homing
 	_hit_hurtboxes = parent._hit_hurtboxes.duplicate()
 	_ignored = parent._hit_hurtboxes.duplicate()
 	set_tint(parent._tint)
@@ -139,12 +221,12 @@ func setup_child(parent: Bullet, new_direction: Vector2) -> void:
 	setup(new_direction)
 
 
-## Ponto do chão sob a bala (ela voa na altura do corpo do player): lama e nuvem ficam no chão, não no ar.
+## Ground point under the bullet (it flies at the height of the player's body): mud and cloud stay on the ground, not in the air.
 func _ground_point() -> Vector2:
 	return global_position + Vector2(0.0, CombatConstants.BODY_HEIGHT)
 
 
-## Deixa uma poça de lama a cada EARTH_TRAIL_SPACING px percorridos.
+## Leaves a mud puddle every EARTH_TRAIL_SPACING px traveled.
 func _drop_mud(step: float) -> void:
 	_mud_distance += step
 	if _mud_distance < SynergyConstants.EARTH_TRAIL_SPACING:
@@ -153,7 +235,7 @@ func _drop_mud(step: float) -> void:
 	MudTrail.spawn(get_tree().current_scene, _ground_point(), SynergyConstants.EARTH_TRAIL_RADIUS, SynergyConstants.EARTH_TRAIL_LIFETIME, modifiers.synergy.mud_slow, modifiers.mud_dps(damage))
 
 
-## Deixa uma nuvem (Spice bag) a cada CLOUD_TRAIL_SPACING px percorridos.
+## Leaves a cloud (Spice bag) every CLOUD_TRAIL_SPACING px traveled.
 func _drop_cloud(step: float) -> void:
 	_cloud_distance += step
 	if _cloud_distance < SynergyConstants.CLOUD_TRAIL_SPACING:
@@ -162,14 +244,14 @@ func _drop_cloud(step: float) -> void:
 	CloudTrail.spawn(get_tree().current_scene, _ground_point(), SynergyConstants.CLOUD_TRAIL_RADIUS, SynergyConstants.CLOUD_TRAIL_LIFETIME, modifiers.synergy.cloud_slow)
 
 
-## Aplica dano (com crit por hit), efeitos de status e lifesteal; consome a bala se não restar pierce.
+## Applies damage (with crit per hit), status effects and lifesteal; consumes the bullet if no pierce remains.
 func apply_hit(area: Area2D) -> void:
 	if not area is Hurtbox:
 		return
 	var hurtbox: Hurtbox = area as Hurtbox
-	if hurtbox in _ignored:
+	if hurtbox in _ignored or hurtbox in _hit_hurtboxes:
 		return
-	# Contra o boss valem só os itens a que ele não está imune
+	# Against the boss only the items it is not immune to apply
 	var mods: ProjectileModifiers = modifiers.for_target(hurtbox) if modifiers != null else null
 	var dealt: int = damage
 	var crit: bool = false
@@ -179,7 +261,7 @@ func apply_hit(area: Area2D) -> void:
 		if not split_child and mods.roll_crit():
 			dealt = maxi(roundi(dealt * mods.crit_multiplier()), 1)
 			crit = true
-			print("[Combat] - crítico! dano %d" % dealt)
+			print("[Combat] - critical! damage %d" % dealt)
 	hurtbox.receive_hit(dealt, direction, crit)
 	EventBus.play_sfx_requested.emit("crit" if crit else "hit")
 	if mods != null:
@@ -197,58 +279,66 @@ func apply_hit(area: Area2D) -> void:
 		_pierce_left -= 1
 		if mods != null:
 			mods.try_tea(hurtbox)
+	elif bounce_count > 0 and _bounce_to_next_enemy():
+		return
 	else:
-		_impact(dealt)
+		_impact(dealt, true)
 
 
-## Weird Eye Drops: spawna 2 balas filhas a +-SPLIT_ANGLE_DEG de "dir", saindo de "origin"; filhas não se dividem.
+## Bounce: redirects the bullet to the nearest enemy not yet hit and refunds part of its range. False if none is near.
+func _bounce_to_next_enemy() -> bool:
+	var target: EnemyBase = _nearest_enemy(CombatConstants.BOUNCE_RANGE)
+	if target == null:
+		return false
+	bounce_count -= 1
+	direction = (target.global_position + CombatConstants.ENEMY_BODY_OFFSET - global_position).normalized()
+	rotation = direction.angle()
+	_age = maxf(_age - lifetime * CombatConstants.BOUNCE_LIFETIME_REFUND, 0.0)
+	print("[Combat] - bullet bounced to another enemy (%d left)" % bounce_count)
+	return true
+
+
+## Split (Eye of Giant Newt / Weird Eye Drops): spawns split_count child bullets fanned around "dir", leaving from "origin"; children do not split.
 func _split(origin: Vector2, dir: Vector2) -> void:
-	if split_child or modifiers == null or not modifiers.synergy.split_on_hit:
+	if split_child or modifiers == null or modifiers.split_count <= 0:
 		return
 	var scene: Node = get_tree().current_scene
-	for side: float in [-1.0, 1.0]:
+	var count: int = modifiers.split_count
+	var span: float = SynergyConstants.SPLIT_ANGLE_DEG
+	for i: int in count:
+		# One child leaves to a random side; two or more are spread evenly across +-span
+		var offset: float = span * (1.0 if randf() < 0.5 else -1.0) if count == 1 else lerpf(-span, span, float(i) / float(count - 1))
 		var child: Bullet = (load(BULLET_SCENE_PATH) as PackedScene).instantiate() as Bullet
 		child.global_position = origin
-		child.setup_child(self, dir.rotated(deg_to_rad(SynergyConstants.SPLIT_ANGLE_DEG) * side))
+		child.setup_child(self, dir.rotated(deg_to_rad(offset)))
 		scene.add_child.call_deferred(child)
-	print("[Synergy] - projétil se dividiu em dois")
+	print("[Combat] - projectile split into %d" % count)
 
 
-## Evita dano duplo no mesmo frame depois que a bala já acertou algo.
+## Avoids double damage in the same frame after the bullet has already hit something.
 func _on_area_entered(area: Area2D) -> void:
 	if _spent:
 		return
 	super(area)
 
 
-## Parede alta ou volume de obstáculo alto (obstáculos baixos não colidem): ricocheteia se ainda há ricochetes, senão destrói a bala (inimigos são tratados pela Hurtbox, para o pierce funcionar).
+## Tall wall or tall obstacle volume (low obstacles do not collide): destroys the bullet (enemies are handled by the Hurtbox, so pierce and bounce work).
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemy") or _spent:
 		return
 	var wall: Dictionary = _probe_wall()
-	var normal: Vector2 = wall["normal"]
-	var out_pos: Vector2 = Vector2(wall["position"]) + normal * SynergyConstants.BOUNCE_PUSH_OUT
-	var reflected: Vector2 = direction.bounce(normal).normalized()
-	_split(out_pos, reflected)
-	if bounce_count > 0:
-		bounce_count -= 1
-		direction = reflected
-		rotation = direction.angle()
-		global_position = out_pos
-		print("[Synergy] - bala ricocheteou (restam %d)" % bounce_count)
-		return
 	_wall_feedback(Vector2(wall["position"]))
 	_impact(_roll_impact_damage())
 
 
-## Dano do impacto sem alvo direto (parede ou fim do alcance): sem crit, com a fração de dano da bala.
+## Impact damage without a direct target (wall or end of range): no crit, with the bullet's damage fraction.
 func _roll_impact_damage() -> int:
 	if modifiers == null:
 		return damage
 	return modifiers.roll_damage(damage, damage_factor)
 
 
-## Bala morreu na parede: mini burst com anel e aviso no EventBus.
+## Bullet died on the wall: mini burst with a ring and notice on the EventBus.
 func _wall_feedback(at: Vector2) -> void:
 	var scene: Node = get_tree().current_scene
 	if scene != null:
@@ -258,7 +348,7 @@ func _wall_feedback(at: Vector2) -> void:
 	EventBus.play_sfx_requested.emit("wall_hit")
 
 
-## Ponto e normal da parede tocada: raio curto ao longo da direção; sem hit, usa a direção oposta como normal.
+## Point and normal of the touched wall: short ray along the direction; with no hit, uses the opposite direction as the normal.
 func _probe_wall() -> Dictionary:
 	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position - direction * 12.0, global_position + direction * 10.0, PhysicsLayers.PROJECTILE_WALL_MASK)
 	var hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(query)
@@ -267,10 +357,11 @@ func _probe_wall() -> Dictionary:
 	return hit
 
 
-## Destrói a bala por contato e cria o efeito de impacto (uma única vez).
-func _impact(dealt: int) -> void:
+## Destroys the bullet on contact and creates the impact effect (only once). The explosion (Explosive) only happens on an enemy hit.
+func _impact(dealt: int, hit_enemy: bool = false) -> void:
 	if _spent:
 		return
 	_spent = true
-	ImpactEffect.spawn(get_tree().current_scene, global_position, dealt, _tint, modifiers, damage, _hit_hurtboxes)
+	var explode: bool = hit_enemy and modifiers != null and modifiers.explosive
+	ImpactEffect.spawn(get_tree().current_scene, global_position, dealt, _tint, modifiers, damage, _hit_hurtboxes, explode)
 	queue_free()

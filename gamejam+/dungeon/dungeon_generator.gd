@@ -1,15 +1,15 @@
 class_name DungeonGenerator
 extends RefCounted
-## Gera o grafo de salas de um cemitério numa grade: árvore conexa com exatamente
-## 1 sala de spawn, 1 de caldeirão, 1 de item e 1 de saída (boss no último cemitério).
+## Generates the room graph of a graveyard on a grid: a connected tree with exactly
+## 1 spawn room, 1 cauldron room, 1 item room and 1 exit room (boss in the last graveyard).
 
 const DIRECTIONS: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
-# Spawn, caldeirão, item e saída
+# Spawn, cauldron, item and exit
 const MIN_ROOMS: int = 4
 const GROW_ATTEMPTS: int = 2000
 
 
-## Gera as salas (já posicionadas). filler_weights: peso por Type das salas extras (ELITE, HORDE, EMPTY).
+## Generates the rooms (already positioned). filler_weights: weight per Type of the extra rooms (ELITE, HORDE, EMPTY).
 static func generate(room_count: int, is_final: bool, filler_weights: Dictionary, pitch_tiles: Vector2i, tile_px: int, rng: RandomNumberGenerator) -> Array[RoomData]:
 	var rooms: Array[RoomData] = _grow(maxi(room_count, MIN_ROOMS), rng)
 	_assign_types(rooms, is_final, filler_weights, rng)
@@ -19,7 +19,7 @@ static func generate(room_count: int, is_final: bool, filler_weights: Dictionary
 	return rooms
 
 
-# Cresce uma árvore: cada nova sala nasce numa célula livre vizinha de uma sala existente.
+# Grows a tree: each new room is born in a free cell next to an existing room.
 static func _grow(count: int, rng: RandomNumberGenerator) -> Array[RoomData]:
 	var rooms: Array[RoomData] = [RoomData.new(Vector2i.ZERO)]
 	var occupied: Dictionary = {Vector2i.ZERO: 0}
@@ -40,7 +40,7 @@ static func _grow(count: int, rng: RandomNumberGenerator) -> Array[RoomData]:
 	return rooms
 
 
-# Distância em salas a partir de "start" (BFS).
+# Distance in rooms from "start" (BFS).
 static func _distances(rooms: Array[RoomData], start: int) -> Array[int]:
 	var dist: Array[int] = []
 	dist.resize(rooms.size())
@@ -56,7 +56,7 @@ static func _distances(rooms: Array[RoomData], start: int) -> Array[int]:
 	return dist
 
 
-# Sorteia o papel de cada sala: spawn e saída em becos distantes, item num beco, caldeirão no resto.
+# Rolls the role of each room: spawn and exit in distant dead ends, cauldron next to the spawn, item in a dead end.
 static func _assign_types(rooms: Array[RoomData], is_final: bool, filler_weights: Dictionary, rng: RandomNumberGenerator) -> void:
 	var unassigned: Array[int] = []
 	for i: int in rooms.size():
@@ -66,7 +66,12 @@ static func _assign_types(rooms: Array[RoomData], is_final: bool, filler_weights
 	rooms[spawn].set_type(RoomData.Type.SPAWN)
 	unassigned.erase(spawn)
 
-	# Saída: o beco mais distante do spawn (empates sorteados)
+	# Cauldron: always the second room, right next to the spawn (the spawn is a dead end, so it has a single neighbor)
+	var cauldron: int = rooms[spawn].neighbors.values()[0]
+	rooms[cauldron].set_type(RoomData.Type.CAULDRON)
+	unassigned.erase(cauldron)
+
+	# Exit: the dead end farthest from the spawn (ties randomized)
 	var dist: Array[int] = _distances(rooms, spawn)
 	var exit_index: int = -1
 	var shuffled: Array[int] = unassigned.duplicate()
@@ -85,15 +90,11 @@ static func _assign_types(rooms: Array[RoomData], is_final: bool, filler_weights
 	rooms[item].set_type(RoomData.Type.ITEM)
 	unassigned.erase(item)
 
-	var cauldron: int = _pick(unassigned, rooms, false, rng)
-	rooms[cauldron].set_type(RoomData.Type.CAULDRON)
-	unassigned.erase(cauldron)
-
 	for i: int in unassigned:
 		rooms[i].set_type(_pick_weighted(filler_weights, rng))
 
 
-# Sorteia uma sala da lista, preferindo becos (prefer_leaf) ou salas de passagem (not prefer_leaf).
+# Picks a room from the list, preferring dead ends (prefer_leaf) or pass-through rooms (not prefer_leaf).
 static func _pick(candidates: Array[int], rooms: Array[RoomData], prefer_leaf: bool, rng: RandomNumberGenerator) -> int:
 	var preferred: Array[int] = []
 	for i: int in candidates:
@@ -103,7 +104,7 @@ static func _pick(candidates: Array[int], rooms: Array[RoomData], prefer_leaf: b
 	return pool[rng.randi() % pool.size()]
 
 
-# Sorteia um tipo pelo peso; sem pesos válidos, a sala fica vazia.
+# Picks a type by weight; with no valid weights, the room is left empty.
 static func _pick_weighted(weights: Dictionary, rng: RandomNumberGenerator) -> RoomData.Type:
 	var total: float = 0.0
 	for weight: float in weights.values():

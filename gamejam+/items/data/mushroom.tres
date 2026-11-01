@@ -12,6 +12,7 @@ effect_type = 1
 script = ExtResource("1")
 id = &"mushroom"
 display_name = "Mushroom"
+description = "Actually very tasty."
 icon = ExtResource("3")
 aspects = Array[int]([1])
 effects = Array[ExtResource("2")]([SubResource("e1")])

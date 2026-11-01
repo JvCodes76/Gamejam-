@@ -1,9 +1,9 @@
 extends Node
-## Game feel central: screen shake por trauma, hitstop e slow-motion.
-## Só escuta o EventBus (as features nunca chamam o Juice direto). A câmera lê shake_offset/shake_rotation.
-## Tudo é contado em tempo real (Time.get_ticks_msec), porque o hitstop zera o Engine.time_scale.
+## Central game feel: trauma-based screen shake, hitstop and slow-motion.
+## Only listens to the EventBus (features never call Juice directly). The camera reads shake_offset/shake_rotation.
+## Everything is counted in real time (Time.get_ticks_msec), because hitstop zeroes Engine.time_scale.
 
-# Offset e rotação de tremida a aplicar na câmera ativa neste quadro
+# Shake offset and rotation to apply to the active camera this frame
 var shake_offset: Vector2 = Vector2.ZERO
 var shake_rotation: float = 0.0
 
@@ -11,13 +11,13 @@ var _trauma: float = 0.0
 var _noise: FastNoiseLite = FastNoiseLite.new()
 var _noise_time: float = 0.0
 var _last_ticks: int = 0
-# Fim do hitstop (ms reais; 0 = sem hitstop)
+# End of hitstop (real ms; 0 = no hitstop)
 var _hitstop_until: int = 0
-# Slow-motion: escala, fim (ms reais) e momento em que a volta termina
+# Slow-motion: scale, end (real ms) and the moment the ramp back ends
 var _slowmo_scale: float = 1.0
 var _slowmo_until: int = 0
 var _slowmo_recover_until: int = 0
-# Momentos (ms) das últimas mortes, para detectar multi-kill
+# Times (ms) of the latest kills, to detect multi-kills
 var _recent_kills: Array[int] = []
 
 
@@ -32,7 +32,7 @@ func _ready() -> void:
 	EventBus.damage_dealt.connect(_on_damage_dealt)
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.scene_change_requested.connect(_on_scene_change_requested)
-	print("[Juice] - pronto")
+	print("[Juice] - ready")
 
 
 func _process(_delta: float) -> void:
@@ -43,14 +43,14 @@ func _process(_delta: float) -> void:
 	_update_time_scale(now)
 
 
-## Soma trauma (0 a 1). Com "reduzir tremida" ligado, é ignorado.
+## Adds trauma (0 to 1). Ignored when "reduce screen shake" is on.
 func add_trauma(amount: float) -> void:
 	if GameManager.reduce_screen_shake:
 		return
 	_trauma = clampf(_trauma + amount, 0.0, 1.0)
 
 
-## Zera shake, hitstop e slow-motion (troca de cena).
+## Resets shake, hitstop and slow-motion (scene change).
 func reset() -> void:
 	_trauma = 0.0
 	shake_offset = Vector2.ZERO
@@ -62,12 +62,12 @@ func reset() -> void:
 	Engine.time_scale = 1.0
 
 
-## Retorna true durante um hitstop (usado pelo áudio para o ducking).
+## Returns true during a hitstop (used by the audio for ducking).
 func is_hitstopped() -> bool:
 	return Time.get_ticks_msec() < _hitstop_until
 
 
-# Trauma decai por segundo; o offset usa trauma² e ruído contínuo
+# Trauma decays per second; the offset uses trauma² and continuous noise
 func _update_shake(real_delta: float) -> void:
 	if _trauma <= 0.0:
 		shake_offset = Vector2.ZERO
@@ -80,7 +80,7 @@ func _update_shake(real_delta: float) -> void:
 	shake_rotation = _noise.get_noise_2d(_noise_time, _noise_time) * FeelConstants.SHAKE_MAX_ROTATION * power
 
 
-# Hitstop tem prioridade (escala 0); depois o slow-motion, que volta a 1.0 de forma suave
+# Hitstop takes priority (scale 0); then slow-motion, which smoothly returns to 1.0
 func _update_time_scale(now: int) -> void:
 	var scale: float = 1.0
 	if now < _hitstop_until:
@@ -96,22 +96,22 @@ func _update_time_scale(now: int) -> void:
 
 func _on_hitstop_requested(duration: float) -> void:
 	var until: int = Time.get_ticks_msec() + int(duration * 1000.0)
-	# Hitstops simultâneos usam o maior fim, sem somar
+	# Simultaneous hitstops use the latest end, without adding up
 	_hitstop_until = maxi(_hitstop_until, until)
 
 
 func _on_slowmo_requested(scale: float, duration: float) -> void:
 	var now: int = Time.get_ticks_msec()
-	# Um slow-motion mais forte (escala menor) substitui o atual
+	# A stronger slow-motion (smaller scale) replaces the current one
 	if now < _slowmo_until and scale > _slowmo_scale:
 		return
 	_slowmo_scale = clampf(scale, 0.05, 1.0)
 	_slowmo_until = now + int(duration * 1000.0)
 	_slowmo_recover_until = _slowmo_until + int(FeelConstants.SLOWMO_RECOVER * 1000.0)
-	print("[Juice] - slow-motion %.2f por %.2f s" % [scale, duration])
+	print("[Juice] - slow-motion %.2f for %.2f s" % [scale, duration])
 
 
-# Crítico: hitstop curto e tremida leve
+# Critical: short hitstop and light shake
 func _on_damage_dealt(_position: Vector2, _amount: int, is_crit: bool, _color: Color) -> void:
 	if not is_crit:
 		return
@@ -119,7 +119,7 @@ func _on_damage_dealt(_position: Vector2, _amount: int, is_crit: bool, _color: C
 	add_trauma(FeelConstants.TRAUMA_CRIT)
 
 
-# Multi-kill: várias mortes numa janela curta geram hitstop
+# Multi-kill: several kills in a short window trigger hitstop
 func _on_enemy_died(_position: Vector2, _was_marked: bool, _is_basic: bool) -> void:
 	var now: int = Time.get_ticks_msec()
 	_recent_kills.append(now)

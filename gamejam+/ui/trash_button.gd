@@ -1,6 +1,6 @@
 class_name TrashButton
 extends Control
-## Lixeira clicável (balde com tampa) desenhada por código.
+## Clickable trash can (bucket with lid) drawn by code.
 
 signal pressed
 
@@ -32,7 +32,7 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
-## Desenha tampa, alça, balde e listras; dica no hover.
+## Draws lid, handle, bucket and stripes; hint on hover.
 func _draw() -> void:
 	var c: Color = hover_color if _hover else body_color
 	draw_rect(Rect2(8, 0, 4, 2), c)

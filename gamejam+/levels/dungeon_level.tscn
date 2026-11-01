@@ -14,13 +14,15 @@
 [ext_resource type="PackedScene" path="res://enemies/fire_skull_elite.tscn" id="20_fire_skull_elite"]
 [ext_resource type="PackedScene" path="res://enemies/ghost_elite.tscn" id="21_ghost_elite"]
 [ext_resource type="PackedScene" path="res://enemies/mushroom_elite.tscn" id="22_mushroom_elite"]
+[ext_resource type="PackedScene" path="res://enemies/fire_skull.tscn" id="23_fire_skull"]
+[ext_resource type="PackedScene" path="res://enemies/mushroom.tscn" id="24_mushroom"]
 [ext_resource type="PackedScene" path="res://enemies/boss_fallen_angel.tscn" id="12_boss"]
 [ext_resource type="Script" path="res://ui/boss_health_bar.gd" id="13_bossbar"]
 
 [node name="DungeonLevel" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_level")
-swarm_scenes = Array[PackedScene]([ExtResource("3_enemy"), ExtResource("4_skull"), ExtResource("10_bat")])
+swarm_scenes = Array[PackedScene]([ExtResource("4_skull"), ExtResource("10_bat"), ExtResource("23_fire_skull"), ExtResource("24_mushroom")])
 elite_scenes = Array[PackedScene]([ExtResource("20_fire_skull_elite"), ExtResource("21_ghost_elite"), ExtResource("22_mushroom_elite")])
 elite_scene = ExtResource("3_enemy")
 boss_scene = ExtResource("12_boss")
@@ -31,12 +33,12 @@ cauldron_scene = ExtResource("6_cauldron")
 [node name="Enemies" type="Node2D" parent="."]
 y_sort_enabled = true
 
-; Itens do chão vêm só das salas de item (sem itens iniciais)
+; Ground items come only from item rooms (no initial items)
 [node name="GroundItemSpawner" type="Node2D" parent="."]
 script = ExtResource("7_gis")
 seed_on_first_load = false
 
-; Antes do HUD: na mesma camada, inventário e pausa desenham por cima da barra do boss
+; Before the HUD: on the same layer, inventory and pause draw above the boss bar
 [node name="BossHealthBar" type="CanvasLayer" parent="."]
 script = ExtResource("13_bossbar")
 

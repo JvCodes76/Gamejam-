@@ -16,6 +16,7 @@ effect_type = 3
 script = ExtResource("1")
 id = &"graveyard_dirt"
 display_name = "Graveyard Dirt"
+description = "Ethically sourced. Kinda."
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([2, 5])

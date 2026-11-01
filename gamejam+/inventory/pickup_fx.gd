@@ -1,6 +1,6 @@
 class_name PickupFx
 extends Node2D
-## Item "sugado" até o player numa curva, depois um pop com partículas na cor do item e o nome flutuando.
+## Item "sucked" toward the player along a curve, then a pop with particles in the item's color and the name floating.
 
 const TRAVEL_TIME: float = 0.28
 
@@ -12,7 +12,7 @@ var _color: Color = Color.WHITE
 var _item_name: String = ""
 
 
-## Cria o efeito a partir do ícone do item do chão, voando até "target" (o player).
+## Creates the effect from the ground item's icon, flying to "target" (the player).
 static func spawn(scene: Node, from: Vector2, texture: Texture2D, sprite_scale: Vector2, target: Node2D, color: Color, item_name: String) -> PickupFx:
 	var fx: PickupFx = PickupFx.new()
 	fx.name = "PickupFx"
@@ -32,7 +32,7 @@ static func spawn(scene: Node, from: Vector2, texture: Texture2D, sprite_scale: 
 
 
 func _ready() -> void:
-	# Ponto de controle acima do caminho: o item sobe antes de cair no player
+	# Control point above the path: the item rises before dropping onto the player
 	_control = _start + Vector2(randf_range(-12.0, 12.0), -28.0)
 	var tween: Tween = create_tween()
 	tween.tween_method(_travel, 0.0, 1.0, TRAVEL_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)

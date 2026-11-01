@@ -1,11 +1,11 @@
 class_name ColliderBuilder
 extends RefCounted
 
-# Cache de polígonos em escala 1.0, por chave da textura
+# Polygon cache at scale 1.0, keyed by texture
 static var _cache: Dictionary = {}
 
 
-# Gera polígonos do contorno (alpha) centrados na origem, em pixels
+# Generates outline (alpha) polygons centered on the origin, in pixels
 static func build_polygons(texture: Texture2D, scale: float = 1.0, epsilon: float = 1.0) -> Array[PackedVector2Array]:
 	var result: Array[PackedVector2Array] = []
 	if texture == null:
@@ -22,7 +22,7 @@ static func build_polygons(texture: Texture2D, scale: float = 1.0, epsilon: floa
 	return result
 
 
-# Casco convexo de todos os polígonos, para testes de encaixe rápidos
+# Convex hull of all polygons, for fast fit tests
 static func build_hull(texture: Texture2D, scale: float = 1.0) -> PackedVector2Array:
 	var all_points: PackedVector2Array = PackedVector2Array()
 	for poly: PackedVector2Array in build_polygons(texture, scale):
@@ -30,7 +30,7 @@ static func build_hull(texture: Texture2D, scale: float = 1.0) -> PackedVector2A
 	if all_points.size() < 3:
 		return PackedVector2Array()
 	var hull: PackedVector2Array = Geometry2D.convex_hull(all_points)
-	# convex_hull fecha o laço repetindo o primeiro ponto
+	# convex_hull closes the loop by repeating the first point
 	if hull.size() > 1 and hull[0] == hull[hull.size() - 1]:
 		hull.remove_at(hull.size() - 1)
 	return hull
@@ -40,7 +40,7 @@ static func _compute(texture: Texture2D, epsilon: float) -> Array[PackedVector2A
 	var out: Array[PackedVector2Array] = []
 	var image: Image = texture.get_image()
 	if image == null:
-		push_warning("[Inventory] - Textura sem imagem: %s" % texture.resource_path)
+		push_warning("[Inventory] - Texture without image: %s" % texture.resource_path)
 		return out
 	if image.is_compressed():
 		image.decompress()
