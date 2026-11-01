@@ -5,31 +5,33 @@ enum State { MENU, PLAYING, PAUSED, GAME_OVER, VICTORY }
 const LEVEL_PATH: String = "res://levels/dungeon_level.tscn"
 const MENU_PATH: String = "res://ui/main_menu.tscn"
 
-## Espera (s) entre a morte do player e o sumário da run
+## Wait (s) between the player's death and the run summary
 @export var death_summary_delay: float = 1.5
-## Espera (s) entre a morte do boss e o sumário da run (deixa a câmera lenta e o "SALA LIMPA" tocarem)
+## Wait (s) between the boss's death and the run summary (lets the slow-motion and the "ROOM CLEARED" play)
 @export var victory_summary_delay: float = 1.8
 
 var state: State = State.MENU
 var score: int = 0
-# Sala atual (1 = primeira); sem triggers por enquanto
+# Current room (1 = first); no triggers for now
 var room_index: int = 1
-# Cemitério atual (1 = primeiro) e semente da partida (as salas de cada cemitério derivam dela)
+# Current graveyard (1 = first) and run seed (the rooms of each graveyard derive from it)
 var cemetery_index: int = 1
 var run_seed: int = 0
-# Modo infinito: quantas vezes o boss final já foi derrotado (0 = primeira volta)
+# Infinite mode: how many times the final boss has been defeated (0 = first lap)
 var loop_index: int = 0
-# Acessibilidade: desliga a tremida de tela
+# Accessibility: turns off screen shake
 var reduce_screen_shake: bool = false
+# [DEBUG] Request to skip to the boss fight on the next level load (read and cleared by the DungeonLevel)
+var debug_boss_requested: bool = false
 
-# --- Estatísticas da run (sumário) ---
+# --- Run statistics (summary) ---
 var kills: int = 0
 var elite_kills: int = 0
 var bosses_defeated: int = 0
 var potions_brewed: int = 0
 var items_collected: int = 0
 var rooms_visited: int = 0
-# Tempo jogado em segundos reais (o hitstop zera o Engine.time_scale, então não usa delta)
+# Time played in real seconds (hitstop zeroes Engine.time_scale, so delta is not used)
 var run_time: float = 0.0
 
 var _last_tick_msec: int = 0
@@ -52,7 +54,7 @@ func _process(_delta: float) -> void:
 	_last_tick_msec = now
 
 
-## Zera o estado e carrega o level principal.
+## Resets the state and loads the main level.
 func start_game() -> void:
 	score = 0
 	room_index = 1
@@ -65,45 +67,54 @@ func start_game() -> void:
 	state = State.PLAYING
 	get_tree().paused = false
 	EventBus.scene_change_requested.emit(LEVEL_PATH)
-	print("[Game] - partida iniciada")
+	print("[Game] - run started")
 
 
-## Avança para a próxima sala e avisa o EventBus.
+## Advances to the next room and notifies the EventBus.
 func advance_room() -> void:
 	room_index += 1
 	rooms_visited += 1
-	print("[Game] - sala %d" % room_index)
+	print("[Game] - room %d" % room_index)
 	EventBus.room_changed.emit(room_index)
 
 
-## Passa para o próximo cemitério: os itens encolhem, o chão é limpo e o level é gerado de novo.
+## Moves to the next graveyard: items shrink, the ground is cleared and the level is generated again.
 func advance_cemetery() -> void:
 	cemetery_index += 1
 	room_index = 1
 	ItemManager.ground_entries.clear()
 	ItemManager.advance_floor()
-	print("[Game] - cemitério %d" % cemetery_index)
+	print("[Game] - graveyard %d" % cemetery_index)
 	EventBus.scene_change_requested.emit(LEVEL_PATH)
 
 
-## Modo infinito: volta ao primeiro cemitério mantendo itens, poções e pontos, com inimigos mais fortes.
+## [DEBUG] Reloads the level directly in the last graveyard, at the boss door (keeps items and potions).
+func debug_go_to_boss() -> void:
+	debug_boss_requested = true
+	room_index = 1
+	ItemManager.ground_entries.clear()
+	print("[Game] - [DEBUG] skipping to the boss fight")
+	EventBus.scene_change_requested.emit(LEVEL_PATH)
+
+
+## Infinite mode: goes back to the first graveyard keeping items, potions and score, with stronger enemies.
 func continue_endless() -> void:
 	if state != State.VICTORY:
 		return
 	loop_index += 1
 	cemetery_index = 1
 	room_index = 1
-	# Nova semente: os mapas da nova volta são diferentes dos já vistos
+	# New seed: the maps of the new lap differ from the ones already seen
 	run_seed = randi()
 	ItemManager.ground_entries.clear()
 	ItemManager.advance_floor()
 	state = State.PLAYING
 	get_tree().paused = false
-	print("[Game] - modo infinito: loop %d" % (loop_index + 1))
+	print("[Game] - infinite mode: loop %d" % (loop_index + 1))
 	EventBus.scene_change_requested.emit(LEVEL_PATH)
 
 
-## Alterna entre jogando e pausado. Ignora fora de partida.
+## Toggles between playing and paused. Ignored outside a run.
 func toggle_pause() -> void:
 	if state != State.PLAYING and state != State.PAUSED:
 		return
@@ -113,7 +124,7 @@ func toggle_pause() -> void:
 	EventBus.game_paused.emit(paused)
 
 
-## Despausa e volta ao menu principal.
+## Unpauses and returns to the main menu.
 func quit_to_menu() -> void:
 	get_tree().paused = false
 	state = State.MENU
@@ -121,12 +132,12 @@ func quit_to_menu() -> void:
 	EventBus.scene_change_requested.emit(MENU_PATH)
 
 
-## Reinicia a partida atual (usado após game over).
+## Restarts the current run (used after game over).
 func restart() -> void:
 	start_game()
 
 
-# Zera os contadores mostrados no sumário da run
+# Resets the counters shown in the run summary
 func _reset_stats() -> void:
 	kills = 0
 	elite_kills = 0
@@ -143,7 +154,7 @@ func _on_enemy_killed(points: int) -> void:
 	EventBus.score_changed.emit(score)
 
 
-# Conta abates para o sumário (elites e boss não são básicos)
+# Counts kills for the summary (elites and the boss are not basic)
 func _on_enemy_died(_position: Vector2, _was_marked: bool, is_basic: bool) -> void:
 	if state != State.PLAYING:
 		return
@@ -164,22 +175,22 @@ func _on_player_died() -> void:
 	if state != State.PLAYING:
 		return
 	state = State.GAME_OVER
-	print("[Game] - game over com %d pontos (loop %d)" % [score, loop_index + 1])
+	print("[Game] - game over with %d points (loop %d)" % [score, loop_index + 1])
 	await get_tree().create_timer(death_summary_delay, true, false, true).timeout
-	# Ignora se o jogador já saiu da tela de game over (ex.: voltou ao menu e iniciou outra partida)
+	# Ignored if the player has already left the game over screen (e.g. went back to the menu and started another run)
 	if state != State.GAME_OVER:
 		return
 	get_tree().paused = true
 	EventBus.run_ended.emit(false)
 
 
-# Boss final derrotado: fecha o loop atual e oferece encerrar a run ou seguir no modo infinito
+# Final boss defeated: closes the current loop and offers to end the run or continue in infinite mode
 func _on_boss_defeated() -> void:
 	if state != State.PLAYING:
 		return
 	state = State.VICTORY
 	bosses_defeated += 1
-	print("[Game] - boss derrotado (loop %d)" % (loop_index + 1))
+	print("[Game] - boss defeated (loop %d)" % (loop_index + 1))
 	await get_tree().create_timer(victory_summary_delay, true, false, true).timeout
 	if state != State.VICTORY:
 		return

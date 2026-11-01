@@ -1,11 +1,11 @@
 class_name RageBar
 extends Control
-## Barra de raiva (sinergia Evil): enche conforme o bônus e pulsa mais forte e rápido quanto maior a raiva.
+## Rage bar (Evil synergy): fills according to the bonus and pulses stronger and faster the higher the rage.
 
 @export var bar_size: Vector2 = Vector2(60.0, 4.0)
 @export var low_color: Color = Color(1.0, 0.55, 0.1)
 @export var high_color: Color = Color(1.0, 0.1, 0.1)
-## Bônus que deixa a barra quase cheia (a raiva não tem teto; a barra satura)
+## Bonus that leaves the bar almost full (rage has no cap; the bar saturates)
 @export var reference_bonus: float = 0.25
 
 var bonus: float = 0.0

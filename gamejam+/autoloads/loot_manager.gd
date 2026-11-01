@@ -1,57 +1,57 @@
 extends Node
-## Sistema de drop de itens. Todo drop sorteia primeiro a raridade (sorteio ponderado) e depois
-## um item só entre os itens dessa raridade. As chances melhoram a cada cemitério completado e,
-## de forma agressiva, a cada conjunto de cemitérios (loop do modo infinito) completado.
-## Quem quer um drop emite EventBus.item_drop_requested(source, position); este autoload decide.
+## Item drop system. Every drop first rolls the rarity (weighted roll) and then
+## one item among the items of that rarity only. Chances improve with every completed graveyard and,
+## aggressively, with every completed set of graveyards (infinite mode loop).
+## Whoever wants a drop emits EventBus.item_drop_requested(source, position); this autoload decides.
 
 const ITEMS_DIR: String = "res://items/data/"
 
-## Origem do drop (cada uma tem sua tabela)
+## Drop source (each one has its own table)
 enum Source {
-	ITEM_ROOM,     # sala de item
-	HORDE_CLEAR,   # sala de timer limpa antes do tempo acabar
-	NORMAL_ENEMY,  # inimigo comum derrotado
-	ELITE_ENEMY,   # elite derrotado
-	BOSS_REWARD,   # arena do boss ao fim de um conjunto de cemitérios (sempre lendário)
-	BOSS_HIT,      # dano no boss (a chance por dano fica no próprio Boss; aqui sempre dropa)
+	ITEM_ROOM,     # item room
+	HORDE_CLEAR,   # timer room cleared before time runs out
+	NORMAL_ENEMY,  # regular enemy defeated
+	ELITE_ENEMY,   # elite defeated
+	BOSS_REWARD,   # boss arena at the end of a set of graveyards (always legendary)
+	BOSS_HIT,      # damage to the boss (the per-hit chance lives in the Boss itself; here it always drops)
 }
 
-@export_group("Tabelas base")
-## Pesos de raridade [Básico, Intermediário, Avançado, Lendário] da sala de item e da sala de timer
+@export_group("Base tables")
+## Rarity weights [Basic, Intermediate, Advanced, Legendary] for the item room and the timer room
 @export var room_rarity_weights: Array[float] = [75.0, 20.0, 4.0, 1.0]
-## Pesos de raridade do drop de inimigo comum
+## Rarity weights for regular enemy drops
 @export var normal_rarity_weights: Array[float] = [75.0, 20.0, 4.0, 1.0]
-## Pesos de raridade do drop de elite
+## Rarity weights for elite drops
 @export var elite_rarity_weights: Array[float] = [25.0, 50.0, 20.0, 5.0]
-## Pesos de raridade do drop por dano no boss
+## Rarity weights for drops from damaging the boss
 @export var boss_hit_rarity_weights: Array[float] = [40.0, 40.0, 17.0, 3.0]
-## Chance (0-1) de um inimigo comum dropar item
+## Chance (0-1) of a regular enemy dropping an item
 @export var normal_drop_chance: float = 0.075
-## Chance (0-1) de um elite dropar item
+## Chance (0-1) of an elite dropping an item
 @export var elite_drop_chance: float = 0.25
 
-@export_group("Melhoria por cemitério")
-## Crescimento dos pesos por cemitério completado (0.15 = +15% do peso base por cemitério)
+@export_group("Improvement per graveyard")
+## Weight growth per completed graveyard (0.15 = +15% of the base weight per graveyard)
 @export var cemetery_rarity_growth: Array[float] = [0.0, 0.15, 0.3, 0.4]
-## Chance de drop somada por cemitério completado
+## Drop chance added per completed graveyard
 @export var normal_drop_chance_per_cemetery: float = 0.005
 @export var elite_drop_chance_per_cemetery: float = 0.02
 
-@export_group("Melhoria por loop (agressiva)")
-## Multiplicador extra dos pesos por loop completado (1.0 = dobra o peso a cada loop)
+@export_group("Improvement per loop (aggressive)")
+## Extra weight multiplier per completed loop (1.0 = doubles the weight each loop)
 @export var loop_rarity_growth: Array[float] = [0.0, 0.5, 1.0, 1.5]
-## Multiplicador extra da chance de drop por loop completado
+## Extra drop chance multiplier per completed loop
 @export var loop_drop_chance_growth: float = 0.25
-## Tetos da chance de drop
+## Drop chance caps
 @export var normal_drop_chance_cap: float = 0.2
 @export var elite_drop_chance_cap: float = 0.6
 
-## Cemitérios por loop (atualizado pelo sinal cemetery_changed)
+## Graveyards per loop (updated by the cemetery_changed signal)
 var cemeteries_per_loop: int = 5
 
-# Itens por raridade: Rarity -> Array[ItemData]
+# Items per rarity: Rarity -> Array[ItemData]
 var _items_by_rarity: Dictionary = {}
-# Lendário do boss ainda não recolhido: reaparece no spawn do próximo loop
+# Boss legendary not yet picked up: reappears at the spawn of the next loop
 var _unclaimed_boss_item: ItemData = null
 
 
@@ -62,12 +62,12 @@ func _ready() -> void:
 	EventBus.item_collected.connect(_on_item_collected)
 
 
-## Cemitérios completados na run inteira (o loop atual conta os anteriores a ele).
+## Graveyards completed in the whole run (the current loop counts the ones before it).
 func cemeteries_completed() -> int:
 	return GameManager.loop_index * cemeteries_per_loop + maxi(GameManager.cemetery_index - 1, 0)
 
 
-## Pesos de raridade já melhorados pelo progresso da run.
+## Rarity weights already improved by the run's progress.
 func rarity_weights(source: Source) -> Array[float]:
 	var base: Array[float] = _base_weights(source)
 	var done: int = cemeteries_completed()
@@ -80,7 +80,7 @@ func rarity_weights(source: Source) -> Array[float]:
 	return out
 
 
-## Chance (0-1) de um inimigo dropar algo; salas sempre dropam.
+## Chance (0-1) of an enemy dropping something; rooms always drop.
 func drop_chance(source: Source) -> float:
 	var done: int = cemeteries_completed()
 	var loop_mult: float = 1.0 + loop_drop_chance_growth * GameManager.loop_index
@@ -92,7 +92,7 @@ func drop_chance(source: Source) -> float:
 	return 1.0
 
 
-## Sorteia um item para a origem (null = sem drop). Não solta no chão.
+## Rolls an item for the source (null = no drop). Does not drop it on the ground.
 func roll_item(source: Source) -> ItemData:
 	if randf() >= drop_chance(source):
 		return null
@@ -102,7 +102,7 @@ func roll_item(source: Source) -> ItemData:
 	return _roll_from_rarity(rarity)
 
 
-## Sorteia e solta o item no chão. Retorna o item (null = sem drop).
+## Rolls and drops the item on the ground. Returns the item (null = no drop).
 func drop_item(source: Source, world_position: Vector2) -> ItemData:
 	var item: ItemData = roll_item(source)
 	if item == null:
@@ -110,13 +110,13 @@ func drop_item(source: Source, world_position: Vector2) -> ItemData:
 	ItemManager.drop_to_ground(item, world_position)
 	if source == Source.BOSS_REWARD:
 		_unclaimed_boss_item = item
-	print("[Loot] - %s dropou %s (%s)" % [Source.keys()[source], item.id, ItemEnums.Rarity.keys()[item.rarity]])
+	print("[Loot] - %s dropped %s (%s)" % [Source.keys()[source], item.id, ItemEnums.Rarity.keys()[item.rarity]])
 	return item
 
 
-## Lendário do boss que ficou para trás (o modo infinito limpa o chão); devolve uma vez só.
+## Boss legendary that was left behind (infinite mode clears the ground); returned only once.
 func take_unclaimed_boss_item() -> ItemData:
-	# Só existe dentro da mesma run, no início de um loop novo
+	# Only exists within the same run, at the start of a new loop
 	if GameManager.loop_index <= 0:
 		_unclaimed_boss_item = null
 		return null
@@ -125,7 +125,7 @@ func take_unclaimed_boss_item() -> ItemData:
 	return item
 
 
-# Sorteio ponderado de raridade; o índice do peso é o valor do enum Rarity
+# Weighted rarity roll; the weight index is the value of the Rarity enum
 func _roll_rarity(weights: Array[float]) -> ItemEnums.Rarity:
 	var total: float = 0.0
 	for w: float in weights:
@@ -140,14 +140,14 @@ func _roll_rarity(weights: Array[float]) -> ItemEnums.Rarity:
 	return (weights.size() - 1) as ItemEnums.Rarity
 
 
-# Item da raridade, preferindo os que o player ainda não tem; sem itens nela, desce de raridade
+# Item of the rarity, preferring ones the player does not have yet; with no items in it, drops down a rarity
 func _roll_from_rarity(rarity: ItemEnums.Rarity) -> ItemData:
 	for r: int in range(rarity, -1, -1):
 		var pool: Array = _items_by_rarity.get(r, [])
 		if pool.is_empty():
 			continue
 		if r != rarity:
-			push_warning("[Loot] - sem itens %s, caindo para %s" % [ItemEnums.Rarity.keys()[rarity], ItemEnums.Rarity.keys()[r]])
+			push_warning("[Loot] - no %s items, falling back to %s" % [ItemEnums.Rarity.keys()[rarity], ItemEnums.Rarity.keys()[r]])
 		var fresh: Array = pool.filter(func(item: ItemData) -> bool: return not _is_owned(item))
 		return (fresh if not fresh.is_empty() else pool).pick_random()
 	return null
@@ -168,7 +168,7 @@ func _at(values: Array[float], index: int) -> float:
 	return values[index] if index < values.size() else 0.0
 
 
-# Já possuído, no chão ou esperando na tela de inventário
+# Already owned, on the ground or waiting on the inventory screen
 func _is_owned(item: ItemData) -> bool:
 	for owned: ItemData in ItemManager.owned_items:
 		if owned.id == item.id:
@@ -185,12 +185,12 @@ func _is_owned(item: ItemData) -> bool:
 func _load_items() -> void:
 	var dir: DirAccess = DirAccess.open(ITEMS_DIR)
 	if dir == null:
-		push_warning("[Loot] - pasta de itens não encontrada: %s" % ITEMS_DIR)
+		push_warning("[Loot] - items folder not found: %s" % ITEMS_DIR)
 		return
 	var files: PackedStringArray = dir.get_files()
 	files.sort()
 	for file: String in files:
-		# Em export, arquivos podem ter sufixo .remap
+		# On export, files may have a .remap suffix
 		var clean: String = file.trim_suffix(".remap")
 		if not clean.ends_with(".tres"):
 			continue
@@ -201,7 +201,7 @@ func _load_items() -> void:
 			_items_by_rarity[item.rarity] = []
 		_items_by_rarity[item.rarity].append(item)
 	for r: int in _items_by_rarity.keys():
-		print("[Loot] - %d itens %s" % [_items_by_rarity[r].size(), ItemEnums.Rarity.keys()[r]])
+		print("[Loot] - %d items %s" % [_items_by_rarity[r].size(), ItemEnums.Rarity.keys()[r]])
 
 
 func _on_item_drop_requested(source: int, world_position: Vector2) -> void:

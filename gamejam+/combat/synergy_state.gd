@@ -1,8 +1,8 @@
 class_name SynergyState
 extends RefCounted
-## Efeitos de sinergia resolvidos para a poção ativa (preenchido por SynergyResolver).
+## Synergy effects resolved for the active potion (filled in by SynergyResolver).
 
-# Aspect -> tier (0 a 4)
+# Aspect -> tier (0 to 4)
 var tiers: Dictionary = {}
 
 # PLANT
@@ -49,47 +49,47 @@ var arc_bounce: bool = false
 var rage_enabled: bool = false
 var rage_resets_per_floor: bool = false
 
-# --- Sinergias especiais (receitas) ---
-# Ids das receitas ativas
+# --- Special synergies (recipes) ---
+# Ids of the active recipes
 var specials: Array[StringName] = []
-# Salad!: bônus somado à chance de lifesteal
+# Salad!: bonus added to the lifesteal chance
 var lifesteal_chance_bonus: float = 0.0
-# EVIL Salad!!: bônus somado à chance de veneno
+# EVIL Salad!!: bonus added to the poison chance
 var poison_chance_bonus: float = 0.0
-# Spice bag: rastro de nuvem e sua lentidão
+# Spice bag: cloud trail and its slow
 var cloud_enabled: bool = false
 var cloud_slow: float = 0.0
-# Unethical Butcher: chance de orbe de cura ao morrer marcado
+# Unethical Butcher: chance of a healing orb when dying marked
 var butcher_orb_chance: float = 0.0
-# Crunchy!: bônus de dano recebido por atordoados
+# Crunchy!: bonus damage taken by stunned enemies
 var stun_damage_bonus: float = 0.0
-# Press F: fantasmas de enfeitiçados mortos
+# Press F: ghosts of dead charmed enemies
 var ghosts_enabled: bool = false
-# RAINBOWS!!!: bônus de charm, ricochetes e ciclo de cores
+# RAINBOWS!!!: charm bonus, bounces and color cycle
 var charm_chance_bonus: float = 0.0
 var bounce_count: int = 0
 var rainbow_colors: bool = false
-# Do NOT make this tea.: chance e fração de vida máxima perdida
+# Do NOT make this tea.: chance and fraction of max health lost
 var tea_chance: float = 0.0
 var tea_health_fraction: float = 0.0
-# Weird Eye Drops.: a bala se divide ao acertar
+# Weird Eye Drops.: the bullet splits on hit
 var split_on_hit: bool = false
-# Magical Potentializer: multiplicadores de raio e dano das explosões
+# Magical Potentializer: explosion radius and damage multipliers
 var explosion_radius_mult: float = 1.0
 var explosion_damage_mult: float = 1.0
 
 
-## Tier (0 a 4) de um aspecto.
+## Tier (0 to 4) of an aspect.
 func tier(aspect: ItemEnums.Aspect) -> int:
 	return int(tiers.get(aspect, 0))
 
 
-## Retorna true se a receita especial está ativa.
+## Returns true if the special recipe is active.
 func has_special(id: StringName) -> bool:
 	return specials.has(id)
 
 
-## Retorna true se alguma sinergia (de aspecto ou especial) está ativa.
+## Returns true if any synergy (aspect or special) is active.
 func any_active() -> bool:
 	if not specials.is_empty():
 		return true

@@ -23,7 +23,7 @@ hframes = 16
 frame = 4
 
 [node name="HealthComponent" parent="." index="2"]
-max_health = 2
+max_health = 30
 
 [node name="CollisionShape2D" parent="Hurtbox" index="0"]
 position = Vector2(0, -34)

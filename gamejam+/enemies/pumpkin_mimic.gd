@@ -1,8 +1,8 @@
 class_name PumpkinMimic
 extends EnemyBase
-## Abóbora mímico: parece uma abóbora decorativa até ser ativada, quando persegue o player.
-## Ativa se levar qualquer dano ou se o player chegar a "wake_radius" px. Dormindo, não conta como inimigo
-## (fora do grupo "enemy"), não fere o player e não se move; a hurtbox continua atingível.
+## Mimic pumpkin: looks like a decorative pumpkin until activated, when it chases the player.
+## Activates if it takes any damage or if the player gets within "wake_radius" px. While asleep, it does not count as an enemy
+## (outside the "enemy" group), does not hurt the player and does not move; the hurtbox remains hittable.
 
 @export var wake_radius: float = 70.0
 @export var anim_fps: float = 8.0
@@ -12,7 +12,7 @@ var _awake: bool = false
 var _anim_time: float = 0.0
 
 
-## Define de qual abóbora (tipo do Prop) o mímico se disfarça; chamar antes de add_child.
+## Sets which pumpkin (Prop type) the mimic disguises itself as; call before add_child.
 func setup(kind: Prop.Kind) -> void:
 	disguise_kind = kind
 
@@ -29,7 +29,7 @@ func _ready() -> void:
 	_sprite.texture = atlas
 	_sprite.hframes = 1
 	_sprite.position = Vector2(0.0, -region.size.y / 2.0)
-	print("[Enemy] - mímico de abóbora disfarçado em %s" % global_position)
+	print("[Enemy] - pumpkin mimic disguised at %s" % global_position)
 
 
 func _physics_process(delta: float) -> void:
@@ -52,7 +52,7 @@ func _on_damaged(_amount: int) -> void:
 	_wake_up()
 
 
-## Revela o mímico: troca para a folha ativa, volta ao grupo "enemy" e passa a perseguir o player.
+## Reveals the mimic: switches to the active sheet, returns to the "enemy" group and starts chasing the player.
 func _wake_up() -> void:
 	if _awake:
 		return
@@ -64,10 +64,10 @@ func _wake_up() -> void:
 	_sprite.frame = 0
 	_sprite.position = Vector2(0.0, -16.0)
 	_play_wake_feedback()
-	print("[Enemy] - mímico de abóbora ativado")
+	print("[Enemy] - pumpkin mimic activated")
 
 
-# Pulo, squash, tremida, "!" sobre a cabeça e som
+# Jump, squash, shake, "!" over the head and sound
 func _play_wake_feedback() -> void:
 	var tween: Tween = create_tween()
 	tween.tween_property(_sprite, "position:y", -28.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

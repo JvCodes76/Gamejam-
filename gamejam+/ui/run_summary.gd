@@ -1,13 +1,13 @@
 class_name RunSummary
 extends CanvasLayer
-## Sumário da run: aparece em EventBus.run_ended. Na derrota só permite voltar ao menu;
-## na vitória (boss derrotado) permite encerrar a run ou continuar no modo infinito.
+## Run summary: appears on EventBus.run_ended. On defeat it only allows going back to the menu;
+## on victory (boss defeated) it allows ending the run or continuing in infinite mode.
 
 const VICTORY_COLOR: Color = Color(1.0, 0.85, 0.4)
 const DEFEAT_COLOR: Color = Color(1.0, 0.35, 0.35)
 const LABEL_COLOR: Color = Color(0.75, 0.75, 0.8)
 
-## Duração (s) do fade-in do painel
+## Duration (s) of the panel fade-in
 @export var fade_in_time: float = 0.35
 
 @onready var _painel: PanelContainer = $Painel
@@ -29,7 +29,7 @@ func _ready() -> void:
 		button.pressed.connect(EventBus.play_sfx_requested.emit.bind("ui_click"))
 
 
-# Preenche e mostra o sumário (o GameManager já pausou a árvore)
+# Fills in and shows the summary (the GameManager has already paused the tree)
 func _on_run_ended(victory: bool) -> void:
 	_fill(victory)
 	visible = true
@@ -41,40 +41,40 @@ func _on_run_ended(victory: bool) -> void:
 		_botao_continuar.grab_focus()
 	else:
 		_botao_menu.grab_focus()
-	print("[UI] - Sumário da run (vitória: %s)" % str(victory))
+	print("[UI] - Run summary (victory: %s)" % str(victory))
 
 
-# Título, estatísticas da run e botões conforme o resultado
+# Title, run statistics and buttons according to the result
 func _fill(victory: bool) -> void:
 	var loop: int = GameManager.loop_index + 1
-	_titulo.text = tr("VITÓRIA") if victory else tr("VOCÊ MORREU")
+	_titulo.text = tr("VICTORY") if victory else tr("YOU DIED")
 	_titulo.add_theme_color_override("font_color", VICTORY_COLOR if victory else DEFEAT_COLOR)
 	if victory:
-		_subtitulo.text = tr("O guardião do último cemitério caiu. Loop %d completo.") % loop
+		_subtitulo.text = tr("The guardian of the last graveyard has fallen. Loop %d complete.") % loop
 	else:
-		_subtitulo.text = tr("Caiu no cemitério %d do loop %d.") % [GameManager.cemetery_index, loop]
+		_subtitulo.text = tr("Fell in graveyard %d of loop %d.") % [GameManager.cemetery_index, loop]
 
 	for child: Node in _stats.get_children():
 		child.queue_free()
-	_add_stat(tr("Pontos"), str(GameManager.score))
-	_add_stat(tr("Tempo"), _format_time(GameManager.run_time))
+	_add_stat(tr("Score"), str(GameManager.score))
+	_add_stat(tr("Time"), _format_time(GameManager.run_time))
 	_add_stat(tr("Loop"), str(loop))
-	_add_stat(tr("Salas visitadas"), str(GameManager.rooms_visited))
-	_add_stat(tr("Inimigos derrotados"), str(GameManager.kills))
-	_add_stat(tr("Elites derrotados"), str(GameManager.elite_kills))
-	_add_stat(tr("Bosses derrotados"), str(GameManager.bosses_defeated))
-	_add_stat(tr("Poções preparadas"), str(GameManager.potions_brewed))
-	_add_stat(tr("Itens coletados"), str(GameManager.items_collected))
+	_add_stat(tr("Rooms visited"), str(GameManager.rooms_visited))
+	_add_stat(tr("Enemies defeated"), str(GameManager.kills))
+	_add_stat(tr("Elites defeated"), str(GameManager.elite_kills))
+	_add_stat(tr("Bosses defeated"), str(GameManager.bosses_defeated))
+	_add_stat(tr("Potions brewed"), str(GameManager.potions_brewed))
+	_add_stat(tr("Items collected"), str(GameManager.items_collected))
 
 	var names: PackedStringArray = _bag_item_names()
-	_itens.text = tr("Bolsa: %s") % (", ".join(names) if not names.is_empty() else tr("vazia"))
+	_itens.text = tr("Bag: %s") % (", ".join(names) if not names.is_empty() else tr("empty"))
 
 	_botao_continuar.visible = victory
-	_botao_continuar.text = tr("Continuar (Loop %d)") % (loop + 1)
-	_botao_menu.text = tr("Encerrar run") if victory else tr("Menu principal")
+	_botao_continuar.text = tr("Continue (Loop %d)") % (loop + 1)
+	_botao_menu.text = tr("End run") if victory else tr("Main menu")
 
 
-# Linha "nome  valor" na grade de estatísticas
+# "name  value" row in the statistics grid
 func _add_stat(stat_name: String, value: String) -> void:
 	var name_label: Label = Label.new()
 	name_label.text = stat_name
@@ -87,7 +87,7 @@ func _add_stat(stat_name: String, value: String) -> void:
 	_stats.add_child(value_label)
 
 
-# Nomes dos itens que estão na bolsa ao fim da run
+# Names of the items in the bag at the end of the run
 func _bag_item_names() -> PackedStringArray:
 	var names: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in ItemManager.bag_entries:
@@ -97,7 +97,7 @@ func _bag_item_names() -> PackedStringArray:
 	return names
 
 
-# Segundos em mm:ss (ou h:mm:ss em runs longas do modo infinito)
+# Seconds as mm:ss (or h:mm:ss in long infinite mode runs)
 func _format_time(seconds: float) -> String:
 	var total: int = int(seconds)
 	var h: int = floori(total / 3600.0)
@@ -108,14 +108,14 @@ func _format_time(seconds: float) -> String:
 	return "%02d:%02d" % [m, s]
 
 
-# Modo infinito: volta ao primeiro cemitério com os itens mantidos
+# Infinite mode: goes back to the first graveyard with items kept
 func _on_continuar_pressed() -> void:
-	print("[UI] - Continuar no modo infinito pressionado")
+	print("[UI] - Continue in infinite mode pressed")
 	visible = false
 	GameManager.continue_endless()
 
 
-# Encerra a run e volta ao menu principal
+# Ends the run and returns to the main menu
 func _on_menu_pressed() -> void:
-	print("[UI] - Encerrar run pressionado")
+	print("[UI] - End run pressed")
 	GameManager.quit_to_menu()

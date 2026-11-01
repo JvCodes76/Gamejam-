@@ -7,13 +7,13 @@ const ENEMY_MASK: int = 4
 @export var move_speed: float = 45.0
 @export var points: int = 10
 @export var contact_cooldown: float = 0.6
-# Inimigo básico (sujeito a mortes instantâneas das sinergias)
+# Basic enemy (subject to instant kills from synergies)
 @export var is_basic: bool = true
-## Fração do knockback ignorada (0 = recebe tudo, 1 = imóvel). Elites e boss resistem mais.
+## Fraction of knockback ignored (0 = takes everything, 1 = immovable). Elites and the boss resist more.
 @export_range(0.0, 1.0) var knockback_resistance: float = 0.0
-## Tempo após o spawn sem causar dano de contato (s)
+## Time after spawn without dealing contact damage (s)
 @export var spawn_grace: float = FeelConstants.SPAWN_GRACE
-## Elite com arte própria: a sala não amplia nem tinge o sprite (só aplica vida e resistência de elite)
+## Elite with its own art: the room does not enlarge or tint the sprite (only applies elite health and resistance)
 @export var has_elite_art: bool = false
 
 @onready var _health: HealthComponent = $HealthComponent
@@ -22,10 +22,10 @@ const ENEMY_MASK: int = 4
 @onready var _sprite: Sprite2D = $Sprite2D
 
 var _base_modulate: Color = Color.WHITE
-# Cooldown do dano de contato e verificação de sobreposição por contagem de quadros (sem await no inimigo)
+# Contact damage cooldown and overlap check by frame count (no await on the enemy)
 var _contact_cooldown_left: float = 0.0
 var _recheck_frames: int = 0
-# Velocidade externa (knockback), somada à perseguição e reduzida por atrito
+# External velocity (knockback), added to the chase and reduced by friction
 var _knockback: Vector2 = Vector2.ZERO
 
 
@@ -37,13 +37,13 @@ func _ready() -> void:
 	_hitbox.hurtbox_hit.connect(_on_hurtbox_hit)
 	_status.changed.connect(_on_status_changed)
 	_health.dot_damaged.connect(_on_dot_damaged)
-	# Carência do spawn: reaproveita o cooldown de contato (a hitbox volta sozinha e reverifica a sobreposição)
+	# Spawn grace: reuses the contact cooldown (the hitbox comes back on its own and rechecks the overlap)
 	if spawn_grace > 0.0:
 		_hitbox.set_deferred("monitoring", false)
 		_contact_cooldown_left = spawn_grace
 
 
-# Persegue o jogador (ou o inimigo mais próximo se enfeitiçado); respeita roots, slow e stun.
+# Chases the player (or the nearest enemy if charmed); respects roots, slow and stun.
 func _physics_process(delta: float) -> void:
 	_hitbox.damage_scale = _status.damage_dealt_multiplier()
 	_tick_contact(delta)
@@ -57,17 +57,17 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 
-## Velocidade desejada em direção ao alvo (antes de lentidão e knockback); subclasses mudam o jeito de andar.
+## Desired velocity toward the target (before slow and knockback); subclasses change how it moves.
 func _chase_velocity(target: Node2D) -> Vector2:
 	return global_position.direction_to(target.global_position) * move_speed
 
 
-## Empurrão externo (golpe): reduzido pela resistência, decai por atrito em _physics_process.
+## External push (hit): reduced by resistance, decays by friction in _physics_process.
 func apply_knockback(impulse: Vector2) -> void:
 	_knockback += impulse * (1.0 - knockback_resistance)
 
 
-## Animação de surgimento: o sprite cresce de 0 até a escala base.
+## Spawn animation: the sprite grows from 0 to the base scale.
 func play_spawn_pop() -> void:
 	var feedback: HitFeedback = get_node_or_null("HitFeedback") as HitFeedback
 	var target_scale: Vector2 = feedback.base_scale() if feedback != null else _sprite.scale
@@ -76,14 +76,14 @@ func play_spawn_pop() -> void:
 	tween.tween_property(_sprite, "scale", target_scale, FeelConstants.SPAWN_POP_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-# Alvo atual: jogador, ou o inimigo não enfeitiçado mais próximo quando enfeitiçado.
+# Current target: the player, or the nearest non-charmed enemy when charmed.
 func _find_target() -> Node2D:
 	if _status.has(StatusEffects.CHARMED):
 		return nearest_enemy(self, true)
 	return get_tree().get_first_node_in_group("player") as Node2D
 
 
-# Inimigo vivo mais próximo de "from"; opcionalmente ignora marcados e enfeitiçados.
+# Nearest living enemy to "from"; optionally ignores marked and charmed ones.
 static func nearest_enemy(from: EnemyBase, only_unmarked_uncharmed: bool) -> EnemyBase:
 	var best: EnemyBase = null
 	var best_dist: float = INF
@@ -102,7 +102,7 @@ static func nearest_enemy(from: EnemyBase, only_unmarked_uncharmed: bool) -> Ene
 	return best
 
 
-# Reage a mudanças de status: stun (e dano recebido), charme (máscara e cor) e dano de marcado.
+# Reacts to status changes: stun (and damage taken), charm (mask and color) and marked damage.
 func _on_status_changed(status: StringName, active: bool) -> void:
 	match status:
 		StatusEffects.STUN:
@@ -113,19 +113,19 @@ func _on_status_changed(status: StringName, active: bool) -> void:
 		StatusEffects.CHARMED:
 			_hitbox.collision_mask = ENEMY_MASK if active else PLAYER_MASK
 			_sprite.modulate = _base_modulate.lerp(CombatConstants.CHARM_TINT, CombatConstants.CHARM_TINT_AMOUNT) if active else _base_modulate
-			print("[Combat] - enfeitiçado: %s" % active)
+			print("[Combat] - charmed: %s" % active)
 			_recheck_contact()
 		StatusEffects.MARKED:
 			_health.damage_taken_multiplier = _status.damage_taken_multiplier()
 
 
-# Inicia o cooldown do dano de contato (contado em _physics_process, sem await).
+# Starts the contact damage cooldown (counted in _physics_process, no await).
 func _on_hit_landed() -> void:
 	_hitbox.set_deferred("monitoring", false)
 	_contact_cooldown_left = contact_cooldown
 
 
-# Conta o cooldown de contato e a espera de 2 quadros antes de reverificar a sobreposição.
+# Counts the contact cooldown and the 2-frame wait before rechecking the overlap.
 func _tick_contact(delta: float) -> void:
 	if _contact_cooldown_left > 0.0:
 		_contact_cooldown_left -= delta
@@ -139,7 +139,7 @@ func _tick_contact(delta: float) -> void:
 			_check_overlap()
 
 
-# Enfeitiçado: o inimigo atingido revida com o próprio dano de contato (dano simétrico).
+# Charmed: the enemy that was hit retaliates with its own contact damage (symmetric damage).
 func _on_hurtbox_hit(hurtbox: Hurtbox) -> void:
 	if not _status.has(StatusEffects.CHARMED):
 		return
@@ -148,12 +148,12 @@ func _on_hurtbox_hit(hurtbox: Hurtbox) -> void:
 		_health.take_damage(other._hitbox.damage)
 
 
-# Agenda a verificação de sobreposição para daqui a 2 quadros de física.
+# Schedules the overlap check for 2 physics frames from now.
 func _recheck_contact() -> void:
 	_recheck_frames = 2
 
 
-# Quem já está encostado não gera novo area_entered; verifica a sobreposição manualmente.
+# Whoever is already touching does not trigger a new area_entered; checks the overlap manually.
 func _check_overlap() -> void:
 	if not _hitbox.monitoring:
 		return
@@ -163,19 +163,19 @@ func _check_overlap() -> void:
 			break
 
 
-# Concede pontos, passa a marca ao inimigo mais próximo e remove o inimigo.
+# Grants points, passes the mark to the nearest enemy and removes the enemy.
 func _on_died() -> void:
-	print("[Enemy] - morreu (+%d pontos)" % points)
+	print("[Enemy] - died (+%d points)" % points)
 	if _status.has(StatusEffects.MARKED):
 		var next: EnemyBase = nearest_enemy(self, false)
 		if next != null:
 			next._status.apply(StatusEffects.MARKED, maxf(_status.time_left(StatusEffects.MARKED), 1.0))
-			print("[Combat] - marca passou para o inimigo mais próximo")
+			print("[Combat] - mark passed to the nearest enemy")
 	if _status.has(StatusEffects.CHARMED):
 		EventBus.charmed_enemy_died.emit(self, _status.time_left(StatusEffects.CHARMED))
 	EventBus.enemy_killed.emit(points)
 	EventBus.enemy_died.emit(global_position, _status.has(StatusEffects.MARKED), is_basic)
-	# O boss não sorteia drop próprio: a recompensa dele é o lendário da arena
+	# The boss does not roll its own drop: its reward is the arena's legendary
 	if not is_in_group("boss"):
 		var source: int = LootManager.Source.NORMAL_ENEMY if is_basic else LootManager.Source.ELITE_ENEMY
 		EventBus.item_drop_requested.emit(source, global_position)
@@ -183,7 +183,7 @@ func _on_died() -> void:
 	queue_free()
 
 
-# Visual da morte num nó separado (o inimigo some na hora): cadáver, tremida, hitstop em elite e som
+# Death visuals in a separate node (the enemy disappears instantly): corpse, shake, hitstop on elites and sound
 func _play_death_feedback() -> void:
 	var scene: Node = get_tree().current_scene
 	if scene != null:
@@ -197,32 +197,32 @@ func _play_death_feedback() -> void:
 		EventBus.play_sfx_requested.emit("elite_die")
 
 
-# Sprite do inimigo (usado para copiar a aparência, p.ex. fantasmas).
+# Enemy sprite (used to copy the appearance, e.g. ghosts).
 func get_sprite() -> Sprite2D:
 	return _sprite
 
 
-# Componente de status do inimigo.
+# Enemy status component.
 func get_status() -> StatusEffects:
 	return _status
 
 
-# Componente de vida do inimigo.
+# Enemy health component.
 func get_health() -> HealthComponent:
 	return _health
 
 
-# Hurtbox do inimigo.
+# Enemy hurtbox.
 func get_hurtbox() -> Hurtbox:
 	return $Hurtbox as Hurtbox
 
 
-# Retorna true se o inimigo está vivo e não foi marcado para remoção.
+# Returns true if the enemy is alive and not queued for removal.
 func is_alive() -> bool:
 	return not is_queued_for_deletion() and not _health.is_dead()
 
 
-# Mata na hora se for um inimigo básico vivo; retorna true se matou.
+# Kills instantly if it is a living basic enemy; returns true if it killed.
 func slay_if_basic() -> bool:
 	if not is_basic or not is_alive():
 		return false
@@ -230,6 +230,6 @@ func slay_if_basic() -> bool:
 	return true
 
 
-# Repassa o tick de dano ao longo do tempo ao EventBus (sinergias de raiz e veneno).
+# Forwards the damage-over-time tick to the EventBus (root and poison synergies).
 func _on_dot_damaged(source: StringName, amount: int) -> void:
 	EventBus.enemy_dot_ticked.emit(self, source, amount)

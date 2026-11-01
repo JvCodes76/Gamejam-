@@ -1,9 +1,9 @@
 class_name PhysicsLayers
 extends RefCounted
-## Camadas de fisica 2D (valores de bitmask) e mascaras compostas, num unico lugar.
-## Altos (arvore, muro, poste, arco, paredes da arena): WORLD (bloqueia movimento e projeteis).
-## Baixos (lapide, banco, arbusto, tronco, caldeirao): LOW_OBSTACLE (so movimento; projeteis passam por cima).
-## BULLET_BLOCKER e o volume (altura) dos obstaculos altos: so os projeteis enxergam essa camada.
+## 2D physics layers (bitmask values) and composite masks, in a single place.
+## Tall (tree, wall, post, arch, arena walls): WORLD (blocks movement and projectiles).
+## Low (tombstone, bench, bush, log, cauldron): LOW_OBSTACLE (movement only; projectiles pass over, except for tombstones).
+## BULLET_BLOCKER is the volume (height) of tall obstacles and tombstones: only projectiles see this layer.
 
 const WORLD: int = 1
 const PLAYER: int = 2
@@ -13,7 +13,7 @@ const ENEMY_BULLET: int = 16
 const LOW_OBSTACLE: int = 32
 const BULLET_BLOCKER: int = 64
 
-# O que bloqueia o movimento de player, inimigos e fantasmas
+# What blocks the movement of the player, enemies and ghosts
 const MOVE_MASK: int = WORLD | LOW_OBSTACLE
-# O que destroi (ou ricocheteia) um projetil
+# What destroys (or bounces) a projectile
 const PROJECTILE_WALL_MASK: int = WORLD | BULLET_BLOCKER

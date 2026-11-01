@@ -1,85 +1,85 @@
 extends Node
 
-# Morte do jogador
+# Player death
 signal player_died()
-# Boss do último cemitério derrotado (fim do loop atual)
+# Last graveyard boss defeated (end of the current loop)
 signal boss_defeated()
-# Boss entrou na arena (a barra de vida do boss passa a acompanhá-lo)
+# Boss entered the arena (the boss health bar starts tracking it)
 signal boss_spawned(boss: Node)
-# Boss cruzou um limiar de vida e ficou imune aos itens da última poção (novos e todos os acumulados)
+# Boss crossed a health threshold and became immune to the items of the last potion (new ones and all accumulated)
 signal boss_adapted(new_items: Array[ItemData], all_immune: Array[ItemData])
-# Run terminou: mostra o sumário (victory = boss derrotado, pode seguir para o modo infinito)
+# Run ended: shows the summary (victory = boss defeated, can continue to infinite mode)
 signal run_ended(victory: bool)
-# Vida atual do jogador alterada
+# Player's current health changed
 signal player_health_changed(current: int, max_value: int)
-# Inimigo derrotado, concede pontos
+# Enemy defeated, grants points
 signal enemy_killed(points: int)
-# Pontuação alterada
+# Score changed
 signal score_changed(score: int)
-# Jogo pausado ou despausado
+# Game paused or unpaused
 signal game_paused(paused: bool)
-# Pedido de troca de cena
+# Scene change request
 signal scene_change_requested(path: String)
-# Pedido para tocar um efeito sonoro
+# Request to play a sound effect
 signal play_sfx_requested(sfx_name: String)
-# Pedido para tocar uma música
+# Request to play a music track
 signal play_music_requested(music_name: String)
-# Item usado no caldeirão (reservado para o caldeirão)
+# Item used in the cauldron (reserved for the cauldron)
 signal item_brewed(item_id: StringName)
-# Efeitos ativos mudaram
+# Active effects changed
 signal active_effects_changed()
-# Pedido para abrir o inventário
+# Request to open the inventory
 signal inventory_open_requested()
-# Inventário fechado
+# Inventory closed
 signal inventory_closed()
-# Itens no chão mudaram
+# Items on the ground changed
 signal ground_items_changed()
-# Pedido de drop de item (source = LootManager.Source); o LootManager sorteia e solta no chão
+# Item drop request (source = LootManager.Source); the LootManager rolls and drops it on the ground
 signal item_drop_requested(source: int, position: Vector2)
-# Item recolhido do chão
+# Item picked up from the ground
 signal item_picked_up(item_id: StringName)
-# Slots de poção mudaram (conteúdo)
+# Potion slots changed (contents)
 signal potion_slots_changed()
-# Slot de poção ativo mudou
+# Active potion slot changed
 signal potion_selected(index: int)
-# Andar mudou (nível atual)
+# Floor changed (current level)
 signal floor_changed(level: int)
-# Pedido para abrir o menu do caldeirão
+# Request to open the cauldron menu
 signal cauldron_open_requested(cauldron: Node)
-# Sala mudou (índice da sala atual)
+# Room changed (current room index)
 signal room_changed(index: int)
-# Cemitério carregado (índice a partir de 1 e total de cemitérios)
+# Graveyard loaded (1-based index and total graveyards)
 signal cemetery_changed(index: int, total: int)
-# Tempo restante da sala de horda (valor negativo = esconder)
+# Time left in the horde room (negative value = hide)
 signal horde_timer_changed(seconds_left: float)
-# Inimigo morreu: posição, estava marcado, é básico
+# Enemy died: position, was marked, is basic
 signal enemy_died(position: Vector2, was_marked: bool, is_basic: bool)
-# Tick de dano ao longo do tempo num inimigo: fonte e dano causado
+# Damage-over-time tick on an enemy: source and damage dealt
 signal enemy_dot_ticked(enemy: Node, source: StringName, amount: int)
-# Raiva (sinergia Evil) mudou: bônus de dano (0.05 = +5%)
+# Rage (Evil synergy) changed: damage bonus (0.05 = +5%)
 signal rage_changed(bonus: float)
-# Inimigo enfeitiçado morreu: o inimigo (ainda válido durante o sinal) e o tempo restante do charm
+# Charmed enemy died: the enemy (still valid during the signal) and the remaining charm time
 signal charmed_enemy_died(enemy: Node2D, charm_time_left: float)
 
-# --- Game feel (escutados pelo autoload Juice, pela UI e pelo áudio) ---
-# Pedido de tremida de tela (trauma de 0 a 1, soma com o atual)
+# --- Game feel (listened to by the Juice autoload, the UI and the audio) ---
+# Screen shake request (trauma from 0 to 1, added to the current one)
 signal screen_shake_requested(trauma: float)
-# Pedido de congelar o jogo por "duration" segundos reais (o maior vence, não empilha)
+# Request to freeze the game for "duration" real seconds (the largest wins, does not stack)
 signal hitstop_requested(duration: float)
-# Pedido de câmera lenta: escala de tempo por "duration" segundos reais
+# Slow-motion request: time scale for "duration" real seconds
 signal slowmo_requested(scale: float, duration: float)
-# Dano direto causado a um inimigo (números de dano)
+# Direct damage dealt to an enemy (damage numbers)
 signal damage_dealt(position: Vector2, amount: int, is_crit: bool, color: Color)
-# Dano negado (sinergia Darkness): mostra "BLOCK"
+# Damage negated (Darkness synergy): shows "BLOCK"
 signal damage_blocked(position: Vector2)
-# Player tomou dano
+# Player took damage
 signal player_hurt(position: Vector2)
-# Bala destruída numa parede
+# Bullet destroyed against a wall
 signal bullet_hit_wall(position: Vector2, color: Color)
-# Sala trancou / foi limpa
+# Room locked / was cleared
 signal room_locked()
 signal room_cleared()
-# Item recolhido do chão (com a posição de onde estava)
+# Item picked up from the ground (with the position it was at)
 signal item_collected(item_id: StringName, position: Vector2)
-# Poção preparada no caldeirão
+# Potion brewed in the cauldron
 signal potion_brewed(color: Color, position: Vector2)

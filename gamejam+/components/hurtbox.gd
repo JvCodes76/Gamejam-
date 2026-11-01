@@ -1,14 +1,14 @@
 class_name Hurtbox
 extends Area2D
 
-## Emitido antes do dano: direção do golpe (zero se desconhecida) e se foi crítico.
+## Emitted before the damage: direction of the hit (zero if unknown) and whether it was a critical.
 signal hit_received(direction: Vector2, is_crit: bool)
 
 @export var health_component: HealthComponent
-## Invencibilidade após levar dano (s). 0 = sem i-frames (inimigos).
+## Invincibility after taking damage (s). 0 = no i-frames (enemies).
 @export var invulnerability_time: float = 0.0
 
-# Dados do golpe atual (válidos durante o sinal damaged do HealthComponent)
+# Current hit data (valid during the HealthComponent's damaged signal)
 var last_hit_direction: Vector2 = Vector2.ZERO
 var last_hit_crit: bool = false
 
@@ -19,7 +19,7 @@ func _ready() -> void:
 	set_physics_process(false)
 
 
-## Repassa o dano recebido ao HealthComponent (ignora durante os i-frames).
+## Passes the received damage to the HealthComponent (ignored during i-frames).
 func receive_hit(damage: int, direction: Vector2 = Vector2.ZERO, is_crit: bool = false) -> void:
 	if health_component == null or is_invulnerable():
 		return
@@ -33,13 +33,13 @@ func receive_hit(damage: int, direction: Vector2 = Vector2.ZERO, is_crit: bool =
 		start_invulnerability(invulnerability_time)
 
 
-## Liga a invencibilidade por "duration" segundos.
+## Turns on invincibility for "duration" seconds.
 func start_invulnerability(duration: float) -> void:
 	_invulnerable_left = maxf(_invulnerable_left, duration)
 	set_physics_process(true)
 
 
-## Retorna true durante os i-frames.
+## Returns true during i-frames.
 func is_invulnerable() -> bool:
 	return _invulnerable_left > 0.0
 
@@ -51,20 +51,20 @@ func _physics_process(delta: float) -> void:
 		set_physics_process(false)
 
 
-# Repassa um dano ao longo do tempo ao HealthComponent.
+# Passes damage over time to the HealthComponent.
 func apply_dot(dps: float, duration: float, source: StringName = &"dot", tick: float = HealthComponent.DOT_TICK) -> void:
 	if health_component:
 		health_component.apply_dot(dps, duration, source, tick)
 
 
-# Aplica um status ao dono (nó StatusEffects irmão), se existir.
+# Applies a status to the owner (sibling StatusEffects node), if it exists.
 func apply_status(status: StringName, duration: float, power: float = 1.0) -> void:
 	var effects: StatusEffects = get_parent().get_node_or_null("StatusEffects") as StatusEffects
 	if effects != null:
 		effects.apply(status, duration, power)
 
 
-# Aplica uma lentidão de uma fonte nomeada (fontes diferentes multiplicam); fraction 0.4 = -40%.
+# Applies a slow from a named source (different sources multiply); fraction 0.4 = -40%.
 func apply_slow(source: StringName, duration: float, fraction: float) -> void:
 	var effects: StatusEffects = get_parent().get_node_or_null("StatusEffects") as StatusEffects
 	if effects != null:

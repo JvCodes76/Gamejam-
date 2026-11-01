@@ -18,4 +18,4 @@ texture = ExtResource("3_tex")
 hframes = 8
 
 [node name="HealthComponent" parent="." index="2"]
-max_health = 1
+max_health = 15

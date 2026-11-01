@@ -16,7 +16,7 @@ signal released(item: PhysicalItem)
 @export var rotate_step_degrees: float = 45.0
 @export var polygon_epsilon: float = 1.0
 
-# Item atualmente segurado (apenas um por vez)
+# Item currently held (only one at a time)
 static var current_grabbed: PhysicalItem = null
 
 var item_data: ItemData
@@ -24,7 +24,7 @@ var item_scale: float = 3.0
 
 var is_hovered: bool = false
 var is_grabbed: bool = false
-var is_scaling: bool = false # true durante o tween (eventos de zona são ruído)
+var is_scaling: bool = false # true during the tween (zone events are noise)
 
 var _sprite: Sprite2D
 var _base_polygons: Array[PackedVector2Array] = []
@@ -52,7 +52,7 @@ func _ready() -> void:
 	linear_damp = rest_linear_damp
 	angular_damp = rest_angular_damp
 
-# Configura sprite e colliders a partir do ItemData
+# Configures the sprite and colliders from the ItemData
 func setup(data: ItemData, new_scale: float = 3.0) -> void:
 	item_data = data
 	item_scale = new_scale
@@ -63,9 +63,9 @@ func setup(data: ItemData, new_scale: float = 3.0) -> void:
 	_sprite.texture = data.icon
 	_base_polygons = ColliderBuilder.build_polygons(data.icon, 1.0, polygon_epsilon)
 	_rebuild_colliders(new_scale)
-	print("[Inventory] - Item '%s' criado (escala %.2f, %d polígonos)" % [data.id, new_scale, _base_polygons.size()])
+	print("[Inventory] - Item '%s' created (scale %.2f, %d polygons)" % [data.id, new_scale, _base_polygons.size()])
 
-# Reconstrói escala do sprite e colliders, com animação opcional
+# Rebuilds the sprite and collider scale, with optional animation
 func apply_item_scale(new_scale: float, tween_time: float = 0.15) -> void:
 	if _scale_tween and _scale_tween.is_valid():
 		_scale_tween.kill()
@@ -76,15 +76,15 @@ func apply_item_scale(new_scale: float, tween_time: float = 0.15) -> void:
 	_scale_tween = create_tween()
 	_scale_tween.tween_method(_rebuild_colliders, item_scale, new_scale, tween_time)
 	_scale_tween.tween_callback(_end_scaling)
-	print("[Inventory] - Escala %.2f -> %.2f" % [item_scale, new_scale])
+	print("[Inventory] - Scale %.2f -> %.2f" % [item_scale, new_scale])
 
-# Libera a flag um frame de física depois, absorvendo eventos espúrios
+# Releases the flag one physics frame later, absorbing spurious events
 func _end_scaling() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	is_scaling = false
 
-# Aplica a escala ao sprite e recria um CollisionPolygon2D por polígono
+# Applies the scale to the sprite and recreates a CollisionPolygon2D per polygon
 func _rebuild_colliders(new_scale: float) -> void:
 	item_scale = new_scale
 	if _sprite:
@@ -101,7 +101,7 @@ func _rebuild_colliders(new_scale: float) -> void:
 		add_child(col)
 		_colliders.append(col)
 
-# Testa se um ponto global está dentro de algum polígono do item
+# Tests whether a global point is inside any of the item's polygons
 func contains_point(global_point: Vector2) -> bool:
 	var local: Vector2 = to_local(global_point)
 	for poly: PackedVector2Array in _base_polygons:
@@ -135,11 +135,11 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		_has_pending_rotation = false
 	if is_grabbed:
 		state.angular_velocity = 0.0
-		# Alcança o mouse em um único passo (sem atraso), limitado por max_grab_speed
+		# Reaches the mouse in a single step (no lag), limited by max_grab_speed
 		var to_mouse: Vector2 = _clamped_mouse() - state.transform.origin
 		var wanted: Vector2 = to_mouse * minf(follow_strength, 1.0 / state.step)
 		wanted = wanted.limit_length(max_grab_speed)
-		# Não empurra continuamente contra paredes estáticas (evita tremor): só desliza
+		# Does not continuously push against static walls (avoids jitter): only slides
 		for i: int in state.get_contact_count():
 			if state.get_contact_collider_object(i) is StaticBody2D:
 				var n: Vector2 = state.get_contact_local_normal(i)
@@ -148,13 +148,13 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 					wanted -= n * into
 		state.linear_velocity = wanted
 
-# Posição do mouse limitada ao retângulo do viewport (item nunca é puxado para fora)
+# Mouse position clamped to the viewport rectangle (the item is never pulled outside)
 func _clamped_mouse() -> Vector2:
 	var rect: Rect2 = get_viewport().get_visible_rect()
 	var m: Vector2 = get_global_mouse_position()
 	return Vector2(clampf(m.x, rect.position.x, rect.end.x), clampf(m.y, rect.position.y, rect.end.y))
 
-# Atualiza estado de hover (apenas se ninguém está segurando outro item)
+# Updates the hover state (only if nobody is holding another item)
 func _update_hover() -> void:
 	var over: bool = false
 	if current_grabbed == null or current_grabbed == self:
@@ -170,12 +170,12 @@ func _grab() -> void:
 	is_grabbed = true
 	current_grabbed = self
 	gravity_scale = 0.0
-	lock_rotation = true # rotação só pela roda durante o grab (evita torque de contato)
+	lock_rotation = true # rotation only via the wheel during the grab (avoids contact torque)
 	sleeping = false
 	linear_damp = 0.0
 	angular_damp = 0.0
 	grabbed.emit(self)
-	print("[Inventory] - Item '%s' segurado" % item_data.id)
+	print("[Inventory] - Item '%s' held" % item_data.id)
 
 func _release() -> void:
 	is_grabbed = false
@@ -186,7 +186,7 @@ func _release() -> void:
 	linear_damp = rest_linear_damp
 	angular_damp = rest_angular_damp
 	released.emit(self)
-	print("[Inventory] - Item '%s' solto" % item_data.id)
+	print("[Inventory] - Item '%s' released" % item_data.id)
 
 func _rotate_by(angle: float) -> void:
 	_pending_rotation = rotation + angle

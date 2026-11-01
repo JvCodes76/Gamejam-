@@ -18,7 +18,7 @@ func _ready() -> void:
 	EventBus.scene_change_requested.connect(change_scene)
 
 
-## Troca de cena com fade out/in. Ignora pedidos durante uma troca.
+## Scene change with fade out/in. Ignores requests during a change.
 func change_scene(path: String) -> void:
 	if _changing:
 		return
@@ -28,7 +28,7 @@ func change_scene(path: String) -> void:
 	await tween.finished
 	var err: Error = get_tree().change_scene_to_file(path)
 	if err != OK:
-		push_error("[Scene] - falha ao carregar %s (erro %d)" % [path, err])
+		push_error("[Scene] - failed to load %s (error %d)" % [path, err])
 		_rect.modulate.a = 0.0
 		_changing = false
 		return

@@ -1,26 +1,26 @@
 class_name BossHealthBar
 extends CanvasLayer
-## Barra de vida do boss no rodapé: moldura e preenchimento em 9-slice (arte HPBar), nome do boss, rastro do
-## dano recebido e os ícones dos itens a que ele está imune (cada um com um X vermelho pequeno).
-## Quando o boss se adapta, anuncia no centro da tela quais itens ele passou a ignorar.
+## Boss health bar at the bottom: 9-slice frame and fill (HPBar art), boss name, trail of the
+## damage taken and the icons of the items it is immune to (each with a small red X).
+## When the boss adapts, announces in the center of the screen which items it now ignores.
 
 const FRAME_TEXTURE: Texture2D = preload("res://assets/sprites/ui/BossHPBarFrame.png")
 const FILL_TEXTURE: Texture2D = preload("res://assets/sprites/ui/BossHPBarFill.png")
 
-## Tamanho da barra em pixels da arte (antes de bar_scale)
+## Bar size in art pixels (before bar_scale)
 @export var bar_size: Vector2 = Vector2(140.0, 10.0)
-## Escala da arte da barra (pixel art)
+## Scale of the bar art (pixel art)
 @export var bar_scale: float = 2.0
-## Distância da barra até a borda de baixo da tela
+## Distance from the bar to the bottom edge of the screen
 @export var bottom_margin: float = 30.0
-## Lado dos ícones de imunidade
+## Side length of the immunity icons
 @export var icon_size: float = 18.0
-## Espera (s) antes do rastro de dano descer e duração da descida
+## Wait (s) before the damage trail drops and the duration of the drop
 @export var trail_delay: float = 0.35
 @export var trail_time: float = 0.45
-## Cor do X das imunidades
+## Color of the immunity X
 @export var cross_color: Color = Color(1.0, 0.15, 0.15)
-## Cor do anúncio de adaptação
+## Color of the adaptation announcement
 @export var announce_color: Color = Color(0.85, 0.55, 1.0)
 
 var _boss: Boss
@@ -40,7 +40,7 @@ func _ready() -> void:
 	EventBus.boss_adapted.connect(_on_boss_adapted)
 
 
-# Monta a barra centralizada no rodapé (fica escondida até o boss surgir).
+# Builds the bar centered at the bottom (hidden until the boss appears).
 func _build() -> void:
 	var screen: Vector2 = get_viewport().get_visible_rect().size
 	var shown_size: Vector2 = bar_size * bar_scale
@@ -56,7 +56,7 @@ func _build() -> void:
 	_bar.scale = Vector2.ONE * bar_scale
 	_bar.position = Vector2((screen.x - shown_size.x) * 0.5, screen.y - bottom_margin - shown_size.y)
 	_root.add_child(_bar)
-	# Moldura atrás, rastro do dano e preenchimento por cima (o preenchimento encolhe a partir da esquerda)
+	# Frame behind, damage trail and fill on top (the fill shrinks from the left)
 	_bar.add_child(_make_patch(FRAME_TEXTURE, 2, 2, 2, 2))
 	_trail = _make_patch(FILL_TEXTURE, 3, 2, 3, 2)
 	_trail.modulate = Color(1.0, 1.0, 1.0, 0.45)
@@ -95,7 +95,7 @@ func _make_patch(texture: Texture2D, left: int, top: int, right: int, bottom: in
 	return patch
 
 
-# Passa a acompanhar o boss novo: vida cheia, sem imunidades.
+# Starts tracking the new boss: full health, no immunities.
 func _on_boss_spawned(boss: Node) -> void:
 	_boss = boss as Boss
 	if _boss == null:
@@ -114,7 +114,7 @@ func _on_boss_spawned(boss: Node) -> void:
 	create_tween().tween_property(_root, "modulate:a", 1.0, 0.4)
 
 
-# Preenchimento acompanha na hora; o rastro espera um pouco e desce suave.
+# The fill follows instantly; the trail waits a bit and drops smoothly.
 func _on_health_changed(current: int, max_value: int) -> void:
 	var ratio: float = clampf(float(current) / maxf(float(max_value), 1.0), 0.0, 1.0)
 	_set_fill_ratio(ratio, _fill)
@@ -128,7 +128,7 @@ func _on_health_changed(current: int, max_value: int) -> void:
 	_trail_tween.tween_method(_set_fill_ratio.bind(_trail), _trail.size.x / bar_size.x, ratio, trail_time).set_ease(Tween.EASE_OUT)
 
 
-# Largura proporcional à vida; abaixo das bordas do 9-slice some (não dá para encolher mais que elas).
+# Width proportional to health; below the 9-slice borders it disappears (it cannot shrink beyond them).
 func _set_fill_ratio(ratio: float, patch: NinePatchRect) -> void:
 	var width: float = bar_size.x * ratio
 	var min_width: float = patch.patch_margin_left + patch.patch_margin_right
@@ -136,7 +136,7 @@ func _set_fill_ratio(ratio: float, patch: NinePatchRect) -> void:
 	patch.size = Vector2(maxf(width, min_width), bar_size.y)
 
 
-# Boss morreu ou saiu da árvore (os dois sinais chegam; só o primeiro esconde).
+# Boss died or left the tree (both signals arrive; only the first one hides).
 func _hide_bar() -> void:
 	if _boss == null or not is_inside_tree():
 		return
@@ -146,7 +146,7 @@ func _hide_bar() -> void:
 	tween.tween_callback(func() -> void: _root.visible = false)
 
 
-# Ícones das imunidades novas entram com pop na barra; o anúncio aparece no centro da tela.
+# Icons of the new immunities pop onto the bar; the announcement appears in the center of the screen.
 func _on_boss_adapted(new_items: Array[ItemData], _all_immune: Array[ItemData]) -> void:
 	var names: PackedStringArray = []
 	for item: ItemData in new_items:
@@ -156,10 +156,10 @@ func _on_boss_adapted(new_items: Array[ItemData], _all_immune: Array[ItemData]) 
 		icon.scale = Vector2.ZERO
 		icon.create_tween().tween_property(icon, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		names.append(_item_name(item))
-	_announce(tr("O BOSS SE ADAPTOU!"), tr("Agora é imune a: %s") % ", ".join(names))
+	_announce(tr("THE BOSS ADAPTED!"), tr("It is now immune to: %s") % ", ".join(names))
 
 
-# Ícone do item com um X vermelho pequeno no canto inferior direito.
+# Item icon with a small red X in the bottom-right corner.
 func _make_immune_icon(item: ItemData) -> Control:
 	var icon: TextureRect = TextureRect.new()
 	icon.texture = item.icon
@@ -180,7 +180,7 @@ func _draw_cross(canvas: Control) -> void:
 	var side: float = icon_size * 0.45
 	var corner: Vector2 = Vector2(icon_size, icon_size)
 	var a: Vector2 = corner - Vector2(side, side)
-	# Contorno escuro para o X aparecer sobre qualquer ícone
+	# Dark outline so the X shows over any icon
 	canvas.draw_line(a, corner, Color.BLACK, 3.0)
 	canvas.draw_line(Vector2(corner.x, a.y), Vector2(a.x, corner.y), Color.BLACK, 3.0)
 	canvas.draw_line(a, corner, cross_color, 1.5)
@@ -191,7 +191,7 @@ func _item_name(item: ItemData) -> String:
 	return tr(item.display_name) if item.display_name != "" else String(item.id)
 
 
-# Título grande com pop e subtítulo; somem juntos subindo.
+# Large title with pop and subtitle; they fade away together rising.
 func _announce(title: String, subtitle: String) -> void:
 	var screen: Vector2 = get_viewport().get_visible_rect().size
 	var box: VBoxContainer = VBoxContainer.new()

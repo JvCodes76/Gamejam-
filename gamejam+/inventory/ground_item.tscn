@@ -9,7 +9,7 @@ script = ExtResource("1")
 color = Color(0, 0, 0, 0.3)
 polygon = PackedVector2Array(-5, 0, -3, -1.5, 3, -1.5, 5, 0, 3, 1.5, -3, 1.5)
 
-; A origem do no e o chao (a sombra fica nela); o icone paira 8 px acima
+; The node origin is the ground (the shadow sits there); the icon hovers 8 px above
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(0, -8)
 texture_filter = 1

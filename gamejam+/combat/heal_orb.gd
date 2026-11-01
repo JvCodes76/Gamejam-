@@ -1,6 +1,6 @@
 class_name HealOrb
 extends Area2D
-## Orbe de cura (receita Unethical Butcher): atrai levemente o player e cura ao ser coletada; some após alguns segundos.
+## Healing orb (Unethical Butcher recipe): slightly attracts the player and heals when collected; disappears after a few seconds.
 
 const ORB_HOVER: float = 8.0
 
@@ -12,7 +12,7 @@ var _collected: bool = false
 var _player: Node2D = null
 
 
-## Cria uma orbe na cena (adição deferida, segura dentro de callbacks de física).
+## Creates an orb in the scene (deferred add, safe inside physics callbacks).
 static func spawn(scene: Node, pos: Vector2) -> HealOrb:
 	var orb: HealOrb = (load("res://combat/heal_orb.tscn") as PackedScene).instantiate() as HealOrb
 	orb.global_position = pos
@@ -25,13 +25,13 @@ func _ready() -> void:
 	shape.radius = SynergyConstants.BUTCHER_ORB_PICKUP_RADIUS
 	($CollisionShape2D as CollisionShape2D).shape = shape
 	body_entered.connect(_on_body_entered)
-	print("[Synergy] - orbe de cura criada em %s" % global_position)
+	print("[Synergy] - healing orb created at %s" % global_position)
 
 
 func _draw() -> void:
 	var pulse: float = 0.5 + 0.5 * sin(_age * 8.0)
 	var glow: Color = SynergyConstants.BUTCHER_ORB_COLOR_A.lerp(SynergyConstants.BUTCHER_ORB_COLOR_B, pulse)
-	# A origem do nó é o chão (y-sort, z 0); a orbe paira ORB_HOVER px acima, com sombra no chão
+	# The node origin is the ground (y-sort, z 0); the orb hovers ORB_HOVER px above, with a shadow on the ground
 	draw_circle(Vector2.ZERO, 3.0, Color(0.0, 0.0, 0.0, 0.25))
 	var center: Vector2 = Vector2(0.0, -ORB_HOVER)
 	draw_circle(center, 6.0, Color(glow, 0.25))
@@ -58,13 +58,13 @@ func _physics_process(delta: float) -> void:
 		_collect(_player)
 
 
-## Coleta ao tocar o corpo do player.
+## Collected on touching the player's body.
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		_collect(body)
 
 
-## Cura o player em heal_amount e some (uma única vez).
+## Heals the player by heal_amount and disappears (only once).
 func _collect(player: Node2D) -> void:
 	if _collected:
 		return
@@ -72,5 +72,5 @@ func _collect(player: Node2D) -> void:
 	var health: HealthComponent = player.get_node_or_null("HealthComponent") as HealthComponent
 	if health != null:
 		health.heal(heal_amount)
-	print("[Synergy] - orbe coletada (+%d de vida)" % heal_amount)
+	print("[Synergy] - orb collected (+%d health)" % heal_amount)
 	queue_free()

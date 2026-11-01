@@ -1,8 +1,8 @@
 class_name SpecialSynergies
 extends RefCounted
-## Receitas especiais: ativas quando TODOS os item_ids aparecem pelo menos uma vez na poção.
-## Várias receitas podem estar ativas ao mesmo tempo e combinam com as sinergias de aspecto.
-## Nota: "match" é palavra reservada do GDScript, por isso a função se chama find_matches().
+## Special recipes: active when ALL item_ids appear at least once in the potion.
+## Several recipes can be active at the same time and combine with the aspect synergies.
+## Note: "match" is a reserved word in GDScript, which is why the function is called find_matches().
 
 const SALAD: StringName = &"salad"
 const EVIL_SALAD: StringName = &"evil_salad"
@@ -15,7 +15,7 @@ const TEA: StringName = &"not_tea"
 const EYE_DROPS: StringName = &"eye_drops"
 const POTENTIALIZER: StringName = &"potentializer"
 
-## Tabela de receitas: id, nome exibido, ids dos itens e descrição curta (inglês).
+## Recipe table: id, displayed name, item ids and short description (English).
 const RECIPES: Array[Dictionary] = [
 	{"id": SALAD, "name": "Salad!", "item_ids": [&"carrot", &"mushroom", &"salt"],
 		"description": "+4% lifesteal chance"},
@@ -40,7 +40,7 @@ const RECIPES: Array[Dictionary] = [
 ]
 
 
-## Receitas ativas para uma lista de itens (cada uma como o Dictionary da tabela).
+## Active recipes for a list of items (each as the table's Dictionary).
 static func find_matches(items: Array[ItemData]) -> Array[Dictionary]:
 	var present: Dictionary = {}
 	for item: ItemData in items:
@@ -58,7 +58,7 @@ static func find_matches(items: Array[ItemData]) -> Array[Dictionary]:
 	return out
 
 
-## Apenas os ids das receitas ativas.
+## Only the ids of the active recipes.
 static func find_ids(items: Array[ItemData]) -> Array[StringName]:
 	var ids: Array[StringName] = []
 	for recipe: Dictionary in find_matches(items):
@@ -66,7 +66,7 @@ static func find_ids(items: Array[ItemData]) -> Array[StringName]:
 	return ids
 
 
-## Receitas (Dictionary da tabela) correspondentes a uma lista de ids, na ordem da tabela.
+## Recipes (table Dictionary) matching a list of ids, in table order.
 static func recipes_for(ids: Array[StringName]) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for recipe: Dictionary in RECIPES:

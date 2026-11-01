@@ -9,7 +9,7 @@ signal item_left_bag(item: PhysicalItem)
 @export var bag_fill_color: Color = Color(0.35, 0.22, 0.12, 0.6)
 @export var bag_line_color: Color = Color(0.6, 0.4, 0.2)
 
-# Geometria do recipiente (subclasses, como o caldeirão, trocam estes valores antes de super._ready)
+# Vessel geometry (subclasses, like the cauldron, change these values before super._ready)
 var interior: PackedVector2Array = BagLayout.INTERIOR
 var mouth_rect: Rect2 = BagLayout.MOUTH_RECT
 var wall_thickness: float = BagLayout.WALL_THICKNESS
@@ -24,7 +24,7 @@ func _ready() -> void:
 	_build_walls()
 	_build_zones()
 
-# Desenha a bolsa (preenchimento + contorno)
+# Draws the bag (fill + outline)
 func _build_visual() -> void:
 	var fill := Polygon2D.new()
 	fill.polygon = interior
@@ -38,7 +38,7 @@ func _build_visual() -> void:
 	line.default_color = bag_line_color
 	add_child(line)
 
-# Constrói paredes ao redor do INTERIOR, sem parede na boca
+# Builds walls around the INTERIOR, with no wall at the mouth
 func _build_walls() -> void:
 	walls = StaticBody2D.new()
 	walls.name = "Walls"
@@ -60,7 +60,7 @@ func _build_walls() -> void:
 		col.polygon = PackedVector2Array([a, b, b + n * t, a + n * t])
 		walls.add_child(col)
 
-# Cria MouthZone e InsideZone
+# Creates MouthZone and InsideZone
 func _build_zones() -> void:
 	mouth_zone = Area2D.new()
 	mouth_zone.name = "MouthZone"
@@ -87,7 +87,7 @@ func _build_zones() -> void:
 	inside_zone.body_entered.connect(_on_inside_entered)
 	inside_zone.body_exited.connect(_on_inside_exited)
 
-# Centro do item dentro do INTERIOR
+# Item center inside the INTERIOR
 func is_inside(item: PhysicalItem) -> bool:
 	return Geometry2D.is_point_in_polygon(to_local(item.global_position), interior)
 
@@ -117,7 +117,7 @@ func _on_inside_exited(body: Node2D) -> void:
 	if body is PhysicalItem:
 		item_left_bag.emit(body as PhysicalItem)
 
-# Instancia um item como filho da bolsa
+# Instantiates an item as a child of the bag
 func spawn_item(data: ItemData, local_position: Vector2, item_rotation: float = 0.0, item_scale: float = 3.0) -> PhysicalItem:
 	var item: PhysicalItem = item_scene.instantiate() as PhysicalItem
 	item.position = local_position
@@ -126,7 +126,7 @@ func spawn_item(data: ItemData, local_position: Vector2, item_rotation: float = 
 	item.setup(data, item_scale)
 	return item
 
-# Lista os itens dentro da bolsa para persistência
+# Lists the items inside the bag for persistence
 func collect_entries() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for child: Node in get_children():

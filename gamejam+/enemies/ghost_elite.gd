@@ -1,17 +1,17 @@
 class_name GhostElite
 extends EnemyBase
-## Assombração (elite): flutua atravessando paredes e obstáculos em direção ao player.
-## De tempos em tempos some (fica quase transparente e intangível: não fere nem pode ser atingida).
-## A folha tem 16 quadros de 32x32: 4 olhando para a direita, 4 para baixo, 4 para cima e 4 para a esquerda.
+## Haunt (elite): floats through walls and obstacles toward the player.
+## From time to time vanishes (becomes almost transparent and intangible: neither hurts nor can be hit).
+## The sheet has 16 frames of 32x32: 4 facing right, 4 down, 4 up and 4 left.
 
 enum Facing { RIGHT, DOWN, UP, LEFT }
 
 const FRAMES_PER_FACING: int = 4
 
 @export var anim_fps: float = 8.0
-## Intervalo entre os sumiços (s), sorteado entre x e y
+## Interval between vanishings (s), rolled between x and y
 @export var fade_interval: Vector2 = Vector2(3.5, 5.0)
-## Quanto tempo fica intangível (s)
+## How long it stays intangible (s)
 @export var fade_time: float = 1.4
 @export var faded_alpha: float = 0.2
 @export var bob_height: float = 3.0
@@ -27,7 +27,7 @@ var _hurtbox: Hurtbox
 
 func _ready() -> void:
 	super._ready()
-	# Atravessa paredes e obstáculos baixos
+	# Passes through walls and low obstacles
 	collision_mask = 0
 	_hurtbox = get_hurtbox()
 	_base_sprite_y = _sprite.position.y
@@ -52,7 +52,7 @@ func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 
 
-# Olha na direção em que está andando (horizontal tem prioridade quando empata)
+# Looks in the direction it is walking (horizontal takes priority on a tie)
 func _update_facing() -> void:
 	if velocity.length_squared() < 4.0:
 		return
@@ -62,12 +62,12 @@ func _update_facing() -> void:
 		_facing = Facing.DOWN if velocity.y > 0.0 else Facing.UP
 
 
-## Some (intangível) ou reaparece.
+## Vanishes (intangible) or reappears.
 func _set_faded(faded: bool) -> void:
 	_faded = faded
 	_fade_left = fade_time if faded else randf_range(fade_interval.x, fade_interval.y)
 	_hurtbox.set_deferred("monitorable", not faded)
-	# Reaparecer respeita o atordoamento (que também suprime o dano de contato)
+	# Reappearing respects stun (which also suppresses contact damage)
 	_hitbox.suppressed = faded or _status.has(StatusEffects.STUN)
 	var tween: Tween = create_tween()
 	tween.tween_property(_sprite, "self_modulate:a", faded_alpha if faded else 1.0, 0.25)
@@ -78,6 +78,6 @@ func _set_faded(faded: bool) -> void:
 
 func _on_status_changed(status: StringName, active: bool) -> void:
 	super._on_status_changed(status, active)
-	# O fim do stun não pode reativar o dano enquanto ela está sumida
+	# The end of the stun must not re-enable damage while it is vanished
 	if status == StatusEffects.STUN and _faded:
 		_hitbox.suppressed = true

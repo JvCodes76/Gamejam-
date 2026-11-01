@@ -1,7 +1,7 @@
 class_name CauldronLayout
 extends RefCounted
 
-# Caldeirão largo (~143x103), coordenadas locais: origem no centro, y para baixo
+# Wide cauldron (~143x103), local coordinates: origin at the center, y down
 const INTERIOR: PackedVector2Array = [
 	Vector2(-47, -52), Vector2(47, -52),
 	Vector2(64, -30), Vector2(71, 0),
@@ -9,17 +9,17 @@ const INTERIOR: PackedVector2Array = [
 	Vector2(-43, 52), Vector2(-64, 32),
 	Vector2(-71, 0), Vector2(-64, -30),
 ]
-# Boca no topo (94 px)
+# Mouth at the top (94 px)
 const MOUTH_RECT: Rect2 = Rect2(-47, -68, 94, 16)
 const WALL_THICKNESS: float = 16.0
 
 
-# Interior escalado pelo multiplicador de tamanho
+# Interior scaled by the size multiplier
 static func scaled_interior(multiplier: float) -> PackedVector2Array:
 	return Transform2D().scaled(Vector2(multiplier, multiplier)) * INTERIOR
 
 
-# Boca escalada pelo multiplicador (a altura da boca não muda)
+# Mouth scaled by the multiplier (the mouth height does not change)
 static func scaled_mouth(multiplier: float) -> Rect2:
 	var interior_top: float = INTERIOR[0].y * multiplier
 	var width: float = MOUTH_RECT.size.x * multiplier

@@ -1,8 +1,8 @@
 class_name Ghost
 extends Area2D
-## Fantasma (receita Press F to pay respects): ex-inimigo enfeitiçado que persegue e fere outros inimigos até o charm acabar.
-## Imune a dano (não está em nenhuma camada de física) e não fere o player (máscara só dos inimigos).
-## A origem fica nos pés (y-sort, z 0); um CharacterBody2D filho ("Mover") o faz esbarrar nos obstáculos altos e baixos.
+## Ghost (Press F to pay respects recipe): former charmed enemy that chases and hurts other enemies until the charm ends.
+## Immune to damage (not on any physics layer) and does not hurt the player (mask only of enemies).
+## The origin is at the feet (y-sort, z 0); a child CharacterBody2D ("Mover") makes it bump into tall and low obstacles.
 
 const BODY_OFFSET_Y: float = -16.0
 
@@ -19,7 +19,7 @@ var _sprite: Sprite2D = null
 var _mover: CharacterBody2D = null
 
 
-## Cria um fantasma com a aparência do inimigo morto (adição deferida, segura dentro de callbacks de física).
+## Creates a ghost with the appearance of the dead enemy (deferred add, safe inside physics callbacks).
 static func spawn(scene: Node, source: Node2D, time_left: float) -> Ghost:
 	var ghost: Ghost = (load("res://enemies/ghost.tscn") as PackedScene).instantiate() as Ghost
 	ghost.global_position = source.global_position
@@ -45,7 +45,7 @@ func _ready() -> void:
 	_sprite.frame = sprite_frame
 	_sprite.scale = sprite_scale
 	_sprite.modulate = SynergyConstants.GHOST_COLOR
-	print("[Synergy] - fantasma surgiu (%.2f s)" % duration)
+	print("[Synergy] - ghost appeared (%.2f s)" % duration)
 
 
 func _physics_process(delta: float) -> void:
@@ -64,7 +64,7 @@ func _physics_process(delta: float) -> void:
 		_strike()
 
 
-## Avança em direção ao alvo, deslizando nos obstáculos (o Mover colide; a posição do fantasma segue o Mover).
+## Advances toward the target, sliding along obstacles (the Mover collides; the ghost's position follows the Mover).
 func _move_toward(target_position: Vector2) -> void:
 	_mover.position = Vector2.ZERO
 	_mover.velocity = global_position.direction_to(target_position) * SynergyConstants.GHOST_SPEED
@@ -73,7 +73,7 @@ func _move_toward(target_position: Vector2) -> void:
 	_mover.position = Vector2.ZERO
 
 
-## Fere os inimigos encostados (um golpe por intervalo) e reinicia o cooldown se acertou.
+## Hurts touching enemies (one hit per interval) and restarts the cooldown if it hit.
 func _strike() -> void:
 	var hit_any: bool = false
 	for area: Area2D in get_overlapping_areas():
@@ -83,10 +83,10 @@ func _strike() -> void:
 			hit_any = true
 	if hit_any:
 		_hit_left = SynergyConstants.GHOST_HIT_COOLDOWN
-		print("[Synergy] - fantasma atacou")
+		print("[Synergy] - ghost attacked")
 
 
-## Inimigo vivo mais próximo (preferindo os que não estão enfeitiçados).
+## Nearest living enemy (preferring those that are not charmed).
 func _nearest_enemy() -> EnemyBase:
 	var best: EnemyBase = null
 	var best_score: float = INF

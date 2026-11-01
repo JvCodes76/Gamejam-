@@ -1,13 +1,13 @@
 class_name PumpkinMimicSpawner
 extends Node
-## Troca algumas abóboras decorativas do nó "props_root" por mímicos (chance por abóbora, com mínimo garantido).
+## Swaps some decorative pumpkins in the "props_root" node for mimics (chance per pumpkin, with a guaranteed minimum).
 
 const PUMPKIN_KINDS: Array[Prop.Kind] = [Prop.Kind.PUMPKIN_PLAIN, Prop.Kind.PUMPKIN_SMILE, Prop.Kind.PUMPKIN_GRIN]
 
 @export var props_root: Node2D
 @export var mimic_scene: PackedScene
 @export_range(0.0, 1.0) var mimic_chance: float = 0.05
-## Mínimo de mímicos por partida (se houver abóboras suficientes).
+## Minimum number of mimics per run (if there are enough pumpkins).
 @export var min_mimics: int = 1
 
 
@@ -32,4 +32,4 @@ func _ready() -> void:
 		mimic.position = prop.position
 		props_root.add_child(mimic)
 		prop.queue_free()
-	print("[Enemy] - %d de %d abóboras viraram mímicos" % [chosen.size(), pumpkins.size()])
+	print("[Enemy] - %d of %d pumpkins became mimics" % [chosen.size(), pumpkins.size()])

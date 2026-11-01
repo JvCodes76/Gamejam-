@@ -1,60 +1,60 @@
 class_name DungeonBuilder
 extends RefCounted
-## Monta o mapa contínuo de um cemitério: chão (TileMapLayer) com variedade, paredes de grade com portas
-## (arcos) só nas paredes de cima/baixo, corredores retos e em U, props dentro e a mata ao redor (exterior).
-## Fora da mata o vazio fica preto.
+## Builds the continuous map of a graveyard: varied floor (TileMapLayer), fence walls with doors
+## (arches) only on the top/bottom walls, straight and U-shaped corridors, props inside and the woods around (exterior).
+## Outside the woods the void stays black.
 
 const TILE: int = 16
 const TILESET_PATH: String = "res://assets/tilesets/halloween/halloween_tileset.tres"
 const TEXTURE_PATH: String = "res://assets/tilesets/halloween/halloween_tileset.png"
 const PROP_SCENE: PackedScene = preload("res://levels/props/prop.tscn")
 
-# --- Chão (células do atlas) ---
-# Retângulos de onde saem as células de chão azul (mesmos do gerador de tiles)
+# --- Floor (atlas cells) ---
+# Rectangles the blue floor cells come from (same as the tile generator)
 const BLUE_SOURCE_RECTS: Array[Rect2i] = [Rect2i(6, 2, 2, 2), Rect2i(2, 4, 3, 1), Rect2i(6, 7, 2, 1), Rect2i(10, 2, 6, 2)]
 const LIGHT_DETAIL_MAX_PIXELS: int = 6
 const LIGHT_BLUE_CHANCE: float = 0.12
-# Células do chão laranja liso (usadas no exterior)
+# Plain orange floor cells (used in the exterior)
 const ORANGE_PLAIN_CELLS: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(0, 2), Vector2i(1, 2), Vector2i(0, 3), Vector2i(1, 3)]
-# Blocos 2x2 de chão laranja (origem no atlas) e peso, para o miolo das manchas
+# 2x2 orange floor blocks (atlas origin) and weight, for the middle of the patches
 const ORANGE_BLOCKS: Array = [
 	[Vector2i(0, 0), 4], [Vector2i(0, 2), 3], [Vector2i(2, 0), 1], [Vector2i(2, 2), 1],
 	[Vector2i(4, 0), 1], [Vector2i(4, 2), 1], [Vector2i(16, 0), 1],
 ]
-# Bordas da mancha laranja por posição na grade 3x3 de blocos (ver tools/generate_tileset.gd)
+# Orange patch edges by position in the 3x3 block grid (see tools/generate_tileset.gd)
 const PATCH_PIECES: Dictionary = {
 	Vector2i(0, 0): Vector2i(14, 8), Vector2i(1, 0): Vector2i(12, 8), Vector2i(2, 0): Vector2i(10, 8),
 	Vector2i(0, 1): Vector2i(16, 2), Vector2i(2, 1): Vector2i(8, 2),
 	Vector2i(0, 2): Vector2i(14, 0), Vector2i(1, 2): Vector2i(12, 0), Vector2i(2, 2): Vector2i(10, 0),
 }
-# Decalques azuis: [origem no atlas, tamanho em células]
+# Blue decals: [atlas origin, size in cells]
 const DECALS_SMALL: Array = [[Vector2i(6, 0), Vector2i(2, 2)], [Vector2i(8, 0), Vector2i(2, 2)], [Vector2i(2, 5), Vector2i(2, 1)]]
 const DECALS_BIG: Array = [[Vector2i(10, 2), Vector2i(6, 6)], [Vector2i(16, 4), Vector2i(4, 4)]]
-# Caminho de pedra: bloco central e tampas de ponta (2x1)
+# Stone path: center block and end caps (2x1)
 const PATH_BLOCK: Vector2i = Vector2i(6, 4)
 const PATH_CAP_TOP: Vector2i = Vector2i(6, 3)
 const PATH_CAP_BOTTOM: Vector2i = Vector2i(6, 6)
 
-# Variedade do chão por sala (tiles quadrados de área por tentativa)
+# Floor variety per room (square tiles of area per attempt)
 const PATCH_TILES_PER_TRY: float = 260.0
 const PATCH_MAX_TRIES: int = 3
 const DECAL_TILES_PER_TRY: float = 140.0
 const BIG_DECAL_MIN_AREA: float = 760.0
 
-# --- Paredes ---
-# Espessura das paredes (fora do chão) e quanto a parede de cima avança para dentro (uma célula: essa
-# faixa do chão vira grama, já que fica atrás da grade)
+# --- Walls ---
+# Wall thickness (outside the floor) and how far the top wall extends inward (one cell: this
+# strip of floor turns into grass, since it sits behind the fence)
 const WALL_THICKNESS: float = 16.0
 const TOP_WALL_INSET: float = 16.0
 
-# Peças da grade do tileset (px no atlas). As retas (barras + base de pedra) e as laterais repetem a cada 32 px.
-# A origem de cada peça fica na base, para o y-sort ordenar pelo chão.
+# Fence pieces of the tileset (px in the atlas). The straight ones (bars + stone base) and the side ones repeat every 32 px.
+# The origin of each piece is at the base, so the y-sort orders by the ground.
 const FENCE_H_TOP: Rect2 = Rect2(32, 162, 32, 30)
 const FENCE_H_BOTTOM: Rect2 = Rect2(32, 290, 32, 30)
 const FENCE_V_LEFT: Rect2 = Rect2(1, 224, 7, 32)
 const FENCE_V_RIGHT: Rect2 = Rect2(89, 224, 7, 32)
 const FENCE_STEP: float = 32.0
-# Quinas: região no atlas e o ponto dela (px da região) que encaixa na ponta da grade reta
+# Corners: atlas region and its point (px of the region) that fits the end of the straight fence
 const CORNER_TL: Rect2 = Rect2(0, 162, 32, 43)
 const CORNER_TL_JOIN: Vector2 = Vector2(32, 30)
 const CORNER_TR: Rect2 = Rect2(64, 162, 32, 43)
@@ -63,50 +63,50 @@ const CORNER_BL: Rect2 = Rect2(0, 272, 32, 48)
 const CORNER_BL_JOIN: Vector2 = Vector2(32, 48)
 const CORNER_BR: Rect2 = Rect2(64, 272, 32, 48)
 const CORNER_BR_JOIN: Vector2 = Vector2(0, 48)
-# A quina de cima desce 13 px abaixo da base da grade reta; a de baixo sobe 48 px acima dela
+# The top corner goes 13 px below the base of the straight fence; the bottom one goes 48 px above it
 const CORNER_TOP_DROP: float = 13.0
 const CORNER_BOTTOM_RISE: float = 48.0
-# Largura (em px) que a quina ocupa dentro da sala, medida da borda esquerda / direita
+# Width (in px) the corner occupies inside the room, measured from the left / right edge
 const CORNER_LEFT_REACH: float = 24.0
 const CORNER_RIGHT_REACH: float = 25.0
-# A base da grade de baixo fica na borda do chão: a face de pedra (13 px) ocupa o fim do chão,
-# e a colisão da parede de baixo começa no topo dela
+# The base of the bottom fence sits at the floor edge: the stone face (13 px) takes up the end of the floor,
+# and the bottom wall collision starts at its top
 const FENCE_BOTTOM_DROP: float = 0.0
 const BOTTOM_WALL_INSET: float = 13.0
-# Faixa (largura, altura em px) de chão azul que tapa a grama logo acima da ponta da diagonal das quinas de baixo
+# Strip (width, height in px) of blue floor that covers the grass just above the tip of the diagonal of the bottom corners
 const CORNER_GAP_STRIP: Vector2 = Vector2(8, 4)
 
-# Corredor em U (salas lado a lado): a faixa horizontal fica tantos px abaixo do centro das salas
-const U_BAND_DEPTH: float = 272.0
-# Folga mínima entre a parede de baixo da sala mais alta (ex.: boss) e o topo da faixa do U
+# U-shaped corridor (side-by-side rooms): the horizontal strip sits this many px below the center of the rooms
+const U_BAND_DEPTH: float = 224.0
+# Minimum clearance between the bottom wall of the tallest room (e.g. boss) and the top of the U strip
 const U_BAND_MIN_DROP: float = 64.0
 
-# --- Props dentro do cemitério ---
+# --- Props inside the graveyard ---
 const PROP_WEIGHTS: Dictionary = {
 	Prop.Kind.GRAVE_CROSS: 4.0, Prop.Kind.GRAVE_ROUND: 4.0, Prop.Kind.GRAVE_BROKEN: 3.0, Prop.Kind.DIRT_MOUND: 2.0,
 	Prop.Kind.CANDLES: 2.0, Prop.Kind.PUMPKIN_PLAIN: 2.0, Prop.Kind.PUMPKIN_SMILE: 1.0, Prop.Kind.PUMPKIN_GRIN: 1.0,
 	Prop.Kind.BUSH_A: 2.0, Prop.Kind.BUSH_B: 2.0, Prop.Kind.LEAVES_A: 2.0, Prop.Kind.LEAVES_B: 2.0,
 	Prop.Kind.HOLLOW_TREE_A: 1.0, Prop.Kind.HOLLOW_TREE_B: 1.0, Prop.Kind.LAMP_POST: 1.0, Prop.Kind.BENCH: 1.0,
 }
-# Um prop a cada N tiles de área da sala
+# One prop every N tiles of room area
 const TILES_PER_PROP: float = 28.0
 const PROP_EDGE_MARGIN: float = 20.0
 const PROP_TOP_MARGIN: float = 64.0
 const PROP_CENTER_CLEAR: float = 72.0
 const PROP_ATTEMPTS: int = 6
 
-# --- Exterior (mata ao redor das grades) ---
+# --- Exterior (woods around the fences) ---
 const EXTERIOR_WEIGHTS: Dictionary = {
 	Prop.Kind.HOLLOW_TREE_A: 6.0, Prop.Kind.HOLLOW_TREE_B: 6.0, Prop.Kind.BUSH_A: 3.0, Prop.Kind.BUSH_B: 3.0,
 	Prop.Kind.LEAVES_A: 2.0, Prop.Kind.LEAVES_B: 2.0, Prop.Kind.PUMPKIN_PLAIN: 1.0, Prop.Kind.PUMPKIN_GRIN: 0.5,
 	Prop.Kind.LAMP_POST: 0.5,
 }
-# Distância mínima (tiles) das grades até o primeiro prop do exterior
+# Minimum distance (tiles) from the fences to the first exterior prop
 const EXTERIOR_CLEAR_TILES: int = 3
-# Passo (tiles) da grade de sorteio dos props do exterior e chance de cada ponto virar um prop
+# Step (tiles) of the exterior prop roll grid and the chance of each point becoming a prop
 const EXTERIOR_STEP_TILES: int = 4
 const EXTERIOR_CHANCE: float = 0.6
-# Buracos/reentrâncias de vazio na mata mais estreitos que 2x isto (tiles) viram grama
+# Holes/notches of void in the woods narrower than 2x this (tiles) become grass
 const EXTERIOR_GAP_FILL_TILES: int = 10
 
 var corridor_width: float = 64.0
@@ -116,13 +116,13 @@ var _image: Image
 var _ground: TileMapLayer
 var _plain_blue: Array[Vector2i] = []
 var _light_blue: Array[Vector2i] = []
-# Células de chão (salas e corredores), células com decoração de chão e células do exterior
+# Floor cells (rooms and corridors), cells with floor decoration and exterior cells
 var _floor: Dictionary = {}
 var _claimed: Dictionary = {}
 var _exterior: Dictionary = {}
 
 
-## Constrói tudo dentro de "root" (nós Ground, Walls e Props com y-sort).
+## Builds everything inside "root" (Ground, Walls and Props nodes with y-sort).
 func build(root: Node2D, rooms: Array[RoomData], corridor_width_tiles: int, density: float, exterior_margin_tiles: int, exterior_density: float, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	corridor_width = float(corridor_width_tiles * TILE)
@@ -145,7 +145,7 @@ func build(root: Node2D, rooms: Array[RoomData], corridor_width_tiles: int, dens
 	props.y_sort_enabled = true
 	root.add_child(props)
 
-	# Corredores: uma vez por par de salas
+	# Corridors: once per pair of rooms
 	var corridors: Array[Rect2] = []
 	var straight: Array[Rect2] = []
 	for index: int in rooms.size():
@@ -181,13 +181,13 @@ func build(root: Node2D, rooms: Array[RoomData], corridor_width_tiles: int, dens
 		_scatter_props(props, room, density)
 	var interior_props: int = props.get_child_count()
 	_scatter_exterior(props, rooms, corridors, exterior_density)
-	print("[Dungeon] - mapa montado: %d salas, %d nós dentro, %d na mata" % [rooms.size(), interior_props, props.get_child_count() - interior_props])
+	print("[Dungeon] - map built: %d rooms, %d nodes inside, %d in the woods" % [rooms.size(), interior_props, props.get_child_count() - interior_props])
 
 
-# --- Corredores ---
+# --- Corridors ---
 
-# Retângulos de chão do corredor entre duas salas: reto (vizinhas de cima/baixo) ou em U (lado a lado,
-# pela parte de baixo das duas).
+# Floor rectangles of the corridor between two rooms: straight (top/bottom neighbors) or U-shaped (side by side,
+# through the bottom of both).
 func _corridor_rects(room: RoomData, other: RoomData, door: RoomData.Door, other_door: RoomData.Door) -> Array[Rect2]:
 	var half: float = corridor_width / 2.0
 	var x_a: float = room.center().x + door.offset
@@ -198,7 +198,7 @@ func _corridor_rects(room: RoomData, other: RoomData, door: RoomData.Door, other
 	elif door.side == Vector2i.UP and other_door.side == Vector2i.DOWN:
 		pieces.append(Rect2(x_a - half, other.rect.end.y, corridor_width, room.rect.position.y - other.rect.end.y))
 	else:
-		# Salas altas (boss) ficariam encostadas na faixa: ela desce até ter a folga mínima
+		# Tall rooms (boss) would touch the strip: it moves down until it has the minimum clearance
 		var lowest_wall: float = maxf(room.rect.end.y, other.rect.end.y)
 		var band_y: float = maxf(room.center().y + U_BAND_DEPTH, lowest_wall + U_BAND_MIN_DROP + half)
 		pieces.append(Rect2(x_a - half, room.rect.end.y, corridor_width, band_y + half - room.rect.end.y))
@@ -207,8 +207,8 @@ func _corridor_rects(room: RoomData, other: RoomData, door: RoomData.Door, other
 	return pieces
 
 
-# Paredes e grades das bordas dos corredores (por células): os trechos dentro da zona de parede das salas
-# ficam por conta das paredes da sala.
+# Walls and fences along the corridor edges (by cells): the stretches inside the rooms' wall zone
+# are handled by the room walls.
 func _build_corridor_edges(walls: Node2D, props: Node2D, rooms: Array[RoomData], corridors: Array[Rect2]) -> void:
 	var cells: Dictionary = {}
 	var zone_cells: Dictionary = {}
@@ -228,8 +228,8 @@ func _build_corridor_edges(walls: Node2D, props: Node2D, rooms: Array[RoomData],
 	var south: Dictionary = {}
 	var west: Dictionary = {}
 	var east: Dictionary = {}
-	# Fora da zona de parede das salas: as 4 bordas. Dentro dela (vão da porta): só as laterais,
-	# para a grade do corredor chegar até os pilares do arco.
+	# Outside the rooms' wall zone: all 4 edges. Inside it (door gap): only the sides,
+	# so the corridor fence reaches the arch pillars.
 	for cell: Vector2i in cells.keys():
 		if not _floor.has(cell + Vector2i.UP):
 			_append_edge(north, cell.y, cell.x)
@@ -253,7 +253,7 @@ func _build_corridor_edges(walls: Node2D, props: Node2D, rooms: Array[RoomData],
 		var x1: float = float((run.z + 1) * TILE)
 		var line_y: float = float((run.x + 1) * TILE)
 		var base_y: float = line_y + FENCE_BOTTOM_DROP
-		# Pontas convexas (sem chão ao lado): a quina diagonal assume o canto
+		# Convex tips (no floor beside): the diagonal corner takes over the corner
 		var left_corner: bool = not _floor.has(Vector2i(run.y - 1, run.x))
 		var right_corner: bool = not _floor.has(Vector2i(run.z + 1, run.x))
 		if left_corner:
@@ -299,7 +299,7 @@ func _append_edge(map: Dictionary, line: int, pos: int) -> void:
 	(map[line] as Array).append(pos)
 
 
-# Junta posições consecutivas de cada linha em trechos (linha, início, fim), fim inclusive.
+# Joins consecutive positions of each row into runs (row, start, end), end inclusive.
 func _runs(map: Dictionary) -> Array[Vector3i]:
 	var out: Array[Vector3i] = []
 	for line: int in map.keys():
@@ -317,9 +317,9 @@ func _runs(map: Dictionary) -> Array[Vector3i]:
 	return out
 
 
-# --- Chão ---
+# --- Floor ---
 
-# Lista células azuis limpas (sem detalhe) e quase limpas do atlas.
+# Lists clean blue cells (no detail) and nearly clean ones from the atlas.
 func _collect_blue_cells() -> void:
 	var base: Color = _image.get_pixel(6 * TILE, 2 * TILE)
 	for rect: Rect2i in BLUE_SOURCE_RECTS:
@@ -332,7 +332,7 @@ func _collect_blue_cells() -> void:
 					_light_blue.append(Vector2i(cx, cy))
 
 
-# Conta pixels que diferem da cor base na célula do atlas.
+# Counts pixels that differ from the base color in the atlas cell.
 func _detail_pixels(cell: Vector2i, base: Color) -> int:
 	var count: int = 0
 	for y: int in TILE:
@@ -342,14 +342,14 @@ func _detail_pixels(cell: Vector2i, base: Color) -> int:
 	return count
 
 
-# Escolhe uma célula de chão azul (maioria limpa, algumas com leve detalhe).
+# Picks a blue floor cell (mostly clean, some with slight detail).
 func _pick_blue() -> Vector2i:
 	if not _light_blue.is_empty() and _rng.randf() < LIGHT_BLUE_CHANCE:
 		return _light_blue[_rng.randi() % _light_blue.size()]
 	return _plain_blue[_rng.randi() % _plain_blue.size()]
 
 
-# Células (grade de 16 px) cobertas por um retângulo alinhado à grade.
+# Cells (16 px grid) covered by a grid-aligned rectangle.
 func _cells_of(rect: Rect2) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	var first: Vector2i = Vector2i(roundi(rect.position.x / TILE), roundi(rect.position.y / TILE))
@@ -365,20 +365,20 @@ func _mark_floor(rect: Rect2) -> void:
 		_floor[cell] = true
 
 
-# Preenche o retângulo com chão azul.
+# Fills the rectangle with blue floor.
 func _fill(rect: Rect2) -> void:
 	for cell: Vector2i in _cells_of(rect):
 		_ground.set_cell(cell, 0, _pick_blue())
 
 
-# Copia um bloco do atlas para a camada (tamanho em células).
+# Copies a block from the atlas to the layer (size in cells).
 func _stamp(atlas_origin: Vector2i, size: Vector2i, cell_origin: Vector2i) -> void:
 	for j: int in size.y:
 		for i: int in size.x:
 			_ground.set_cell(cell_origin + Vector2i(i, j), 0, atlas_origin + Vector2i(i, j))
 
 
-# Marca células ocupadas (com margem) para a decoração do chão não se sobrepor.
+# Marks occupied cells (with margin) so floor decoration does not overlap.
 func _claim(origin: Vector2i, size: Vector2i, margin: int = 0) -> void:
 	for y: int in range(origin.y - margin, origin.y + size.y + margin):
 		for x: int in range(origin.x - margin, origin.x + size.x + margin):
@@ -393,11 +393,11 @@ func _cells_free(origin: Vector2i, size: Vector2i) -> bool:
 	return true
 
 
-# Caminho de pedra vertical de 2 células de largura, de cy0 até cy1 (exclusivo), com tampas opcionais.
+# Vertical stone path 2 cells wide, from cy0 to cy1 (exclusive), with optional caps.
 func _path_v(cx: int, cy0: int, cy1: int, cap_start: bool, cap_end: bool) -> void:
 	for cy: int in range(cy0, cy1 - 1, 2):
 		_stamp(PATH_BLOCK, Vector2i(2, 2), Vector2i(cx, cy))
-	# Comprimento ímpar: a última linha recebe a metade de cima do bloco
+	# Odd length: the last row gets the top half of the block
 	if (cy1 - cy0) % 2 == 1:
 		_stamp(PATH_BLOCK, Vector2i(2, 1), Vector2i(cx, cy1 - 1))
 	if cap_start:
@@ -407,15 +407,15 @@ func _path_v(cx: int, cy0: int, cy1: int, cap_start: bool, cap_end: bool) -> voi
 	_claim(Vector2i(cx - 1, cy0 - 1), Vector2i(4, cy1 - cy0 + 2), 1)
 
 
-# Variedade do chão da sala: caminhos de pedra até as portas, manchas de grama laranja e decalques.
+# Room floor variety: stone paths to the doors, orange grass patches and decals.
 func _decorate_floor(room: RoomData) -> void:
 	var rect: Rect2 = room.rect
 	var first: Vector2i = Vector2i(roundi(rect.position.x / TILE), roundi(rect.position.y / TILE))
 	var size: Vector2i = room.size_tiles
 	var center_cell: Vector2i = Vector2i(roundi(rect.get_center().x / TILE), roundi(rect.get_center().y / TILE))
 
-	# Caminhos: da porta até o centro (um por porta). Portas de cima e de baixo na mesma coluna viram um
-	# caminho só, sem tampas no meio. Cada entrada: [início, fim, tampa no início, tampa no fim]
+	# Paths: from the door to the center (one per door). Top and bottom doors in the same column become one
+	# single path, with no caps in the middle. Each entry: [start, end, start cap, end cap]
 	var paths: Dictionary = {}
 	for door: RoomData.Door in room.doors:
 		var cx: int = roundi((rect.get_center().x + door.offset) / TILE) - 1
@@ -442,7 +442,7 @@ func _decorate_floor(room: RoomData) -> void:
 		_try_decal(DECALS_BIG[_rng.randi() % DECALS_BIG.size()], first, size)
 
 
-# Mancha laranja retangular de blocos 2x2 com as bordas do artista (origem em células, tamanho em blocos).
+# Rectangular orange patch of 2x2 blocks with the artist's edges (origin in cells, size in blocks).
 func _place_patch(origin: Vector2i, blocks: Vector2i) -> void:
 	for j: int in blocks.y:
 		for i: int in blocks.x:
@@ -453,7 +453,7 @@ func _place_patch(origin: Vector2i, blocks: Vector2i) -> void:
 	_claim(origin, blocks * 2, 1)
 
 
-# Escolhe um bloco de chão laranja pelo peso.
+# Picks an orange floor block by weight.
 func _pick_orange_block() -> Vector2i:
 	var total: int = 0
 	for entry: Array in ORANGE_BLOCKS:
@@ -466,7 +466,7 @@ func _pick_orange_block() -> Vector2i:
 	return ORANGE_BLOCKS[0][0]
 
 
-# Tenta pôr um decalque [atlas, tamanho] numa posição livre aleatória da sala.
+# Tries to place a decal [atlas, size] at a random free position in the room.
 func _try_decal(decal: Array, first: Vector2i, size: Vector2i) -> void:
 	var atlas: Vector2i = decal[0]
 	var decal_size: Vector2i = decal[1]
@@ -482,8 +482,8 @@ func _try_decal(decal: Array, first: Vector2i, size: Vector2i) -> void:
 
 # --- Exterior ---
 
-# A faixa de chão atrás da grade de cima e as cunhas sob a diagonal das quinas de baixo ficam fora do
-# cemitério: viram grama (menos na entrada das portas de cima).
+# The strip of floor behind the top fence and the wedges under the diagonal of the bottom corners are outside the
+# graveyard: they become grass (except at the entrance of the top doors).
 func _paint_behind_top_fence(room: RoomData) -> void:
 	var first: Vector2i = Vector2i(roundi(room.rect.position.x / TILE), roundi(room.rect.position.y / TILE))
 	var width: int = room.size_tiles.x
@@ -496,7 +496,7 @@ func _paint_behind_top_fence(room: RoomData) -> void:
 				in_gap = true
 		if not in_gap:
 			_set_grass(Vector2i(first.x + x, first.y))
-	# Cunhas de chão sob a diagonal das quinas de baixo
+	# Floor wedges under the diagonal of the bottom corners
 	var last_row: int = first.y + room.size_tiles.y - 1
 	for corner_x: int in [0, 1, width - 2, width - 1]:
 		_set_grass(Vector2i(first.x + corner_x, last_row))
@@ -506,7 +506,7 @@ func _set_grass(cell: Vector2i) -> void:
 	_ground.set_cell(cell, 0, ORANGE_PLAIN_CELLS[_rng.randi() % ORANGE_PLAIN_CELLS.size()])
 
 
-# Chão laranja (grama) ao redor de salas e corredores, até a margem.
+# Orange floor (grass) around rooms and corridors, up to the margin.
 func _paint_exterior(rooms: Array[RoomData], corridors: Array[Rect2], margin_tiles: int) -> void:
 	for rect: Rect2 in _all_rects(rooms, corridors):
 		for cell: Vector2i in _cells_of(rect.grow(float(margin_tiles * TILE))):
@@ -517,8 +517,8 @@ func _paint_exterior(rooms: Array[RoomData], corridors: Array[Rect2], margin_til
 	_fill_exterior_gaps(EXTERIOR_GAP_FILL_TILES)
 
 
-# Fechamento morfológico (dilata e erode por "radius" células): preenche com grama os buracos e as
-# reentrâncias estreitas de vazio preto que sobram entre as margens retangulares das salas e corredores.
+# Morphological closing (dilates and erodes by "radius" cells): fills with grass the holes and the
+# narrow notches of black void left between the rectangular margins of rooms and corridors.
 func _fill_exterior_gaps(radius: int) -> void:
 	var land: Dictionary = _floor.merged(_exterior)
 	if land.is_empty():
@@ -545,13 +545,13 @@ func _fill_exterior_gaps(radius: int) -> void:
 				_set_grass(cell)
 
 
-# Dilatação (dilate = true) ou erosão com um quadrado de lado 2*radius+1, separável (linhas e depois colunas).
+# Dilation (dilate = true) or erosion with a square of side 2*radius+1, separable (rows then columns).
 func _morph(grid: PackedByteArray, w: int, h: int, radius: int, dilate: bool) -> PackedByteArray:
 	var rows: PackedByteArray = _morph_pass(grid, w, h, radius, dilate, true)
 	return _morph_pass(rows, w, h, radius, dilate, false)
 
 
-# Uma passada 1D com soma acumulada: dilata se há algum 1 na janela; erode se a janela é toda 1.
+# A 1D pass with a running sum: dilates if there is any 1 in the window; erodes if the window is all 1s.
 func _morph_pass(grid: PackedByteArray, w: int, h: int, radius: int, dilate: bool, horizontal: bool) -> PackedByteArray:
 	var out: PackedByteArray = PackedByteArray()
 	out.resize(w * h)
@@ -567,7 +567,7 @@ func _morph_pass(grid: PackedByteArray, w: int, h: int, radius: int, dilate: boo
 			var a: int = maxi(i - radius, 0)
 			var b: int = mini(i + radius + 1, length)
 			var count: int = prefix[b] - prefix[a]
-			# Fora da grade conta como vazio: a erosão perto da borda zera
+			# Outside the grid counts as void: erosion near the edge zeroes out
 			var full: bool = count == radius * 2 + 1
 			var index: int = line * w + i if horizontal else i * w + line
 			out[index] = 1 if (count > 0 if dilate else full) else 0
@@ -581,7 +581,7 @@ func _all_rects(rooms: Array[RoomData], corridors: Array[Rect2]) -> Array[Rect2]
 	return rects
 
 
-# Árvores, arbustos, folhas e abóboras na mata, longe das grades (só decoração: sem colisão).
+# Trees, bushes, leaves and pumpkins in the woods, away from the fences (decoration only: no collision).
 func _scatter_exterior(props: Node2D, rooms: Array[RoomData], corridors: Array[Rect2], density: float) -> void:
 	if density <= 0.0:
 		return
@@ -597,7 +597,7 @@ func _scatter_exterior(props: Node2D, rooms: Array[RoomData], corridors: Array[R
 			continue
 		var kind: Prop.Kind = _pick_kind(EXTERIOR_WEIGHTS)
 		var pos: Vector2 = ((Vector2(cell) + Vector2(_rng.randf(), _rng.randf())) * TILE).snapped(Vector2.ONE)
-		# O sprite inteiro precisa ficar sobre a grama (senão a copa da árvore invade o vazio preto)
+		# The whole sprite must sit on grass (otherwise the tree canopy invades the black void)
 		if not _over_exterior(Rect2(pos + Prop.local_rect(kind).position, Prop.local_rect(kind).size)):
 			continue
 		var prop: Prop = PROP_SCENE.instantiate() as Prop
@@ -607,7 +607,7 @@ func _scatter_exterior(props: Node2D, rooms: Array[RoomData], corridors: Array[R
 		props.add_child(prop)
 
 
-# Verdadeiro se todas as células sob o retângulo (px) são de grama do exterior.
+# True if all cells under the rectangle (px) are exterior grass.
 func _over_exterior(rect: Rect2) -> bool:
 	var first: Vector2i = Vector2i(floori(rect.position.x / TILE), floori(rect.position.y / TILE))
 	var last: Vector2i = Vector2i(floori((rect.end.x - 1.0) / TILE), floori((rect.end.y - 1.0) / TILE))
@@ -618,9 +618,9 @@ func _over_exterior(rect: Rect2) -> bool:
 	return true
 
 
-# --- Paredes das salas ---
+# --- Room walls ---
 
-# Paredes dos 4 lados da sala; cima e baixo têm um vão por porta; cada vão ganha um bloqueio (desligado).
+# Walls on the 4 sides of the room; top and bottom have a gap per door; each gap gets a blocker (disabled).
 func _build_room_walls(walls: Node2D, room: RoomData) -> void:
 	var rect: Rect2 = room.rect
 	var t: float = WALL_THICKNESS
@@ -634,7 +634,7 @@ func _build_room_walls(walls: Node2D, room: RoomData) -> void:
 		door.blocker = _add_door_blocker(walls, room, door)
 
 
-# Vãos (início, fim em x) das portas de um lado da sala, em ordem.
+# Gaps (start, end in x) of the doors on one side of the room, in order.
 func _gaps(room: RoomData, side: Vector2i) -> Array[Vector2]:
 	var gaps: Array[Vector2] = []
 	for door: RoomData.Door in room.doors:
@@ -645,7 +645,7 @@ func _gaps(room: RoomData, side: Vector2i) -> Array[Vector2]:
 	return gaps
 
 
-# Divide [from, to] removendo os vãos (ordenados).
+# Splits [from, to] removing the gaps (sorted).
 func _spans(from: float, to: float, gaps: Array[Vector2]) -> Array[Vector2]:
 	var spans: Array[Vector2] = []
 	var cursor: float = from
@@ -658,7 +658,7 @@ func _spans(from: float, to: float, gaps: Array[Vector2]) -> Array[Vector2]:
 	return spans
 
 
-# Colisão das quinas (quadrados que cobrem a grade diagonal).
+# Corner collision (squares covering the diagonal fence).
 func _build_corner_walls(walls: Node2D, room: RoomData) -> void:
 	var rect: Rect2 = room.rect
 	var t: float = WALL_THICKNESS
@@ -672,7 +672,7 @@ func _build_corner_walls(walls: Node2D, room: RoomData) -> void:
 	_add_wall(walls, Rect2(rect.end.x - CORNER_RIGHT_REACH, bottom, CORNER_RIGHT_REACH + t, bottom_height))
 
 
-# Grade da sala: retas com vão nas portas, quinas, laterais e um arco em cada porta.
+# Room fence: straight pieces with gaps at the doors, corners, sides and an arch at each door.
 func _build_room_fences(props: Node2D, room: RoomData) -> void:
 	var rect: Rect2 = room.rect
 	var top_base: float = rect.position.y + TOP_WALL_INSET
@@ -705,7 +705,7 @@ func _build_room_fences(props: Node2D, room: RoomData) -> void:
 		door.arch = arch
 
 
-# Grade horizontal de x0 a x1 com a base na altura "base_y" (peças de 32 px; a última é recortada).
+# Horizontal fence from x0 to x1 with the base at height "base_y" (32 px pieces; the last one is clipped).
 func _add_fence_h(props: Node2D, x0: float, x1: float, base_y: float, piece: Rect2) -> void:
 	var x: float = x0
 	while x < x1 - 0.01:
@@ -715,7 +715,7 @@ func _add_fence_h(props: Node2D, x0: float, x1: float, base_y: float, piece: Rec
 		x += width
 
 
-# Grade vertical de y0 a y1 com o centro em "center_x" (peças de 32 px; a última é recortada).
+# Vertical fence from y0 to y1 centered at "center_x" (32 px pieces; the last one is clipped).
 func _add_fence_v(props: Node2D, y0: float, y1: float, center_x: float, piece: Rect2) -> void:
 	var y: float = y0
 	while y < y1 - 0.01:
@@ -725,18 +725,18 @@ func _add_fence_v(props: Node2D, y0: float, y1: float, center_x: float, piece: R
 		y += height
 
 
-# As 2 células de grama sob a quina de baixo passam um pouco da diagonal e apareceriam como um fio laranja
-# atrás da grade: recortes de chão azul tapam a sobra. "join_x" é onde a quina encontra a grade reta,
-# "cells_end_x" o fim das 2 células de grama e "line_y" a base da parede.
+# The 2 grass cells under the bottom corner extend slightly past the diagonal and would show as an orange thread
+# behind the fence: blue floor cutouts cover the excess. "join_x" is where the corner meets the straight fence,
+# "cells_end_x" is the end of the 2 grass cells and "line_y" is the base of the wall.
 func _cover_corner_gap(props: Node2D, join_x: float, cells_end_x: float, line_y: float) -> void:
 	var dir: float = signf(cells_end_x - join_x)
-	# Da junção até o fim das células (atrás da grade reta)
+	# From the junction to the end of the cells (behind the straight fence)
 	_cover_blue(props, Rect2(minf(join_x, cells_end_x), line_y - TILE, absf(cells_end_x - join_x), TILE))
-	# Faixa de cima, um pouco para dentro da quina (acima da diagonal de pedra)
+	# Top strip, slightly inside the corner (above the stone diagonal)
 	_cover_blue(props, Rect2(join_x - CORNER_GAP_STRIP.x if dir > 0.0 else join_x, line_y - TILE, CORNER_GAP_STRIP.x, CORNER_GAP_STRIP.y))
 
 
-# Recorte de chão azul liso (abaixo de tudo que fica em pé, acima do chão).
+# Plain blue floor cutout (below everything standing, above the floor).
 func _cover_blue(props: Node2D, rect: Rect2) -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
@@ -752,7 +752,7 @@ func _cover_blue(props: Node2D, rect: Rect2) -> void:
 	props.add_child(sprite)
 
 
-# Sprite da grade: "origin" é o ponto da região (px) que fica em "base_pos" (y-sort pelos pés).
+# Fence sprite: "origin" is the point of the region (px) that sits at "base_pos" (y-sort by the feet).
 func _add_fence_sprite(props: Node2D, region: Rect2, origin: Vector2, base_pos: Vector2) -> void:
 	var sprite: Sprite2D = Sprite2D.new()
 	var atlas: AtlasTexture = AtlasTexture.new()
@@ -766,7 +766,7 @@ func _add_fence_sprite(props: Node2D, region: Rect2, origin: Vector2, base_pos: 
 	props.add_child(sprite)
 
 
-# Cria um StaticBody2D retangular na layer world (bloqueia movimento e projéteis).
+# Creates a rectangular StaticBody2D on the world layer (blocks movement and projectiles).
 func _add_wall(parent: Node2D, rect: Rect2) -> StaticBody2D:
 	var body: StaticBody2D = StaticBody2D.new()
 	body.collision_layer = PhysicsLayers.WORLD
@@ -781,7 +781,7 @@ func _add_wall(parent: Node2D, rect: Rect2) -> StaticBody2D:
 	return body
 
 
-# Bloqueio do vão da porta (centrado na linha da parede); começa desligado (layer 0).
+# Door gap blocker (centered on the wall line); starts disabled (layer 0).
 func _add_door_blocker(walls: Node2D, room: RoomData, door: RoomData.Door) -> StaticBody2D:
 	var t: float = WALL_THICKNESS
 	var x: float = room.center().x + door.offset
@@ -791,9 +791,9 @@ func _add_door_blocker(walls: Node2D, room: RoomData, door: RoomData.Door) -> St
 	return body
 
 
-# --- Props dentro do cemitério ---
+# --- Props inside the graveyard ---
 
-# Espalha props decorativos na sala, longe das portas, do centro e uns dos outros.
+# Scatters decorative props in the room, away from the doors, the center and each other.
 func _scatter_props(props: Node2D, room: RoomData, density: float) -> void:
 	if room.type == RoomData.Type.BOSS:
 		return
@@ -817,7 +817,7 @@ func _scatter_props(props: Node2D, room: RoomData, density: float) -> void:
 			break
 
 
-# Faixas livres da porta até o centro da sala (para o player e os inimigos passarem).
+# Free strips from the door to the center of the room (for the player and enemies to pass).
 func _door_lanes(room: RoomData) -> Array[Rect2]:
 	var lanes: Array[Rect2] = []
 	var center: Vector2 = room.center()
@@ -826,13 +826,13 @@ func _door_lanes(room: RoomData) -> Array[Rect2]:
 		var x: float = center.x + door.offset
 		var y0: float = room.rect.position.y if door.side == Vector2i.UP else center.y
 		lanes.append(Rect2(x - width / 2.0, y0, width, room.rect.size.y / 2.0))
-		# Vãos laterais: ligação livre até o centro
+		# Side gaps: free connection to the center
 		if door.offset != 0.0:
 			lanes.append(Rect2(minf(x, center.x) - width / 2.0, center.y - width / 2.0, absf(x - center.x) + width, width))
 	return lanes
 
 
-# Verdadeiro se o retângulo invade o centro livre, uma faixa de porta ou outro prop.
+# True if the rectangle invades the free center, a door strip or another prop.
 func _blocked(footprint: Rect2, center: Vector2, placed: Array[Rect2], lanes: Array[Rect2]) -> bool:
 	if footprint.grow(8.0).has_point(center) or footprint.get_center().distance_to(center) < PROP_CENTER_CLEAR:
 		return true

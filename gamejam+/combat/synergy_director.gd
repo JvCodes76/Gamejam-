@@ -1,7 +1,7 @@
 class_name SynergyDirector
 extends Node
-## Sinergias de aspecto que reagem ao mundo (marcação, raiva, cura de raízes, mortes, negação de dano).
-## Vive como filho do Player; recebe o estado da poção ativa via configure().
+## Aspect synergies that react to the world (marking, rage, root healing, kills, damage negation).
+## Lives as a child of the Player; receives the active potion's state via configure().
 
 var _player: Node2D = null
 var _health: HealthComponent = null
@@ -15,7 +15,7 @@ var _last_summary: String = ""
 var _flash_tween: Tween = null
 
 
-## Liga o diretor ao jogador e aos sinais globais.
+## Connects the director to the player and the global signals.
 func setup(player: Node2D, health: HealthComponent) -> void:
 	_player = player
 	_health = health
@@ -28,7 +28,7 @@ func setup(player: Node2D, health: HealthComponent) -> void:
 	EventBus.floor_changed.connect(_on_floor_changed)
 
 
-## Recebe os modificadores da poção ativa (e suas sinergias) e aplica o que depende do estado.
+## Receives the active potion's modifiers (and its synergies) and applies what depends on the state.
 func configure(mods: ProjectileModifiers, aspect_counts: Dictionary) -> void:
 	_mods = mods
 	_state = mods.synergy
@@ -41,7 +41,7 @@ func configure(mods: ProjectileModifiers, aspect_counts: Dictionary) -> void:
 	var summary: String = SynergyResolver.summary(aspect_counts, _state.specials)
 	if summary != _last_summary:
 		_last_summary = summary
-		print("[Synergy] - %s" % (summary + " ativos" if summary != "" else "nenhuma ativa"))
+		print("[Synergy] - %s" % (summary + "  active" if summary != "" else "none active"))
 
 
 func _process(delta: float) -> void:
@@ -53,17 +53,17 @@ func _process(delta: float) -> void:
 		reevaluate_marks()
 
 
-## Bônus de dano atual da raiva (0.05 = +5%); 0 se a sinergia Evil não está ativa.
+## Current rage damage bonus (0.05 = +5%); 0 if the Evil synergy is not active.
 func rage_bonus() -> float:
 	return _rage_kills * SynergyConstants.EVIL_RAGE_PER_KILL if _state.rage_enabled else 0.0
 
 
-## Número de mortes acumuladas pela raiva.
+## Number of kills accumulated by the rage.
 func rage_kills() -> int:
 	return _rage_kills
 
 
-## Marca os N inimigos de maior vida máxima (N = tier de Animal) e desmarca os que saíram do topo.
+## Marks the N enemies with the highest max health (N = Animal tier) and unmarks the ones that left the top.
 func reevaluate_marks() -> void:
 	var candidates: Array[EnemyBase] = []
 	for node: Node in get_tree().get_nodes_in_group("enemy"):
@@ -81,13 +81,13 @@ func reevaluate_marks() -> void:
 	for enemy: EnemyBase in chosen:
 		var status: StatusEffects = enemy.get_status()
 		if not status.has(StatusEffects.MARKED):
-			print("[Synergy] - inimigo mais forte marcado (vida %d)" % enemy.get_health().max_health)
+			print("[Synergy] - strongest enemy marked (health %d)" % enemy.get_health().max_health)
 		status.apply(StatusEffects.MARKED, SynergyConstants.ANIMAL_MARK_DURATION)
 		if _state.marked_weaken > 0.0:
 			status.apply(StatusEffects.WEAKENED, SynergyConstants.ANIMAL_MARK_DURATION, _state.marked_weaken)
 
 
-## Sorteia a morte instantânea por tick de veneno (tier 12); false para inimigos não básicos.
+## Rolls the instant kill per poison tick (tier 12); false for non-basic enemies.
 func roll_poison_instakill(is_basic: bool) -> bool:
 	return is_basic and _state.poison_instakill_chance > 0.0 and randf() < _state.poison_instakill_chance
 
@@ -107,7 +107,7 @@ func _clear_marks() -> void:
 	_marked.clear()
 
 
-## Ticks de DoT: raízes curam o player (tier 12) e veneno pode matar básicos na hora (tier 12).
+## DoT ticks: roots heal the player (tier 12) and poison can instantly kill basic enemies (tier 12).
 func _on_enemy_dot_ticked(enemy: Node, source: StringName, amount: int) -> void:
 	if source == &"roots" and _state.root_heal_fraction > 0.0 and amount > 0 and _health != null:
 		_heal_carry += amount * _state.root_heal_fraction
@@ -115,15 +115,15 @@ func _on_enemy_dot_ticked(enemy: Node, source: StringName, amount: int) -> void:
 		if heal > 0:
 			_heal_carry -= heal
 			_health.heal(heal)
-			print("[Synergy] - raízes curaram %d" % heal)
+			print("[Synergy] - roots healed %d" % heal)
 	elif source == &"poison" and _state.poison_instakill_chance > 0.0:
 		var target: EnemyBase = enemy as EnemyBase
 		if target != null and target.is_alive() and roll_poison_instakill(target.is_basic):
 			target.slay_if_basic()
-			print("[Synergy] - veneno matou um inimigo básico")
+			print("[Synergy] - poison killed a basic enemy")
 
 
-## Mortes: explosão dos marcados (Animal 12), poça de lama (Earth 12) e reavaliação da marca.
+## Kills: explosion of marked enemies (Animal 12), mud puddle (Earth 12) and mark re-evaluation.
 func _on_enemy_died(pos: Vector2, was_marked: bool, _is_basic: bool) -> void:
 	if _mods == null:
 		return
@@ -131,25 +131,25 @@ func _on_enemy_died(pos: Vector2, was_marked: bool, _is_basic: bool) -> void:
 	if _state.marked_explode and was_marked:
 		var dmg: int = _mods.roll_explosion_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.ANIMAL_EXPLOSION_FRACTION)
 		ImpactEffect.spawn_blast(scene, pos + CombatConstants.ENEMY_BODY_OFFSET, _mods.explosion_radius(SynergyConstants.ANIMAL_EXPLOSION_RADIUS), dmg, SynergyConstants.ANIMAL_EXPLOSION_COLOR)
-		print("[Synergy] - inimigo marcado explodiu (dano %d)" % dmg)
+		print("[Synergy] - marked enemy exploded (damage %d)" % dmg)
 	if _state.mud_death_pool:
 		MudTrail.spawn(scene, pos, SynergyConstants.EARTH_DEATH_POOL_RADIUS, SynergyConstants.EARTH_DEATH_POOL_LIFETIME, _state.mud_slow, _mods.mud_dps(CombatConstants.WEAPON_BASE_DAMAGE))
-		print("[Synergy] - poça de lama na morte")
+		print("[Synergy] - mud puddle on death")
 	if was_marked and _state.butcher_orb_chance > 0.0 and randf() < _state.butcher_orb_chance:
 		HealOrb.spawn(scene, pos)
-		print("[Synergy] - Unethical Butcher: orbe de cura dropada")
+		print("[Synergy] - Unethical Butcher: healing orb dropped")
 	if _state.mark_count > 0:
 		reevaluate_marks()
 
 
-## Press F to pay respects: o inimigo enfeitiçado que morreu vira um fantasma pelo tempo restante do charm.
+## Press F to pay respects: the charmed enemy that died becomes a ghost for the remaining charm time.
 func _on_charmed_enemy_died(enemy: Node2D, time_left: float) -> void:
 	if not _state.ghosts_enabled or time_left < SynergyConstants.GHOST_MIN_TIME or not is_instance_valid(enemy):
 		return
 	Ghost.spawn(get_tree().current_scene, enemy, time_left)
 
 
-## Cada morte acumula raiva (Evil).
+## Each kill accumulates rage (Evil).
 func _on_enemy_killed(_points: int) -> void:
 	if not _state.rage_enabled:
 		return
@@ -157,13 +157,13 @@ func _on_enemy_killed(_points: int) -> void:
 	_apply_rage()
 
 
-## Zera a raiva a cada sala, exceto com Evil tier 6 (zera por andar).
+## Resets the rage every room, except with Evil tier 6 (resets per floor).
 func _on_room_changed(_index: int) -> void:
 	if not _state.rage_resets_per_floor:
 		_reset_rage()
 
 
-## Zera a raiva a cada andar.
+## Resets the rage every floor.
 func _on_floor_changed(_level: int) -> void:
 	_reset_rage()
 
@@ -179,13 +179,13 @@ func _apply_rage() -> void:
 	var bonus: float = rage_bonus()
 	if _mods != null:
 		_mods.rage_multiplier = 1.0 + bonus
-	print("[Synergy] - raiva +%.1f%%" % (bonus * 100.0))
+	print("[Synergy] - rage +%.1f%%" % (bonus * 100.0))
 	EventBus.rage_changed.emit(bonus)
 
 
-## Dano negado (Darkness): flash escuro no player e, no tier 6, explosão sombria nos inimigos.
+## Damage negated (Darkness): dark flash on the player and, at tier 6, a dark explosion on enemies.
 func _on_damage_negated(amount: int) -> void:
-	print("[Synergy] - dano negado (%d)" % amount)
+	print("[Synergy] - damage negated (%d)" % amount)
 	if _player != null:
 		if _flash_tween != null and _flash_tween.is_valid():
 			_flash_tween.kill()
@@ -195,10 +195,10 @@ func _on_damage_negated(amount: int) -> void:
 	if _state.negate_blast and _mods != null and _player != null:
 		var dmg: int = _mods.roll_explosion_damage(CombatConstants.WEAPON_BASE_DAMAGE, SynergyConstants.DARKNESS_BLAST_FRACTION)
 		ImpactEffect.spawn_blast(get_tree().current_scene, _body_position(), _mods.explosion_radius(SynergyConstants.DARKNESS_BLAST_RADIUS), dmg, SynergyConstants.DARKNESS_COLOR, 24)
-		print("[Synergy] - explosão sombria (dano %d)" % dmg)
+		print("[Synergy] - dark explosion (damage %d)" % dmg)
 
 
-## Centro do corpo do player (a origem do nó fica nos pés); explosões "do corpo" partem daqui.
+## Center of the player's body (the node origin is at the feet); "body" explosions originate here.
 func _body_position() -> Vector2:
 	var player: Player = _player as Player
 	return player.aim_origin if player != null else _player.global_position

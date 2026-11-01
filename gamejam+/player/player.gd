@@ -11,9 +11,9 @@ const BULLET_SCENE: PackedScene = preload("res://projectiles/bullet.tscn")
 @export var gamepad_crosshair_distance: float = 60.0
 @export var walk_frame_time: float = 0.18
 @export var cape_frame_time: float = 0.12
-# Pixels que a cabeça sobe nos quadros "andando"
+# Pixels the head rises in the "walking" frames
 @export var head_bob: float = 1.0
-## Invencibilidade após levar dano (s)
+## Invincibility after taking damage (s)
 @export var invulnerability_time: float = 0.8
 @export var knockback_impulse: float = FeelConstants.PLAYER_KNOCKBACK_IMPULSE
 
@@ -27,9 +27,9 @@ var _walk_frame: int = 0
 var _cape_timer: float = 0.0
 var _cape_frame: int = 0
 var _head_base_y: float = 0.0
-# Posição no ciclo de cores do arco-íris (receita RAINBOWS!!!)
+# Position in the rainbow color cycle (RAINBOWS!!! recipe)
 var _rainbow_index: int = 0
-# Game feel: recuo do sprite no tiro, knockback, piscar dos i-frames e morte
+# Game feel: sprite recoil on shots, knockback, i-frame blinking and death
 var _recoil_offset: Vector2 = Vector2.ZERO
 var _cape_base_position: Vector2 = Vector2.ZERO
 var _knockback: Vector2 = Vector2.ZERO
@@ -38,7 +38,7 @@ var _dead: bool = false
 var _flash_materials: Array[ShaderMaterial] = []
 var _flash_tween: Tween
 
-# Folha com 4 direções x 2 quadros (parado/andando): baixo, direita, esquerda, cima
+# Sheet with 4 directions x 2 frames (idle/walking): down, right, left, up
 const FRAMES_PER_DIRECTION: int = 2
 enum Facing { DOWN, RIGHT, LEFT, UP }
 
@@ -54,8 +54,8 @@ enum Facing { DOWN, RIGHT, LEFT, UP }
 @onready var _muzzle_flash: MuzzleFlash = $Pivot/Muzzle/MuzzleFlash
 
 
-## Centro do corpo no mundo. A origem do nó fica nos pés (y-sort e colisão);
-## a mira, o muzzle e as sinergias "do corpo" partem daqui.
+## Body center in the world. The node origin is at the feet (y-sort and collision);
+## the aim, the muzzle and the "body" synergies originate here.
 var aim_origin: Vector2:
 	get:
 		return _body_center.global_position
@@ -76,7 +76,7 @@ func _ready() -> void:
 	_director.name = "SynergyDirector"
 	add_child(_director)
 	_director.setup(self, _health)
-	# Adiado para o HUD (que vem depois na árvore) já estar conectado
+	# Deferred so the HUD (which comes later in the tree) is already connected
 	EventBus.player_health_changed.emit.call_deferred(_health.current_health, _health.max_health)
 	EventBus.game_paused.connect(_on_game_paused)
 	EventBus.potion_selected.connect(_on_potion_selected)
@@ -84,21 +84,21 @@ func _ready() -> void:
 	EventBus.active_effects_changed.connect(_recalculate_modifiers)
 	_recalculate_modifiers()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	print("[Player] - pronto")
+	print("[Player] - ready")
 
 
-## Restaura o cursor do sistema ao sair da cena.
+## Restores the system cursor when leaving the scene.
 func _exit_tree() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
-## Volta a mirar com o mouse quando ele se move.
+## Goes back to aiming with the mouse when it moves.
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_use_gamepad = false
 
 
-## Alterna a poção ativa com o scroll do mouse.
+## Switches the active potion with the mouse scroll.
 func _unhandled_input(event: InputEvent) -> void:
 	if _dead or ItemManager.inventory_open or not event is InputEventMouseButton:
 		return
@@ -121,7 +121,7 @@ func _physics_process(delta: float) -> void:
 		_shoot()
 
 
-## Move o jogador em 8 direções com aceleração e atrito.
+## Moves the player in 8 directions with acceleration and friction.
 func _handle_movement(delta: float) -> void:
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if input_dir != Vector2.ZERO:
@@ -131,7 +131,7 @@ func _handle_movement(delta: float) -> void:
 	if _knockback == Vector2.ZERO:
 		move_and_slide()
 		return
-	# Knockback soma só neste passo; a velocidade de caminhada continua a mesma
+	# Knockback is added only in this step; the walking speed stays the same
 	var walk_velocity: Vector2 = velocity
 	velocity += _knockback
 	move_and_slide()
@@ -139,9 +139,9 @@ func _handle_movement(delta: float) -> void:
 	_knockback = _knockback.move_toward(Vector2.ZERO, FeelConstants.KNOCKBACK_FRICTION * delta)
 
 
-## Atualiza a mira (analógico ou mouse), gira o Pivot e posiciona o crosshair.
+## Updates the aim (analog stick or mouse), rotates the Pivot and positions the crosshair.
 func _update_aim() -> void:
-	# Com o inventário aberto a mira fica congelada e o crosshair some
+	# With the inventory open the aim is frozen and the crosshair disappears
 	if ItemManager.inventory_open:
 		_crosshair.visible = false
 		return
@@ -163,7 +163,7 @@ func _update_aim() -> void:
 	_camera.look_target = _crosshair.global_position
 
 
-## Escolhe a direção do sprite pela mira e alterna os 2 quadros enquanto anda.
+## Picks the sprite direction from the aim and alternates the 2 frames while walking.
 func _update_sprite(delta: float) -> void:
 	var facing: Facing = _facing_from(_aim_direction)
 	if velocity.length() > 5.0:
@@ -181,7 +181,7 @@ func _update_sprite(delta: float) -> void:
 	_sprite.frame = facing * FRAMES_PER_DIRECTION + _walk_frame
 
 
-## Anima a capa: parada no quadro 0, cicla os 4 quadros ao andar.
+## Animates the cape: idle on frame 0, cycles the 4 frames while walking.
 func _update_cape(delta: float, walking: bool) -> void:
 	if walking:
 		_cape_timer += delta
@@ -194,14 +194,14 @@ func _update_cape(delta: float, walking: bool) -> void:
 	_cape.frame = _cape_frame
 
 
-## Converte a direção da mira em uma das 4 direções da folha.
+## Converts the aim direction into one of the sheet's 4 directions.
 func _facing_from(direction: Vector2) -> Facing:
 	if absf(direction.x) > absf(direction.y):
 		return Facing.RIGHT if direction.x > 0.0 else Facing.LEFT
 	return Facing.DOWN if direction.y > 0.0 else Facing.UP
 
 
-## Dispara uma bala na direção da mira.
+## Fires a bullet in the aim direction.
 func _shoot() -> void:
 	_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
 	var bullet: Bullet = BULLET_SCENE.instantiate() as Bullet
@@ -225,7 +225,7 @@ func _shoot() -> void:
 	EventBus.play_sfx_requested.emit("shoot")
 
 
-## Recalcula os modificadores a partir da poção ativa e tinge o crosshair.
+## Recomputes the modifiers from the active potion and tints the crosshair.
 func _recalculate_modifiers() -> void:
 	var potion: PotionData = ItemManager.get_active_potion()
 	var specials: Array[StringName] = potion.special_synergies if potion != null else ([] as Array[StringName])
@@ -237,16 +237,16 @@ func _recalculate_modifiers() -> void:
 	_crosshair.color = Color(_mods.color, 0.9)
 	_crosshair.queue_redraw()
 	_crosshair.pulse()
-	print("[Potion] - modificadores: dano x%.2f, alcance x%.2f, cadência x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])
+	print("[Potion] - modifiers: damage x%.2f, range x%.2f, fire rate x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])
 
 
-## Avisa uma vez dos efeitos não implementados ao trocar de poção.
+## Warns once about unimplemented effects when swapping potions.
 func _on_potion_selected(index: int) -> void:
 	_recalculate_modifiers()
 	_mods.print_unimplemented()
 
 
-## Alterna cursor do sistema e crosshair conforme a pausa.
+## Toggles the system cursor and crosshair according to the pause.
 func _on_game_paused(paused: bool) -> void:
 	if ItemManager.inventory_open:
 		return
@@ -254,12 +254,12 @@ func _on_game_paused(paused: bool) -> void:
 	_crosshair.visible = not paused
 
 
-## Repassa a mudança de vida ao EventBus.
+## Forwards the health change to the EventBus.
 func _on_health_changed(current: int, max_value: int) -> void:
 	EventBus.player_health_changed.emit(current, max_value)
 
 
-## Dano: flash vermelho, tremida, hitstop, knockback e aviso no EventBus (os i-frames ficam na Hurtbox).
+## Damage: red flash, shake, hitstop, knockback and notice on the EventBus (the i-frames live in the Hurtbox).
 func _on_damaged(_amount: int) -> void:
 	if _health.is_dead():
 		return
@@ -274,7 +274,7 @@ func _on_damaged(_amount: int) -> void:
 	EventBus.play_sfx_requested.emit("player_hurt")
 
 
-## Pisca alternando a transparência durante os i-frames.
+## Blinks by alternating transparency during the i-frames.
 func _update_blink(delta: float) -> void:
 	if _hurtbox.is_invulnerable():
 		_blink_time += delta
@@ -287,7 +287,7 @@ func _update_blink(delta: float) -> void:
 		_cape.modulate.a = 1.0
 
 
-## Pisca o sprite e a capa numa cor (shader de flash).
+## Flashes the sprite and cape in a color (flash shader).
 func _flash(color: Color, duration: float) -> void:
 	if _flash_tween != null:
 		_flash_tween.kill()
@@ -303,9 +303,9 @@ func _set_flash(value: float) -> void:
 		mat.set_shader_parameter("flash", value)
 
 
-## Trata a morte do jogador: player_died sai na hora; o corpo fica como "cadáver" visual até a troca de cena.
+## Handles the player's death: player_died is emitted right away; the body stays as a visual "corpse" until the scene change.
 func _on_died() -> void:
-	print("[Player] - morreu")
+	print("[Player] - died")
 	_dead = true
 	EventBus.player_died.emit()
 	remove_from_group("player")

@@ -3,13 +3,13 @@ extends Node
 const SFX_PATH: String = "res://assets/audio/sfx/%s.%s"
 const MUSIC_PATH: String = "res://assets/audio/music/%s.%s"
 const MUSIC_EXTENSIONS: Array[String] = ["ogg", "mp3"]
-# Música de fundo do jogo todo (menos a luta contra o boss) e música da bossfight
+# Background music for the whole game (except the boss fight) and the boss fight music
 const MAIN_MUSIC: String = "main_theme"
 const BOSS_MUSIC: String = "boss_theme"
-# Extensões tentadas na ordem (o jsfxr exporta .wav; .ogg tem preferência se existir)
+# Extensions tried in order (jsfxr exports .wav; .ogg is preferred if it exists)
 const SFX_EXTENSIONS: Array[String] = ["ogg", "wav"]
 const SFX_POOL_SIZE: int = 16
-# Volume (dB) por nome de SFX; o que não está aqui toca em 0 dB
+# Volume (dB) per SFX name; anything not listed here plays at 0 dB
 const SFX_VOLUME_DB: Dictionary = {
 	"shoot": -8.0,
 	"hit": -6.0,
@@ -22,15 +22,15 @@ const SFX_VOLUME_DB: Dictionary = {
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _music_player: AudioStreamPlayer
 var _next_sfx_index: int = 0
-# Streams já carregados (null = arquivo não existe), para não bater no disco a cada tiro
+# Already loaded streams (null = file does not exist), to avoid hitting the disk on every shot
 var _stream_cache: Dictionary = {}
-# Quantas vezes cada SFX tocou no quadro atual (limite contra estouro em hordas)
+# How many times each SFX played this frame (cap against overload in hordes)
 var _frame_counts: Dictionary = {}
 var _frame_id: int = -1
-# Ducking da música: fim (ms reais) do abaixamento
+# Music ducking: end (real ms) of the volume dip
 var _duck_until: int = 0
 var _music_base_db: float = 0.0
-# Nome da música tocando agora (evita reiniciar a mesma faixa)
+# Name of the music currently playing (avoids restarting the same track)
 var _current_music: String = ""
 
 
@@ -58,18 +58,18 @@ func _ready() -> void:
 	EventBus.boss_defeated.connect(_on_boss_music_ended)
 	EventBus.scene_change_requested.connect(_on_scene_change_requested)
 	play_music(MAIN_MUSIC)
-	print("[Audio] - AudioManager pronto")
+	print("[Audio] - AudioManager ready")
 
 
 func _process(_delta: float) -> void:
-	# Ducking em tempo real (o hitstop zera o time_scale, então nada de tween aqui)
+	# Real-time ducking (hitstop zeroes time_scale, so no tweens here)
 	var ducked: bool = Time.get_ticks_msec() < _duck_until
 	var target: float = _music_base_db + (FeelConstants.MUSIC_DUCK_DB if ducked else 0.0)
 	if not is_equal_approx(_music_player.volume_db, target):
 		_music_player.volume_db = move_toward(_music_player.volume_db, target, 2.0)
 
 
-# Toca um efeito sonoro no primeiro player livre do pool, com pitch variando e limite por quadro
+# Plays a sound effect on the first free player in the pool, with varying pitch and a per-frame cap
 func play_sfx(sfx_name: String) -> void:
 	var frame: int = Engine.get_process_frames()
 	if frame != _frame_id:
@@ -91,7 +91,7 @@ func play_sfx(sfx_name: String) -> void:
 	player.play()
 
 
-## Abaixa a música por um instante (hitstop e morte).
+## Lowers the music for a moment (hitstop and death).
 func duck_music(duration: float = FeelConstants.MUSIC_DUCK_TIME) -> void:
 	_duck_until = maxi(_duck_until, Time.get_ticks_msec() + int(duration * 1000.0))
 
@@ -104,22 +104,22 @@ func _on_player_died() -> void:
 	duck_music(0.6)
 
 
-# Boss entrou na arena: troca para a música da bossfight
+# Boss entered the arena: switch to the boss fight music
 func _on_boss_spawned(_boss: Node) -> void:
 	play_music(BOSS_MUSIC)
 
 
-# Boss derrotado: volta para a música principal
+# Boss defeated: go back to the main music
 func _on_boss_music_ended() -> void:
 	play_music(MAIN_MUSIC)
 
 
-# Troca de cena (menu, reinício, morte na bossfight): garante a música principal
+# Scene change (menu, restart, death in the boss fight): ensures the main music
 func _on_scene_change_requested(_path: String) -> void:
 	play_music(MAIN_MUSIC)
 
 
-# Stream do SFX pelo nome (cache; tenta .ogg e depois .wav; avisa só uma vez se não existir)
+# SFX stream by name (cached; tries .ogg then .wav; warns only once if missing)
 func _get_sfx_stream(sfx_name: String) -> AudioStream:
 	if _stream_cache.has(sfx_name):
 		return _stream_cache[sfx_name]
@@ -130,12 +130,12 @@ func _get_sfx_stream(sfx_name: String) -> AudioStream:
 			stream = load(path) as AudioStream
 			break
 	if stream == null:
-		print("[Audio] - Aviso: SFX não encontrado: %s" % sfx_name)
+		print("[Audio] - Warning: SFX not found: %s" % sfx_name)
 	_stream_cache[sfx_name] = stream
 	return stream
 
 
-# Toca uma música em loop no bus Music (ignora se a mesma já estiver tocando)
+# Plays a looping track on the Music bus (ignored if the same one is already playing)
 func play_music(music_name: String) -> void:
 	if music_name == _current_music and _music_player.playing:
 		return
@@ -147,7 +147,7 @@ func play_music(music_name: String) -> void:
 			stream = load(path) as AudioStream
 			break
 	if stream == null:
-		print("[Audio] - Aviso: música não encontrada: %s" % music_name)
+		print("[Audio] - Warning: music not found: %s" % music_name)
 		return
 
 	if stream is AudioStreamOggVorbis:
@@ -158,27 +158,27 @@ func play_music(music_name: String) -> void:
 	_current_music = music_name
 	_music_player.stream = stream
 	_music_player.play()
-	print("[Audio] - Música tocando: %s" % music_name)
+	print("[Audio] - Music playing: %s" % music_name)
 
 
-# Para a música atual
+# Stops the current music
 func stop_music() -> void:
 	_music_player.stop()
 	_current_music = ""
-	print("[Audio] - Música parada")
+	print("[Audio] - Music stopped")
 
 
-# Define o volume linear (0.0 a 1.0) de um bus
+# Sets the linear volume (0.0 to 1.0) of a bus
 func set_bus_volume(bus: StringName, linear: float) -> void:
 	var idx: int = AudioServer.get_bus_index(bus)
 	if idx == -1:
-		print("[Audio] - Aviso: bus não existe: %s" % bus)
+		print("[Audio] - Warning: bus does not exist: %s" % bus)
 		return
 
 	AudioServer.set_bus_volume_db(idx, linear_to_db(clampf(linear, 0.0, 1.0)))
 
 
-# Cria o bus de áudio caso ele ainda não exista
+# Creates the audio bus if it does not exist yet
 func _ensure_bus(bus_name: StringName) -> void:
 	if AudioServer.get_bus_index(bus_name) != -1:
 		return
@@ -186,10 +186,10 @@ func _ensure_bus(bus_name: StringName) -> void:
 	AudioServer.add_bus()
 	var idx: int = AudioServer.get_bus_count() - 1
 	AudioServer.set_bus_name(idx, bus_name)
-	print("[Audio] - Bus criado: %s" % bus_name)
+	print("[Audio] - Bus created: %s" % bus_name)
 
 
-# Retorna um player livre do pool; se todos estiverem ocupados, usa o próximo em rodízio
+# Returns a free player from the pool; if all are busy, uses the next one round-robin
 func _get_free_sfx_player() -> AudioStreamPlayer:
 	for candidate: AudioStreamPlayer in _sfx_players:
 		if not candidate.playing:

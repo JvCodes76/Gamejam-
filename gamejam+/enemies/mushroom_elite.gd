@@ -1,31 +1,59 @@
 class_name MushroomElite
 extends EnemyBase
-## Cogumelo venenoso (elite): anda devagar e, quando o alvo chega perto, para, infla o chapéu e solta uma nuvem de esporos
-## que fere tudo no raio. Folhas de 32x32: idle com 4 quadros e ataque com 6 (o último é o estouro).
+## Poisonous mushroom (elite): static and tanky. Keeps shooting volleys of spores toward the target and, when the
+## target gets close, inflates its cap and releases a lingering cloud of spores around itself.
+## 32x32 sheets: idle with 4 frames and attack with 6 (the last is the burst).
 
 const SPORE_COLOR: Color = Color(0.55, 0.85, 0.25)
+# Point (px from the feet) where the spores leave the cap and where the cloud is centered
+const CAP_OFFSET: Vector2 = Vector2(0.0, -26.0)
+const CLOUD_OFFSET: Vector2 = Vector2(0.0, -8.0)
+# Point (px from the target's feet) the spores aim at
+const TARGET_AIM_OFFSET: Vector2 = Vector2(0.0, -12.0)
 
 @export var idle_texture: Texture2D
 @export var attack_texture: Texture2D
 @export var idle_fps: float = 6.0
-## Distância do alvo (px) que dispara o ataque
-@export var trigger_radius: float = 70.0
-## Raio da nuvem de esporos (px)
-@export var spore_radius: float = 80.0
-@export var spore_damage: int = 2
-## Duração da animação de ataque até o estouro (s)
+
+@export_group("Spore shots")
+## Interval between volleys (s)
+@export var shot_interval: float = 1.6
+## Spores per volley (fan aimed at the target)
+@export var shot_count: int = 3
+## Angle (degrees) between spores of the same volley
+@export var shot_spread_degrees: float = 14.0
+@export var shot_speed: float = 120.0
+## Lifetime of each spore (s); range = speed * lifetime
+@export var shot_lifetime: float = 2.5
+@export var spore_damage: int = 15
+## Maximum distance (px) to the target to shoot
+@export var shot_range: float = 320.0
+
+@export_group("Spore cloud")
+## Distance (px) to the target that triggers the cloud
+@export var cloud_trigger_radius: float = 90.0
+@export var cloud_radius: float = 80.0
+## Time the cloud stays around the mushroom (s)
+@export var cloud_lifetime: float = 2.5
+## Interval (s) between hits on whoever is inside the cloud
+@export var cloud_tick: float = 0.5
+@export var cloud_damage: int = 15
+## Duration of the charge animation until the cloud comes out (s)
 @export var attack_time: float = 0.7
-@export var attack_cooldown: float = 2.0
+## Time (s) between clouds, counted from the release
+@export var cloud_cooldown: float = 3.5
 
 var _anim_time: float = 0.0
 var _attacking: bool = false
 var _attack_elapsed: float = 0.0
-var _cooldown_left: float = 0.0
+var _shot_left: float = 0.0
+var _cloud_left: float = 0.0
 
 
 func _ready() -> void:
 	super._ready()
-	_cooldown_left = attack_cooldown * 0.5
+	# Desynchronizes mushrooms spawned together
+	_shot_left = shot_interval * randf_range(0.5, 1.0)
 	_set_sheet(idle_texture, 4)
 
 
@@ -37,20 +65,40 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	_cooldown_left = maxf(_cooldown_left - delta, 0.0)
+	_shot_left = maxf(_shot_left - delta, 0.0)
+	_cloud_left = maxf(_cloud_left - delta, 0.0)
 	if _attacking:
 		_tick_attack(delta)
-	elif _cooldown_left <= 0.0 and _status.can_act():
+	elif _status.can_act():
 		var target: Node2D = _find_target()
-		if target != null and global_position.distance_to(target.global_position) <= trigger_radius:
-			_start_attack()
+		if target != null:
+			var distance: float = global_position.distance_to(target.global_position)
+			if distance <= cloud_trigger_radius and _cloud_left <= 0.0:
+				_start_attack()
+			elif distance <= shot_range and _shot_left <= 0.0:
+				_shoot(target)
 	super._physics_process(delta)
 
 
-func _chase_velocity(target: Node2D) -> Vector2:
-	if _attacking:
-		return Vector2.ZERO
-	return super._chase_velocity(target)
+# Static: never walks (knockback is ignored by knockback_resistance in the scene)
+func _chase_velocity(_target: Node2D) -> Vector2:
+	return Vector2.ZERO
+
+
+# Volley of spores in a fan aimed at the target
+func _shoot(target: Node2D) -> void:
+	_shot_left = shot_interval
+	var scene: Node = get_tree().current_scene
+	if scene == null:
+		return
+	var origin: Vector2 = global_position + CAP_OFFSET
+	var aim: Vector2 = origin.direction_to(target.global_position + TARGET_AIM_OFFSET)
+	var amount: int = _scaled(spore_damage)
+	var hits_enemies: bool = _status.has(StatusEffects.CHARMED)
+	for i: int in shot_count:
+		var angle: float = deg_to_rad(shot_spread_degrees) * (float(i) - float(shot_count - 1) * 0.5)
+		SporeProjectile.spawn(scene, origin, aim.rotated(angle) * shot_speed, amount, shot_lifetime, SPORE_COLOR, hits_enemies, self)
+	ImpactEffect.spawn_burst(scene, origin, 10.0, SPORE_COLOR, 8, 0.3, 1.0, 0.6)
 
 
 func _start_attack() -> void:
@@ -60,7 +108,7 @@ func _start_attack() -> void:
 	EventBus.play_sfx_requested.emit("mushroom_charge")
 
 
-# Avança a animação de ataque; atordoado cancela sem soltar os esporos
+# Advances the charge animation; stun cancels it without releasing the cloud
 func _tick_attack(delta: float) -> void:
 	if not _status.can_act():
 		_end_attack()
@@ -69,37 +117,31 @@ func _tick_attack(delta: float) -> void:
 	var last: int = _sprite.hframes - 1
 	_sprite.frame = mini(int(_attack_elapsed / attack_time * last), last)
 	if _attack_elapsed >= attack_time:
-		_release_spores()
+		_release_cloud()
 		_end_attack()
 
 
 func _end_attack() -> void:
 	_attacking = false
-	_cooldown_left = attack_cooldown
 	_set_sheet(idle_texture, 4)
 
 
-# Fere o player (ou os inimigos, se enfeitiçado) dentro do raio
-func _release_spores() -> void:
-	var center: Vector2 = global_position + Vector2(0.0, -12.0)
+# Lingering cloud around the mushroom (hurts the player, or the enemies if charmed)
+func _release_cloud() -> void:
+	_cloud_left = cloud_cooldown
 	var scene: Node = get_tree().current_scene
-	if scene != null:
-		var fx: ImpactEffect = ImpactEffect.spawn_burst(scene, center, spore_radius, SPORE_COLOR, 18, 0.6, 2.0, 0.8)
-		fx.global_position = center
-	var amount: int = maxi(1, roundi(spore_damage * _status.damage_dealt_multiplier()))
-	if _status.has(StatusEffects.CHARMED):
-		for node: Node in get_tree().get_nodes_in_group("enemy"):
-			var other: EnemyBase = node as EnemyBase
-			if other != null and other != self and other.is_alive() and other.global_position.distance_to(center) <= spore_radius:
-				other.get_hurtbox().receive_hit(amount, center.direction_to(other.global_position))
-	else:
-		var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
-		if player != null and player.global_position.distance_to(center) <= spore_radius:
-			var hurtbox: Hurtbox = player.get_node_or_null("Hurtbox") as Hurtbox
-			if hurtbox != null:
-				hurtbox.receive_hit(amount, center.direction_to(player.global_position))
+	if scene == null:
+		return
+	var center: Vector2 = global_position + CLOUD_OFFSET
+	SporeCloud.spawn(scene, center, cloud_radius, cloud_lifetime, cloud_tick, _scaled(cloud_damage), SPORE_COLOR, _status.has(StatusEffects.CHARMED), self)
+	ImpactEffect.spawn_burst(scene, center, cloud_radius, SPORE_COLOR, 18, 0.6, 2.0, 0.8)
 	EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_SPAWN)
 	EventBus.play_sfx_requested.emit("mushroom_spores")
+
+
+# Damage with the status multiplier (weakened deals less)
+func _scaled(base: int) -> int:
+	return maxi(1, roundi(base * _status.damage_dealt_multiplier()))
 
 
 func _set_sheet(texture: Texture2D, frames: int) -> void:

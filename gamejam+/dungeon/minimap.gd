@@ -1,10 +1,10 @@
 class_name Minimap
 extends CanvasLayer
-## Minimapa do cemitério: só as salas já visitadas, em blocos chapados (sem tiles nem props), centrado no player.
+## Graveyard minimap: only the rooms already visited, in flat blocks (no tiles or props), centered on the player.
 
 @export var panel_size: Vector2 = Vector2(180.0, 140.0)
 @export var margin: float = 8.0
-## Pixels de mapa por pixel de mundo (menor = mais zoom out)
+## Map pixels per world pixel (smaller = more zoomed out)
 @export var map_scale: float = 0.06
 @export var background_color: Color = Color(0.0, 0.0, 0.0, 0.6)
 @export var border_color: Color = Color(1.0, 1.0, 1.0, 0.5)
@@ -18,7 +18,7 @@ var _player: Node2D = null
 var _canvas: Control = null
 
 
-## Liga o minimapa às salas geradas e ao player.
+## Connects the minimap to the generated rooms and to the player.
 func setup(rooms: Array[RoomData], player: Node2D) -> void:
 	_rooms = rooms
 	_player = player
@@ -45,7 +45,7 @@ func _process(_delta: float) -> void:
 		_canvas.queue_redraw()
 
 
-## Converte uma posição do mundo para o painel (player no centro).
+## Converts a world position to the panel (player at the center).
 func _to_panel(world: Vector2) -> Vector2:
 	return panel_size / 2.0 + (world - _player.global_position) * map_scale
 
@@ -53,7 +53,7 @@ func _to_panel(world: Vector2) -> Vector2:
 func _draw_map() -> void:
 	_canvas.draw_rect(Rect2(Vector2.ZERO, panel_size), background_color)
 	if _player != null:
-		# Corredores só entre salas visitadas (não revela as vizinhas)
+		# Corridors only between visited rooms (does not reveal the neighbors)
 		for i: int in _rooms.size():
 			var room: RoomData = _rooms[i]
 			if not room.visited:

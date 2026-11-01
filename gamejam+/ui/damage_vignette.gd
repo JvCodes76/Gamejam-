@@ -1,6 +1,6 @@
 class_name DamageVignette
 extends ColorRect
-## Vinheta vermelha na tela: acende ao levar dano e cai em 0,3 s; fica mais forte com vida baixa e pulsa com 1 de vida.
+## Red vignette on the screen: lights up on taking damage and fades in 0.3 s; gets stronger with low health and pulses on the last HUD block.
 
 const SHADER_CODE: String = """
 shader_type canvas_item;
@@ -54,10 +54,12 @@ func _on_player_hurt(_position: Vector2) -> void:
 
 
 func _on_player_health_changed(current: int, max_value: int) -> void:
-	_pulse = current == 1
+	# "Last block" of the HUD (CombatConstants.HEALTH_SCALE of health)
+	var last_block: bool = current > 0 and current <= CombatConstants.HEALTH_SCALE
+	_pulse = last_block
 	if current <= 0:
 		_base = 0.6
-	elif current == 1:
+	elif last_block:
 		_base = 0.35
 	elif float(current) / float(maxi(max_value, 1)) <= 0.4:
 		_base = 0.15

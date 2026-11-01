@@ -4,12 +4,12 @@ extends Node
 signal damaged(amount: int)
 signal died()
 signal health_changed(current: int, max_value: int)
-# Dano ao longo do tempo causado (fonte e quantidade real)
-signal dot_damaged(source: StringName, amount: int)  # emitido a cada tick, mesmo com 0
-# Dano ignorado pela chance de negação (sinergia Darkness)
+# Damage over time dealt (source and actual amount)
+signal dot_damaged(source: StringName, amount: int)  # emitted on every tick, even with 0
+# Damage ignored by the negation chance (Darkness synergy)
 signal damage_negated(amount: int)
 
-@export var max_health: int = 5
+@export var max_health: int = 75
 
 var current_health: int
 var _is_dead: bool = false
@@ -17,15 +17,15 @@ var _is_dead: bool = false
 const DOT_TICK: float = 0.5
 const TICK_EPSILON: float = 0.001
 
-# Multiplicador de dano recebido (ex.: marked); a fração é acumulada
+# Damage taken multiplier (e.g. marked); the fraction is accumulated
 var damage_taken_multiplier: float = 1.0
-# Chance de negar um dano recebido por completo (0 = nunca)
+# Chance to completely negate incoming damage (0 = never)
 var negate_chance: float = 0.0
 
-# source -> { dps, time, tick_every, tick_left, carry }; fontes diferentes empilham
+# source -> { dps, time, tick_every, tick_left, carry }; different sources stack
 var _dots: Dictionary = {}
 var _taken_carry: float = 0.0
-# True enquanto um tick de DoT aplica dano (o feedback de acerto ignora esses danos)
+# True while a DoT tick applies damage (hit feedback ignores this damage)
 var applying_dot: bool = false
 
 
@@ -34,12 +34,12 @@ func _ready() -> void:
 	set_process(false)
 
 
-# Reduz a vida e emite os sinais correspondentes.
+# Reduces health and emits the corresponding signals.
 func take_damage(amount: int) -> void:
 	_apply_damage(amount)
 
 
-# Aplica o dano (negação e multiplicador) e retorna o dano realmente causado.
+# Applies the damage (negation and multiplier) and returns the damage actually dealt.
 func _apply_damage(amount: int) -> int:
 	if _is_dead:
 		return 0
@@ -61,7 +61,7 @@ func _apply_damage(amount: int) -> int:
 	return amount
 
 
-# Mata na hora, ignorando negação e multiplicadores.
+# Kills instantly, ignoring negation and multipliers.
 func kill() -> void:
 	if _is_dead:
 		return
@@ -73,7 +73,7 @@ func kill() -> void:
 	died.emit()
 
 
-# Cura a vida até o máximo.
+# Heals health up to the maximum.
 func heal(amount: int) -> void:
 	if _is_dead or amount <= 0:
 		return
@@ -81,12 +81,12 @@ func heal(amount: int) -> void:
 	health_changed.emit(current_health, max_health)
 
 
-# Retorna true se já morreu.
+# Returns true if already dead.
 func is_dead() -> bool:
 	return _is_dead
 
 
-# Dano ao longo do tempo por fonte: renova a duração e usa o maior dps da mesma fonte, sem empilhar nela.
+# Damage over time per source: renews the duration and uses the highest dps of the same source, without stacking on it.
 func apply_dot(dps: float, duration: float, source: StringName = &"dot", tick: float = DOT_TICK) -> void:
 	if _is_dead or dps <= 0.0:
 		return
@@ -119,6 +119,6 @@ func _process(delta: float) -> void:
 		set_process(false)
 
 
-# Fontes de DoT ativas (indicadores de status).
+# Active DoT sources (status indicators).
 func active_dot_sources() -> Array:
 	return _dots.keys()

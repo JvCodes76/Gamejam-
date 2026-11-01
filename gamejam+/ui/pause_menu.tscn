@@ -31,13 +31,13 @@ alignment = 1
 
 [node name="Titulo" type="Label" parent="Painel/VBox"]
 layout_mode = 2
-text = "Pausado"
+text = "Paused"
 horizontal_alignment = 1
 
 [node name="BotaoContinuar" type="Button" parent="Painel/VBox"]
 layout_mode = 2
-text = "Continuar"
+text = "Resume"
 
 [node name="BotaoMenu" type="Button" parent="Painel/VBox"]
 layout_mode = 2
-text = "Menu principal"
+text = "Main menu"

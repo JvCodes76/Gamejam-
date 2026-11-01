@@ -1,14 +1,14 @@
 class_name FireSkullElite
 extends EnemyBase
-## Caveira de fogo azul (elite): persegue o player e, de tempos em tempos, para, pisca e dá uma investida em linha reta.
-## A folha tem 16 quadros de 32x32 que giram em loop (hframes na Sprite2D).
+## Blue fire skull (elite): chases the player and, from time to time, stops, flashes and charges in a straight line.
+## The sheet has 16 frames of 32x32 that loop (hframes on the Sprite2D).
 
 enum State { CHASE, WINDUP, DASH }
 
 @export var anim_fps: float = 12.0
-## Intervalo entre investidas (s), sorteado entre x e y
+## Interval between charges (s), rolled between x and y
 @export var dash_interval: Vector2 = Vector2(2.2, 3.4)
-## Tempo parado avisando antes da investida (s)
+## Time standing still warning before the charge (s)
 @export var windup_time: float = 0.5
 @export var dash_speed: float = 320.0
 @export var dash_time: float = 0.35
@@ -32,7 +32,7 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# Atordoado ou preso: cancela a investida e volta a perseguir
+	# Stunned or rooted: cancels the charge and goes back to chasing
 	if not _status.can_move() and _state != State.CHASE:
 		_enter_chase()
 	if _status.can_act():
@@ -51,7 +51,7 @@ func _chase_velocity(target: Node2D) -> Vector2:
 	return super._chase_velocity(target)
 
 
-# Persegue -> avisa -> investe -> persegue
+# Chases -> warns -> charges -> chases
 func _advance_state() -> void:
 	match _state:
 		State.CHASE:
@@ -77,7 +77,7 @@ func _enter_chase() -> void:
 	_state_left = randf_range(dash_interval.x, dash_interval.y)
 
 
-# Pisca em azul e treme antes de investir
+# Flashes blue and shakes before charging
 func _play_windup_feedback() -> void:
 	var feedback: HitFeedback = get_node_or_null("HitFeedback") as HitFeedback
 	if feedback != null:

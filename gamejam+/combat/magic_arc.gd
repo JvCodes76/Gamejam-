@@ -1,9 +1,9 @@
 class_name MagicArc
 extends Line2D
-## Raio de magia (sinergia Magic): visual curto do arco entre dois inimigos e o salto de dano.
+## Magic bolt (Magic synergy): short visual of the arc between two enemies and the damage jump.
 
 
-## Acerta o inimigo vizinho mais próximo (sem repetir) com a fração do dano da arma; no tier 6 o raio quica de volta.
+## Hits the nearest neighboring enemy (no repeats) with a fraction of the weapon damage; at tier 6 the bolt bounces back.
 static func chain_from(first: Hurtbox, mods: ProjectileModifiers, base_damage: int) -> void:
 	var origin: EnemyBase = first.get_parent() as EnemyBase
 	if origin == null:
@@ -18,15 +18,15 @@ static func chain_from(first: Hurtbox, mods: ProjectileModifiers, base_damage: i
 	var dmg: int = mods.for_target(neighbor.get_hurtbox()).roll_secondary_damage(base_damage, SynergyConstants.MAGIC_ARC_FRACTION)
 	neighbor.get_hurtbox().receive_hit(dmg)
 	_draw_arc(scene, origin_pos, neighbor_pos, color, 4.0)
-	print("[Synergy] - raio saltou para %s (dano %d)" % [neighbor_pos, dmg])
+	print("[Synergy] - bolt jumped to %s (damage %d)" % [neighbor_pos, dmg])
 	if mods.synergy.arc_bounce and origin.is_alive():
 		var back: int = mods.roll_secondary_damage(base_damage, SynergyConstants.MAGIC_ARC_FRACTION)
 		origin.get_hurtbox().receive_hit(back)
 		_draw_arc(scene, neighbor_pos, origin_pos, color, -4.0)
-		print("[Synergy] - raio quicou de volta (dano %d)" % back)
+		print("[Synergy] - bolt bounced back (damage %d)" % back)
 
 
-## Inimigo vivo mais próximo de "from" dentro do alcance do raio (nunca o próprio).
+## Nearest living enemy to "from" within the bolt's reach (never itself).
 static func _nearest_neighbor(from: EnemyBase) -> EnemyBase:
 	var best: EnemyBase = null
 	var best_dist: float = SynergyConstants.MAGIC_ARC_RANGE * SynergyConstants.MAGIC_ARC_RANGE
@@ -41,7 +41,7 @@ static func _nearest_neighbor(from: EnemyBase) -> EnemyBase:
 	return best
 
 
-## Desenha um arco em zigue-zague de "a" até "b" que some em MAGIC_ARC_TIME.
+## Draws a zigzag arc from "a" to "b" that fades in MAGIC_ARC_TIME.
 static func _draw_arc(scene: Node, a: Vector2, b: Vector2, color: Color, jag: float) -> void:
 	var line: MagicArc = MagicArc.new()
 	var side: Vector2 = (b - a).orthogonal().normalized() * jag

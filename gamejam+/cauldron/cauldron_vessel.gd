@@ -1,9 +1,9 @@
 class_name CauldronVessel
 extends Bag
-## Recipiente físico do caldeirão: reaproveita a bolsa, com paredes grossas, líquido e tampa.
+## Physical cauldron vessel: reuses the bag, with thick walls, liquid and lid.
 
 @export var size_multiplier: float = 1.0
-# Sprite opcional que substitui o desenho placeholder
+# Optional sprite that replaces the placeholder drawing
 @export var vessel_texture: Texture2D
 @export var wall_color: Color = Color(0.2, 0.2, 0.25)
 @export var wall_line_color: Color = Color(0.42, 0.42, 0.5)
@@ -37,7 +37,7 @@ func _process(delta: float) -> void:
 	liquid.position.y = sin(_time * liquid_wobble_speed) * liquid_wobble * 0.5
 
 
-# Desenha o caldeirão: paredes grossas + fundo do interior (ou sprite)
+# Draws the cauldron: thick walls + interior background (or sprite)
 func _build_visual() -> void:
 	if vessel_texture != null:
 		var sprite := Sprite2D.new()
@@ -66,7 +66,7 @@ func _build_visual() -> void:
 	add_child(line)
 
 
-# Caldeirão não encolhe itens na boca
+# The cauldron does not shrink items at the mouth
 func _on_mouth_entered(_body: Node2D) -> void:
 	pass
 
@@ -75,7 +75,7 @@ func _on_mouth_exited(_body: Node2D) -> void:
 	pass
 
 
-# Quads das paredes (mesma geometria do colisor, sem a boca)
+# Wall quads (same geometry as the collider, without the mouth)
 func _wall_quads() -> Array[PackedVector2Array]:
 	var out: Array[PackedVector2Array] = []
 	for i: int in interior.size():
@@ -99,7 +99,7 @@ func _build_liquid() -> void:
 	add_child(liquid)
 
 
-# Tampa invisível: fecha a boca quando há poção pronta
+# Invisible lid: closes the mouth when a potion is ready
 func _build_lid() -> void:
 	lid = StaticBody2D.new()
 	lid.name = "Lid"
@@ -115,7 +115,7 @@ func _build_lid() -> void:
 	add_child(lid)
 
 
-# Bolhas subindo do líquido (ligadas só durante o preparo)
+# Bubbles rising from the liquid (on only while brewing)
 func _build_bubbles() -> void:
 	bubbles = CPUParticles2D.new()
 	bubbles.name = "Bubbles"
@@ -137,12 +137,12 @@ func _build_bubbles() -> void:
 	add_child(bubbles)
 
 
-## Liga ou desliga as bolhas do preparo.
+## Turns the brewing bubbles on or off.
 func set_brewing(value: bool) -> void:
 	bubbles.emitting = value
 
 
-## Itens com o centro dentro do interior (filhos desta e de bolsas irmãs, pois itens são arrastados entre elas).
+## Items with their center inside the interior (children of this and of sibling bags, since items are dragged between them).
 func collect_items() -> Array[PhysicalItem]:
 	var out: Array[PhysicalItem] = []
 	var holders: Array[Node] = [self]
@@ -157,7 +157,7 @@ func collect_items() -> Array[PhysicalItem]:
 	return out
 
 
-## Mostra o líquido da poção, preenchendo o interior até a altura em que a área = volume.
+## Shows the potion liquid, filling the interior up to the height where area = volume.
 func show_potion(potion: PotionData) -> void:
 	_liquid_poly = _liquid_polygon(potion.volume)
 	_has_liquid = _liquid_poly.size() >= 3
@@ -165,10 +165,10 @@ func show_potion(potion: PotionData) -> void:
 	liquid.color = potion.color
 	liquid.visible = _has_liquid
 	(lid.get_child(0) as CollisionShape2D).set_deferred("disabled", false)
-	print("[Cauldron] - Líquido exibido (volume %.1f, área %.1f)" % [potion.volume, liquid_area()])
+	print("[Cauldron] - Liquid shown (volume %.1f, area %.1f)" % [potion.volume, liquid_area()])
 
 
-## Remove o líquido e abre a boca de novo.
+## Removes the liquid and opens the mouth again.
 func clear_potion() -> void:
 	_has_liquid = false
 	_liquid_poly = PackedVector2Array()
@@ -177,12 +177,12 @@ func clear_potion() -> void:
 	(lid.get_child(0) as CollisionShape2D).set_deferred("disabled", true)
 
 
-## Área do polígono do líquido atual (0 se vazio).
+## Area of the current liquid polygon (0 if empty).
 func liquid_area() -> float:
 	return absf(_area(_liquid_poly)) if _has_liquid else 0.0
 
 
-# Corta o interior abaixo de y; bisseção da altura até a área alvo
+# Clips the interior below y; bisection on the height until the target area
 func _liquid_polygon(volume: float) -> PackedVector2Array:
 	var total: float = absf(_area(interior))
 	if volume <= 0.0:
@@ -204,7 +204,7 @@ func _liquid_polygon(volume: float) -> PackedVector2Array:
 	return _below(_liquid_surface_y)
 
 
-# Parte do interior abaixo da linha y (semiplano)
+# Part of the interior below the line y (half-plane)
 func _below(y: float) -> PackedVector2Array:
 	var half := PackedVector2Array([Vector2(-1000, y), Vector2(1000, y), Vector2(1000, 1000), Vector2(-1000, 1000)])
 	var parts: Array[PackedVector2Array] = Geometry2D.intersect_polygons(interior, half)

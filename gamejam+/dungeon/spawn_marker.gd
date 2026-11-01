@@ -1,7 +1,7 @@
 class_name SpawnMarker
 extends Node2D
-## Aviso de spawn no chão: círculo e cruz pulsando por "duration" segundos; depois emite "finished" e some.
-## Fase 2: vira uma runa/cova animada (sprite).
+## Spawn warning on the ground: circle and cross pulsing for "duration" seconds; then emits "finished" and disappears.
+## Phase 2: becomes an animated rune/grave (sprite).
 
 signal finished(point: Vector2)
 
@@ -29,7 +29,7 @@ func _draw() -> void:
 	var pulse: float = 0.5 + 0.5 * sin(_age * 22.0)
 	var color: Color = Color(COLOR, 0.35 + 0.45 * pulse)
 	var r: float = RADIUS * (0.6 + 0.4 * t)
-	# Elipse achatada (perspectiva do chão)
+	# Flattened ellipse (ground perspective)
 	var points: PackedVector2Array = PackedVector2Array()
 	for i: int in 17:
 		var a: float = TAU * float(i) / 16.0

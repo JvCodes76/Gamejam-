@@ -1,7 +1,7 @@
 class_name DamageNumbers
 extends Node2D
-## Números de dano flutuantes no mundo, com pool fixo de Labels (sem alocação em hordas).
-## Normal: branco. Crítico: maior, laranja, com "!" e pop. DoT: menor, na cor da fonte, ticks agrupados. Negado: "BLOCK".
+## Floating damage numbers in the world, with a fixed Label pool (no allocation in hordes).
+## Normal: white. Critical: bigger, orange, with "!" and pop. DoT: smaller, in the source color, grouped ticks. Negated: "BLOCK".
 
 enum Style { NORMAL, CRIT, DOT, BLOCK }
 
@@ -63,7 +63,7 @@ func _process(delta: float) -> void:
 		set_process(false)
 
 
-## Mostra um número/texto em "world_position" com o estilo e a cor dados.
+## Shows a number/text at "world_position" with the given style and color.
 func show_text(world_position: Vector2, text_value: String, style: Style, color: Color, key: String = "") -> void:
 	var entry: Dictionary = _take_entry()
 	var label: Label = entry["label"]
@@ -84,7 +84,7 @@ func show_text(world_position: Vector2, text_value: String, style: Style, color:
 	set_process(true)
 
 
-# Entrada livre do pool; se todas estão em uso, reaproveita a mais velha
+# Free entry of the pool; if all are in use, reuses the oldest
 func _take_entry() -> Dictionary:
 	var oldest: Dictionary = _entries[0]
 	for entry: Dictionary in _entries:
@@ -106,7 +106,7 @@ func _on_damage_blocked(world_position: Vector2) -> void:
 	show_text(world_position, "BLOCK", Style.BLOCK, FeelConstants.DAMAGE_NUMBER_BLOCK_COLOR)
 
 
-# DoT: soma no número ainda visível do mesmo inimigo e fonte; senão cria um novo
+# DoT: adds to the still-visible number of the same enemy and source; otherwise creates a new one
 func _on_dot_ticked(enemy: Node, source: StringName, amount: int) -> void:
 	if amount <= 0 or not is_instance_valid(enemy):
 		return

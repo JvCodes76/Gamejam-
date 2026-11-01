@@ -15,7 +15,7 @@ func _ready() -> void:
 	z_index = 100
 
 
-## Pop de escala com flash de brilho (troca de poção).
+## Scale pop with a brightness flash (potion swap).
 func pulse() -> void:
 	if not is_inside_tree():
 		return
@@ -28,7 +28,7 @@ func pulse() -> void:
 	_pulse_tween.tween_property(self, "modulate", Color.WHITE, 0.2)
 
 
-## Desenha um círculo com cruz centrado na posição.
+## Draws a circle with a cross centered on the position.
 func _draw() -> void:
 	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 16, color, line_width)
 	draw_line(Vector2(-cross_size, 0.0), Vector2(-radius, 0.0), color, line_width)

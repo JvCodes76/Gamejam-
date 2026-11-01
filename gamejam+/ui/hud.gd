@@ -1,6 +1,6 @@
 extends CanvasLayer
-## HUD: vida (blocos desenhados), pontuação animada, barra de raiva, frascos de poção e vinheta de dano,
-## atualizados pelos sinais do EventBus.
+## HUD: health (drawn blocks), animated score, rage bar, potion flasks and damage vignette,
+## updated by the EventBus signals.
 
 @onready var _health_display: HealthDisplay = $HealthDisplay
 @onready var _label_pontos: Label = $LabelPontos
@@ -31,22 +31,22 @@ func _ready() -> void:
 	EventBus.rage_changed.connect(_on_rage_changed)
 	_shown_score = GameManager.score
 	_set_shown_score(_shown_score)
-	print("[UI] - HUD pronto")
+	print("[UI] - HUD ready")
 
 
-# Atualiza os blocos de vida
+# Updates the health blocks
 func _on_player_health_changed(current: int, max_value: int) -> void:
 	_health_display.set_health(current, max_value)
 
 
-# Mostra a raiva (sinergia Evil) só quando maior que zero
+# Shows the rage (Evil synergy) only when greater than zero
 func _on_rage_changed(bonus: float) -> void:
 	_label_rage.visible = bonus > 0.0
 	_label_rage.text = "Rage +%.1f%%" % (bonus * 100.0)
 	_rage_bar.set_bonus(bonus)
 
 
-# Conta até a nova pontuação e dá um pop no texto
+# Counts up to the new score and gives the text a pop
 func _on_score_changed(score: int) -> void:
 	if _score_tween != null:
 		_score_tween.kill()
@@ -65,16 +65,16 @@ func _on_score_changed(score: int) -> void:
 
 func _set_shown_score(value: int) -> void:
 	_shown_score = value
-	_label_pontos.text = "Pontos: %d" % value
+	_label_pontos.text = "Score: %d" % value
 
 
-# Atualiza os frascos ao trocar o slot ativo
+# Updates the flasks when the active slot changes
 func _on_potion_selected(_index: int) -> void:
 	_refresh_potions()
 	EventBus.play_sfx_requested.emit("potion_swap")
 
 
-# Redesenha os dois frascos conforme os slots do ItemManager
+# Redraws the two flasks according to the ItemManager slots
 func _refresh_potions() -> void:
 	for i: int in _slots.size():
 		var potion: PotionData = ItemManager.potion_slots[i]

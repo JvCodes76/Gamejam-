@@ -1,19 +1,19 @@
 class_name Cauldron
 extends Node2D
-## Caldeirão no mundo (um por andar): guarda o estado e mostra o destaque de interação.
+## Cauldron in the world (one per floor): holds the state and shows the interaction highlight.
 
 @export var outline_color: Color = Color(1.0, 0.85, 0.35)
 @export var outline_width: float = 1.5
 @export var body_color: Color = Color(0.16, 0.16, 0.2)
 @export var rim_color: Color = Color(0.32, 0.32, 0.38)
-# Distância extra de alcance do interator (o caldeirão é maior que um item)
+# Extra reach distance of the interactor (the cauldron is bigger than an item)
 @export var interact_reach: float = 14.0
-# Cor das bolhas sem poção pronta
+# Bubble color with no potion ready
 @export var idle_bubble_color: Color = Color(0.45, 0.85, 0.35)
 
-# A origem do nó é o chão (pés): y-sort pela base; o desenho sobe FEET_OFFSET px
+# The node origin is the ground (feet): y-sort by the base; the drawing is raised FEET_OFFSET px
 const FEET_OFFSET: float = 13.0
-# Pegada de movimento (elipse na base): obstáculo baixo, o player e os inimigos esbarram, mas os tiros passam
+# Movement footprint (ellipse at the base): low obstacle, the player and enemies bump into it, but shots pass through
 const FOOTPRINT_RADIUS: Vector2 = Vector2(13.0, 5.0)
 
 var state: CauldronState = CauldronState.new()
@@ -31,16 +31,16 @@ func _ready() -> void:
 	_build_footprint()
 	_build_particles()
 	EventBus.potion_brewed.connect(_on_potion_brewed)
-	print("[Cauldron] - Caldeirão pronto em %s" % str(global_position))
+	print("[Cauldron] - Cauldron ready at %s" % str(global_position))
 
 
-## Mostra ou esconde o contorno (player ao alcance).
+## Shows or hides the outline (player in reach).
 func set_highlighted(value: bool) -> void:
 	if _outline != null:
 		_outline.visible = value
 
 
-# Desenha o pote placeholder (corpo, borda e contorno)
+# Draws the placeholder pot (body, rim and outline)
 func _build_visual() -> void:
 	_visual = Node2D.new()
 	_visual.position = Vector2(0.0, -FEET_OFFSET)
@@ -77,7 +77,7 @@ func _process(_delta: float) -> void:
 		_set_bubble_color(color)
 
 
-# Bolhas na boca do caldeirão (cor da mistura) e vapor subindo (Fase 2: sprites de bolha/vapor)
+# Bubbles at the cauldron mouth (mixture color) and rising steam (Phase 2: bubble/steam sprites)
 func _build_particles() -> void:
 	var img: Image = Image.create(2, 2, false, Image.FORMAT_RGBA8)
 	img.fill(Color.WHITE)
@@ -127,7 +127,7 @@ func _set_bubble_color(color: Color) -> void:
 	_bubbles.color_ramp = fade
 
 
-# Poção pronta neste caldeirão: "puff" de partículas, flash e tremida leve
+# Potion ready in this cauldron: particle "puff", flash and light shake
 func _on_potion_brewed(color: Color, at: Vector2) -> void:
 	if at.distance_to(global_position) > 4.0:
 		return
@@ -138,10 +138,10 @@ func _on_potion_brewed(color: Color, at: Vector2) -> void:
 	tween.tween_property(_visual, "modulate", Color.WHITE, 0.3)
 	EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_BREW)
 	EventBus.play_sfx_requested.emit("brew")
-	print("[Cauldron] - poção pronta (puff)")
+	print("[Cauldron] - potion ready (puff)")
 
 
-# Cria o corpo estático (layer low_obstacle) com a pegada elíptica na base
+# Creates the static body (low_obstacle layer) with the elliptical footprint at the base
 func _build_footprint() -> void:
 	var points: PackedVector2Array = PackedVector2Array()
 	for i: int in 16:

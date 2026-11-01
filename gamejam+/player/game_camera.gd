@@ -1,13 +1,13 @@
 class_name GameCamera
 extends Camera2D
-## Câmera do player: suavização leve, look-ahead na direção da mira, recuo no tiro e tremida do Juice.
+## Player camera: light smoothing, look-ahead in the aim direction, recoil on shots and Juice shake.
 
 @export var look_ahead_fraction: float = FeelConstants.CAMERA_LOOK_AHEAD
 @export var look_ahead_max: float = FeelConstants.CAMERA_LOOK_AHEAD_MAX
 
-# Ponto que a câmera "olha" (crosshair); definido pelo player a cada quadro
+# Point the camera "looks" at (crosshair); set by the player every frame
 var look_target: Vector2 = Vector2.INF
-# Câmera parada (morte do player): ignora look-ahead
+# Camera stopped (player death): ignores look-ahead
 var frozen: bool = false
 
 var _look_offset: Vector2 = Vector2.ZERO
@@ -33,6 +33,6 @@ func _process(delta: float) -> void:
 	ignore_rotation = is_zero_approx(Juice.shake_rotation)
 
 
-## Recuo de câmera: empurra 1 a 2 px para trás da direção do tiro.
+## Camera recoil: pushes 1 to 2 px back from the shot direction.
 func kick(direction: Vector2, strength: float = FeelConstants.CAMERA_RECOIL) -> void:
 	_recoil = -direction.normalized() * strength

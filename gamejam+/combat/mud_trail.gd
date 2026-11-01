@@ -1,19 +1,19 @@
 class_name MudTrail
 extends Area2D
-## Poça de lama temporária (sinergia Earth): reduz a velocidade e, com tier 6, causa dano a quem está dentro.
+## Temporary mud puddle (Earth synergy): reduces speed and, at tier 6, damages anyone inside.
 
 var radius: float = SynergyConstants.EARTH_TRAIL_RADIUS
 var lifetime: float = SynergyConstants.EARTH_TRAIL_LIFETIME
-# Redução de velocidade (0.4 = -40%)
+# Speed reduction (0.4 = -40%)
 var slow_fraction: float = SynergyConstants.EARTH_MUD_SLOW
-# Dano por segundo (0 = sem dano)
+# Damage per second (0 = no damage)
 var dps: float = 0.0
 
 var _age: float = 0.0
 var _refresh_left: float = 0.0
 
 
-## Cria uma poça na cena (adição deferida, segura dentro de callbacks de física).
+## Creates a puddle in the scene (deferred add, safe inside physics callbacks).
 static func spawn(scene: Node, pos: Vector2, new_radius: float, new_lifetime: float, new_slow: float, new_dps: float) -> MudTrail:
 	var mud: MudTrail = (load("res://combat/mud_trail.tscn") as PackedScene).instantiate() as MudTrail
 	mud.global_position = pos
@@ -51,7 +51,7 @@ func _physics_process(delta: float) -> void:
 		_affect_overlapping()
 
 
-## Renova slow (e dano) em quem está dentro; o DoT usa a fonte "mud", então poças sobrepostas não empilham dano.
+## Renews slow (and damage) on anyone inside; the DoT uses the "mud" source, so overlapping puddles do not stack damage.
 func _affect_overlapping() -> void:
 	var span: float = SynergyConstants.EARTH_MUD_REFRESH * 2.5
 	for area: Area2D in get_overlapping_areas():

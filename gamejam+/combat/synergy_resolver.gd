@@ -1,11 +1,11 @@
 class_name SynergyResolver
 extends RefCounted
-## Converte aspect_counts da poção em um SynergyState (tiers cumulativos 3/6/9/12).
+## Converts the potion's aspect_counts into a SynergyState (cumulative tiers 3/6/9/12).
 
 const A = ItemEnums.Aspect
 
 
-## Tier (0 a 4) para uma contagem de aspectos.
+## Tier (0 to 4) for an aspect count.
 static func tier_of(count: int) -> int:
 	var tier: int = 0
 	for threshold: int in SynergyConstants.TIER_THRESHOLDS:
@@ -14,7 +14,7 @@ static func tier_of(count: int) -> int:
 	return tier
 
 
-## Resolve o estado de sinergias a partir de Aspect -> int e dos ids das receitas especiais.
+## Resolves the synergy state from Aspect -> int and the special recipe ids.
 static func resolve(aspect_counts: Dictionary, specials: Array[StringName] = []) -> SynergyState:
 	var s: SynergyState = SynergyState.new()
 	for aspect: int in ItemEnums.Aspect.values():
@@ -101,7 +101,7 @@ static func resolve(aspect_counts: Dictionary, specials: Array[StringName] = [])
 	return s
 
 
-## Preenche as flags/valores das receitas especiais ativas.
+## Fills in the flags/values of the active special recipes.
 static func _resolve_specials(s: SynergyState, specials: Array[StringName]) -> void:
 	s.specials = specials.duplicate()
 	if s.has_special(SpecialSynergies.SALAD):
@@ -129,7 +129,7 @@ static func _resolve_specials(s: SynergyState, specials: Array[StringName]) -> v
 		s.explosion_damage_mult = SynergyConstants.POTENTIALIZER_DAMAGE_MULT
 
 
-## Linhas legíveis (inglês) das sinergias ativas, p.ex. "Poison (6): poison slows by 20%, deals +50% damage".
+## Readable lines (English) of the active synergies, e.g. "Poison (6): poison slows by 20%, deals +50% damage".
 static func describe(aspect_counts: Dictionary) -> PackedStringArray:
 	var lines: PackedStringArray = PackedStringArray()
 	for aspect: int in ItemEnums.Aspect.values():
@@ -146,7 +146,7 @@ static func describe(aspect_counts: Dictionary) -> PackedStringArray:
 	return lines
 
 
-## Resumo curto para log, p.ex. "Poison 6, Plant 3" (vazio se nada ativo); receitas especiais entre colchetes.
+## Short summary for logging, e.g. "Poison 6, Plant 3" (empty if nothing active); special recipes in brackets.
 static func summary(aspect_counts: Dictionary, specials: Array[StringName] = []) -> String:
 	var parts: PackedStringArray = PackedStringArray()
 	for aspect: int in ItemEnums.Aspect.values():
@@ -162,7 +162,7 @@ static func _aspect_name(aspect: int) -> String:
 	return String(ItemEnums.Aspect.keys()[aspect]).capitalize()
 
 
-## Textos por tier (índice 0 = tier 3, 3 = tier 12) de um aspecto.
+## Texts per tier (index 0 = tier 3, 3 = tier 12) of an aspect.
 static func _tier_texts(aspect: int) -> Array:
 	match aspect:
 		A.PLANT:
