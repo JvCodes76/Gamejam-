@@ -169,32 +169,34 @@ func apply_hit(area: Area2D) -> void:
 	var hurtbox: Hurtbox = area as Hurtbox
 	if hurtbox in _ignored:
 		return
+	# Contra o boss valem só os itens a que ele não está imune
+	var mods: ProjectileModifiers = modifiers.for_target(hurtbox) if modifiers != null else null
 	var dealt: int = damage
 	var crit: bool = false
-	if modifiers != null:
+	if mods != null:
 		var extra: float = (1.0 + SynergyConstants.LIGHT_HOLY_BONUS if _holy else 1.0) * damage_factor
-		dealt = modifiers.roll_damage(damage, extra)
-		if not split_child and modifiers.roll_crit():
-			dealt = maxi(roundi(dealt * modifiers.crit_multiplier()), 1)
+		dealt = mods.roll_damage(damage, extra)
+		if not split_child and mods.roll_crit():
+			dealt = maxi(roundi(dealt * mods.crit_multiplier()), 1)
 			crit = true
 			print("[Combat] - crítico! dano %d" % dealt)
 	hurtbox.receive_hit(dealt, direction, crit)
 	EventBus.play_sfx_requested.emit("crit" if crit else "hit")
-	if modifiers != null:
-		modifiers.apply_on_hit_effects(hurtbox, damage)
+	if mods != null:
+		mods.apply_on_hit_effects(hurtbox, damage)
 		if _holy:
-			modifiers.try_holy_slay(hurtbox)
-		if modifiers.synergy.arc_enabled:
-			MagicArc.chain_from(hurtbox, modifiers, damage)
+			mods.try_holy_slay(hurtbox)
+		if mods.synergy.arc_enabled:
+			MagicArc.chain_from(hurtbox, mods, damage)
 		if shooter_health != null and is_instance_valid(shooter_health):
-			shooter_health.heal(modifiers.roll_heal(dealt, shooter_health.max_health))
+			shooter_health.heal(mods.roll_heal(dealt, shooter_health.max_health))
 	hit_landed.emit()
 	_hit_hurtboxes.append(hurtbox)
 	_split(global_position, direction)
 	if _pierce_left > 0:
 		_pierce_left -= 1
-		if modifiers != null:
-			modifiers.try_tea(hurtbox)
+		if mods != null:
+			mods.try_tea(hurtbox)
 	else:
 		_impact(dealt)
 

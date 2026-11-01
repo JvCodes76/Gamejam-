@@ -4,6 +4,10 @@ extends Node
 signal player_died()
 # Boss do último cemitério derrotado (fim do loop atual)
 signal boss_defeated()
+# Boss entrou na arena (a barra de vida do boss passa a acompanhá-lo)
+signal boss_spawned(boss: Node)
+# Boss cruzou um limiar de vida e ficou imune aos itens da última poção (novos e todos os acumulados)
+signal boss_adapted(new_items: Array[ItemData], all_immune: Array[ItemData])
 # Run terminou: mostra o sumário (victory = boss derrotado, pode seguir para o modo infinito)
 signal run_ended(victory: bool)
 # Vida atual do jogador alterada

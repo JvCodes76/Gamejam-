@@ -1,7 +1,7 @@
 class_name RoomEncounter
 extends Node
 ## Comportamento de uma sala quando o player entra pela primeira vez:
-## caldeirão (enxame + 1 elite), elite (3 elites, tranca), horda (timer, tranca) e boss (tranca; placeholder).
+## caldeirão (enxame + 1 elite), elite (3 elites sorteados, tranca), horda (timer, tranca) e boss (tranca; placeholder).
 ## No modo infinito os inimigos ganham vida, dano, velocidade e quantidade a cada loop (ver DungeonLevel).
 
 enum Kind { SWARM, ELITE, BOSS }
@@ -69,13 +69,14 @@ func _spawn_swarm(count: int) -> void:
 		_spawn(_level.swarm_scenes.pick_random(), Kind.SWARM)
 
 
-# Cria "count" elites (placeholder: inimigo base com mais vida, maior e azulado).
+# Cria "count" elites sorteados de elite_scenes (sem elites próprios, usa o placeholder elite_scene).
 func _spawn_elites(count: int) -> void:
 	for i: int in count:
-		_spawn(_level.elite_scene, Kind.ELITE)
+		var scene: PackedScene = _level.elite_scenes.pick_random() if not _level.elite_scenes.is_empty() else _level.elite_scene
+		_spawn(scene, Kind.ELITE)
 
 
-# Cria o boss no centro da sala (placeholder: sem cena própria, usa o elite_scene bem maior e avermelhado).
+# Cria o boss no centro da sala (sem boss_scene, usa o elite_scene bem maior e avermelhado como placeholder).
 func _spawn_boss() -> void:
 	var scene: PackedScene = _level.boss_scene if _level.boss_scene != null else _level.elite_scene
 	_spawn(scene, Kind.BOSS, room.center())
@@ -100,25 +101,28 @@ func _spawn_now(point: Vector2, scene: PackedScene, kind: Kind) -> void:
 	match kind:
 		Kind.ELITE:
 			health.max_health = roundi(health.max_health * _level.elite_health_multiplier)
-			sprite.scale *= _level.elite_scale
-			sprite.modulate = _level.elite_tint
+			# Elites com arte própria já vêm no tamanho e cor certos
+			if not enemy.has_elite_art:
+				sprite.scale *= _level.elite_scale
+				sprite.modulate = _level.elite_tint
 			enemy.is_basic = false
 			enemy.knockback_resistance = FeelConstants.ELITE_KNOCKBACK_RESISTANCE
 			enemy.add_to_group("elite")
 		Kind.BOSS:
 			health.max_health = roundi(health.max_health * _level.boss_health_multiplier)
-			sprite.scale *= _level.boss_scale
-			sprite.modulate = _level.boss_tint
 			enemy.move_speed *= _level.boss_move_speed_multiplier
 			enemy.points = _level.boss_points
 			enemy.is_basic = false
 			enemy.knockback_resistance = 1.0
 			enemy.add_to_group("boss")
-			# O sprite cresce muito: acompanha com as áreas de acerto para não ficar um alvo minúsculo
-			for area_name: String in ["Hurtbox", "Hitbox"]:
-				var area: Node2D = enemy.get_node_or_null(area_name) as Node2D
-				if area != null:
-					area.scale *= _level.boss_scale
+			# Só o placeholder (sem cena própria) é ampliado e tingido; a cena do boss já vem no tamanho certo
+			if _level.boss_scene == null:
+				sprite.scale *= _level.boss_scale
+				sprite.modulate = _level.boss_tint
+				for area_name: String in ["Hurtbox", "Hitbox"]:
+					var area: Node2D = enemy.get_node_or_null(area_name) as Node2D
+					if area != null:
+						area.scale *= _level.boss_scale
 	_apply_loop_scaling(enemy, health)
 	_level.enemy_root.add_child(enemy)
 	enemy.global_position = point

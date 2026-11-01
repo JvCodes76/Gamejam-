@@ -119,9 +119,10 @@ func _apply_splash() -> void:
 		if hurtbox == null or hurtbox in seen:
 			continue
 		seen.append(hurtbox)
+		var mods: ProjectileModifiers = modifiers.for_target(hurtbox) if modifiers != null else null
 		hurtbox.receive_hit(_splash_damage(), (hurtbox.global_position - global_position).normalized())
-		if modifiers != null:
-			modifiers.apply_on_hit_effects(hurtbox, base_damage)
+		if mods != null:
+			mods.apply_on_hit_effects(hurtbox, base_damage)
 
 
 ## Burst de partículas quadradas (pixel art) na cor da poção.

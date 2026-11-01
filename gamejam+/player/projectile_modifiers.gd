@@ -29,6 +29,8 @@ var unimplemented: Dictionary = {}
 var synergy: SynergyState = SynergyState.new()
 ## Multiplicador de dano da raiva (sinergia Evil); mantido pelo SynergyDirector.
 var rage_multiplier: float = 1.0
+## Itens da poção que gerou estes modificadores (o Boss se adapta a eles).
+var source_items: Array[ItemData] = []
 
 var _damage_carry: float = 0.0
 var _heal_carry: float = 0.0
@@ -54,6 +56,31 @@ static func from_totals(totals: Dictionary, aspects: Dictionary = {}, specials: 
 		if _total(totals, t) != 0.0:
 			m.unimplemented[t] = _total(totals, t)
 	return m
+
+
+## Resolve os modificadores direto de uma lista de itens (mesmo cálculo da PotionData).
+static func from_items(items: Array[ItemData]) -> ProjectileModifiers:
+	var m: ProjectileModifiers = from_totals(ItemManager.compute_effect_totals(items), ItemManager.count_aspects(items), SpecialSynergies.find_ids(items))
+	m.source_items = items.duplicate()
+	return m
+
+
+## Cópia destes modificadores sem os itens de ids bloqueados (id -> qualquer); mantém cor e raiva.
+func without_items(blocked_ids: Dictionary) -> ProjectileModifiers:
+	var kept: Array[ItemData] = []
+	for item: ItemData in source_items:
+		if not blocked_ids.has(item.id):
+			kept.append(item)
+	var m: ProjectileModifiers = from_items(kept)
+	m.color = color
+	m.rage_multiplier = rage_multiplier
+	return m
+
+
+## Modificadores que valem contra o alvo: o Boss tira os itens a que está imune (e registra a poção do golpe).
+func for_target(target: Hurtbox) -> ProjectileModifiers:
+	var boss: Boss = target.get_parent() as Boss if target != null else null
+	return boss.adapt_modifiers(self) if boss != null else self
 
 
 ## Dano inteiro (mínimo 1) com acúmulo da parte fracionária; extra = multiplicador adicional (bala santa).

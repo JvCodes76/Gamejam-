@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="1_base"]
+[ext_resource type="Script" path="res://enemies/mushroom_elite.gd" id="2_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Enemies/Enemy_MushroomElite-Idle-Sheet.png" id="tex_0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Enemies/Enemy_MushroomElite-Attack-Sheet.png" id="tex_1"]
+
+[sub_resource type="CapsuleShape2D" id="hurt_shape"]
+radius = 18.0
+height = 44.0
+
+[node name="MushroomElite" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+has_elite_art = true
+idle_texture = ExtResource("tex_0")
+attack_texture = ExtResource("tex_1")
+move_speed = 30.0
+points = 60
+
+[node name="Sprite2D" parent="." index="1"]
+modulate = Color(1, 1, 1, 1)
+position = Vector2(0, -40)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("tex_0")
+hframes = 4
+
+[node name="HealthComponent" parent="." index="2"]
+max_health = 3
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -26)
+shape = SubResource("hurt_shape")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -26)
+shape = SubResource("hurt_shape")

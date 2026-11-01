@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="1_base"]
+[ext_resource type="Script" path="res://enemies/fire_skull_elite.gd" id="2_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Enemies/Enemy_FireSkullElite-Sheet.png" id="tex_0"]
+
+[sub_resource type="CapsuleShape2D" id="hurt_shape"]
+radius = 16.0
+height = 48.0
+
+[node name="FireSkullElite" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+has_elite_art = true
+move_speed = 55.0
+points = 60
+
+[node name="Sprite2D" parent="." index="1"]
+modulate = Color(1, 1, 1, 1)
+position = Vector2(0, -40)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("tex_0")
+hframes = 16
+
+[node name="HealthComponent" parent="." index="2"]
+max_health = 2
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -30)
+shape = SubResource("hurt_shape")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -30)
+shape = SubResource("hurt_shape")

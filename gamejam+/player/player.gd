@@ -232,6 +232,7 @@ func _recalculate_modifiers() -> void:
 	_mods = ProjectileModifiers.from_totals(ItemManager.get_active_effect_totals(), potion.aspect_counts if potion != null else {}, specials)
 	if potion != null:
 		_mods.color = potion.color
+		_mods.source_items = potion.items
 	_director.configure(_mods, potion.aspect_counts if potion != null else {})
 	_crosshair.color = Color(_mods.color, 0.9)
 	_crosshair.queue_redraw()

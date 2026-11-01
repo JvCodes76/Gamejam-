@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="1_base"]
+[ext_resource type="Script" path="res://enemies/boss.gd" id="2_boss"]
+[ext_resource type="Texture2D" uid="uid://bgpcsw5j6rhvu" path="res://assets/sprites/Enemies/Boss_FallenAngel-Idle-Sheet.png" id="3_idle"]
+[ext_resource type="Texture2D" uid="uid://cayoo53mtiftb" path="res://assets/sprites/Enemies/Boss_FallenAngel-ExplosionAttack-Sheet.png" id="4_wings"]
+
+[sub_resource type="CircleShape2D" id="body_shape"]
+radius = 18.0
+
+[sub_resource type="CapsuleShape2D" id="hurt_shape"]
+radius = 34.0
+height = 96.0
+
+[sub_resource type="CapsuleShape2D" id="hit_shape"]
+radius = 26.0
+height = 80.0
+
+; Anjo caído: voa perseguindo o player e se adapta às poções (ver boss.gd)
+[node name="BossFallenAngel" instance=ExtResource("1_base")]
+script = ExtResource("2_boss")
+idle_texture = ExtResource("3_idle")
+wings_texture = ExtResource("4_wings")
+move_speed = 45.0
+
+[node name="CollisionShape2D" parent="." index="0"]
+position = Vector2(0, -10)
+shape = SubResource("body_shape")
+
+[node name="Sprite2D" parent="." index="1"]
+modulate = Color(1, 1, 1, 1)
+position = Vector2(0, -60)
+scale = Vector2(1.2, 1.2)
+texture = ExtResource("3_idle")
+hframes = 8
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -60)
+shape = SubResource("hurt_shape")
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -56)
+shape = SubResource("hit_shape")

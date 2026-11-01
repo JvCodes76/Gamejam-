@@ -13,6 +13,7 @@ enum Source {
 	NORMAL_ENEMY,  # inimigo comum derrotado
 	ELITE_ENEMY,   # elite derrotado
 	BOSS_REWARD,   # arena do boss ao fim de um conjunto de cemitérios (sempre lendário)
+	BOSS_HIT,      # dano no boss (a chance por dano fica no próprio Boss; aqui sempre dropa)
 }
 
 @export_group("Tabelas base")
@@ -22,6 +23,8 @@ enum Source {
 @export var normal_rarity_weights: Array[float] = [75.0, 20.0, 4.0, 1.0]
 ## Pesos de raridade do drop de elite
 @export var elite_rarity_weights: Array[float] = [25.0, 50.0, 20.0, 5.0]
+## Pesos de raridade do drop por dano no boss
+@export var boss_hit_rarity_weights: Array[float] = [40.0, 40.0, 17.0, 3.0]
 ## Chance (0-1) de um inimigo comum dropar item
 @export var normal_drop_chance: float = 0.075
 ## Chance (0-1) de um elite dropar item
@@ -156,6 +159,8 @@ func _base_weights(source: Source) -> Array[float]:
 			return normal_rarity_weights
 		Source.ELITE_ENEMY:
 			return elite_rarity_weights
+		Source.BOSS_HIT:
+			return boss_hit_rarity_weights
 	return room_rarity_weights
 
 

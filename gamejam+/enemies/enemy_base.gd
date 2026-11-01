@@ -13,6 +13,8 @@ const ENEMY_MASK: int = 4
 @export_range(0.0, 1.0) var knockback_resistance: float = 0.0
 ## Tempo após o spawn sem causar dano de contato (s)
 @export var spawn_grace: float = FeelConstants.SPAWN_GRACE
+## Elite com arte própria: a sala não amplia nem tinge o sprite (só aplica vida e resistência de elite)
+@export var has_elite_art: bool = false
 
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _hitbox: Hitbox = $Hitbox

@@ -33,6 +33,9 @@ const ROOM_TRIGGER_INSET: float = 40.0
 
 @export_group("Inimigos")
 @export var swarm_scenes: Array[PackedScene] = []
+## Elites sorteados nas salas de elite e de caldeirão (vazio = usa elite_scene)
+@export var elite_scenes: Array[PackedScene] = []
+## Elite genérico (placeholder ampliado e tingido; também é o boss placeholder)
 @export var elite_scene: PackedScene
 @export var cauldron_scene: PackedScene
 @export var cauldron_swarm_count: int = 8
@@ -46,7 +49,7 @@ const ROOM_TRIGGER_INSET: float = 40.0
 @export var min_spawn_distance: float = 140.0
 
 @export_group("Boss")
-## Cena do boss (placeholder: sem cena própria, usa o elite_scene ampliado)
+## Cena do boss (vazia = placeholder: usa o elite_scene ampliado e tingido)
 @export var boss_scene: PackedScene
 @export var boss_health_multiplier: float = 40.0
 @export var boss_scale: float = 2.6

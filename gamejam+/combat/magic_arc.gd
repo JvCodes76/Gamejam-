@@ -15,7 +15,7 @@ static func chain_from(first: Hurtbox, mods: ProjectileModifiers, base_damage: i
 	var neighbor_pos: Vector2 = neighbor.global_position
 	var scene: Node = origin.get_tree().current_scene
 	var color: Color = mods.color.lerp(SynergyConstants.MAGIC_ARC_COLOR, 0.5)
-	var dmg: int = mods.roll_secondary_damage(base_damage, SynergyConstants.MAGIC_ARC_FRACTION)
+	var dmg: int = mods.for_target(neighbor.get_hurtbox()).roll_secondary_damage(base_damage, SynergyConstants.MAGIC_ARC_FRACTION)
 	neighbor.get_hurtbox().receive_hit(dmg)
 	_draw_arc(scene, origin_pos, neighbor_pos, color, 4.0)
 	print("[Synergy] - raio saltou para %s (dano %d)" % [neighbor_pos, dmg])
