@@ -7,16 +7,16 @@ const VICTORY_COLOR: Color = Color(1.0, 0.85, 0.4)
 const DEFEAT_COLOR: Color = Color(1.0, 0.35, 0.35)
 const LABEL_COLOR: Color = Color(0.75, 0.75, 0.8)
 
-## Duration (s) of the panel fade-in
+## Duration (s) of the logo + panel fade-in
 @export var fade_in_time: float = 0.35
 
-@onready var _painel: PanelContainer = $Painel
-@onready var _titulo: Label = $Painel/VBox/Titulo
-@onready var _subtitulo: Label = $Painel/VBox/Subtitulo
-@onready var _stats: GridContainer = $Painel/VBox/Stats
-@onready var _itens: Label = $Painel/VBox/Itens
-@onready var _botao_continuar: Button = $Painel/VBox/Botoes/BotaoContinuar
-@onready var _botao_menu: Button = $Painel/VBox/Botoes/BotaoMenu
+@onready var _conteudo: HBoxContainer = $Conteudo
+@onready var _titulo: Label = $Conteudo/Painel/VBox/Titulo
+@onready var _subtitulo: Label = $Conteudo/Painel/VBox/Subtitulo
+@onready var _stats: GridContainer = $Conteudo/Painel/VBox/Stats
+@onready var _itens: Label = $Conteudo/Painel/VBox/Itens
+@onready var _botao_continuar: Button = $Conteudo/Painel/VBox/Botoes/BotaoContinuar
+@onready var _botao_menu: Button = $Conteudo/Painel/VBox/Botoes/BotaoMenu
 
 
 func _ready() -> void:
@@ -34,9 +34,9 @@ func _on_run_ended(victory: bool) -> void:
 	_fill(victory)
 	visible = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	_painel.modulate.a = 0.0
+	_conteudo.modulate.a = 0.0
 	var tween: Tween = create_tween()
-	tween.tween_property(_painel, "modulate:a", 1.0, fade_in_time)
+	tween.tween_property(_conteudo, "modulate:a", 1.0, fade_in_time)
 	if victory:
 		_botao_continuar.grab_focus()
 	else:

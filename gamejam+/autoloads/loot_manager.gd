@@ -49,9 +49,23 @@ enum Source {
 ## Extra "completed graveyards" granted by other modes (Monster Survivors: player level)
 var progress_bonus: int = 0
 
+@export_group("Bad luck protection")
+## Each enemy kill without a drop adds this much to the next drop chance (0.004 = +0.4%)
+@export var normal_pity_chance_step: float = 0.004
+@export var elite_pity_chance_step: float = 0.06
+## Consecutive kills without a drop after which the next one always drops an item
+@export var normal_pity_guarantee: int = 30
+@export var elite_pity_guarantee: int = 5
+## Consecutive Basic enemy drops after which the next drop cannot be Basic
+@export var basic_streak_limit: int = 3
+
 ## Graveyards per loop (updated by the cemetery_changed signal)
 var cemeteries_per_loop: int = 5
 
+# Enemy kills in a row without a drop, per source (Source -> int)
+var _misses: Dictionary = {}
+# Enemy drops in a row that were Basic
+var _basic_streak: int = 0
 # Items per rarity: Rarity -> Array[ItemData]
 var _items_by_rarity: Dictionary = {}
 # Boss legendary not yet picked up: reappears at the spawn of the next loop
@@ -97,12 +111,47 @@ func drop_chance(source: Source) -> float:
 
 ## Rolls an item for the source (null = no drop). Does not drop it on the ground.
 func roll_item(source: Source) -> ItemData:
-	if randf() >= drop_chance(source):
+	var pity: bool = _is_enemy_source(source)
+	if randf() >= _effective_chance(source):
+		if pity:
+			_misses[source] = int(_misses.get(source, 0)) + 1
+			print("[Loot] - %s: %d kills without a drop" % [Source.keys()[source], _misses[source]])
 		return null
 	var rarity: ItemEnums.Rarity = ItemEnums.Rarity.LEGENDARY
 	if source != Source.BOSS_REWARD:
-		rarity = _roll_rarity(rarity_weights(source))
+		var weights: Array[float] = rarity_weights(source)
+		# Too many Basic drops in a row: the next one is at least Intermediate
+		if pity and _basic_streak >= basic_streak_limit and weights.size() > 1:
+			weights[ItemEnums.Rarity.BASIC] = 0.0
+		rarity = _roll_rarity(weights)
+		if pity:
+			_basic_streak = _basic_streak + 1 if rarity == ItemEnums.Rarity.BASIC else 0
+	if pity:
+		_misses[source] = 0
 	return _roll_from_rarity(rarity)
+
+
+## Forgets the bad luck counters (new run).
+func reset_pity() -> void:
+	_misses.clear()
+	_basic_streak = 0
+
+
+# Drop chance with the bad luck protection: grows with every miss and is 100% after the guarantee
+func _effective_chance(source: Source) -> float:
+	var chance: float = drop_chance(source)
+	if not _is_enemy_source(source):
+		return chance
+	var misses: int = int(_misses.get(source, 0))
+	var guarantee: int = normal_pity_guarantee if source == Source.NORMAL_ENEMY else elite_pity_guarantee
+	if misses >= guarantee:
+		return 1.0
+	var step: float = normal_pity_chance_step if source == Source.NORMAL_ENEMY else elite_pity_chance_step
+	return minf(chance + step * misses, 1.0)
+
+
+func _is_enemy_source(source: Source) -> bool:
+	return source == Source.NORMAL_ENEMY or source == Source.ELITE_ENEMY
 
 
 ## Rolls and drops the item on the ground. Returns the item (null = no drop).

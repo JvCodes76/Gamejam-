@@ -12,6 +12,8 @@ const PORTAL_SHEET_PATH: String = "res://assets/sprites/Portal-Sheet.png"
 const PORTAL_FPS: float = 10.0
 # Boss arena cauldron: distance (px) from the left wall and from the far wall
 const BOSS_CAULDRON_MARGIN: Vector2 = Vector2(96.0, 96.0)
+# Night atmosphere (lights, fog, particles, shadows), behind the "Atmosphere effects" setting
+const AMBIENCE_SCENE: PackedScene = preload("res://ambience/ambience_layer.tscn")
 
 @export_group("Graveyards")
 ## Number of rooms in each graveyard (the array size is the number of graveyards)
@@ -146,6 +148,7 @@ func _ready() -> void:
 	if not is_tutorial:
 		_spawn_pumpkin_mimics()
 	_populate_rooms()
+	add_child(AMBIENCE_SCENE.instantiate())
 	if jump_to_boss:
 		_debug_place_at_boss()
 	var minimap: Minimap = get_node_or_null("Minimap") as Minimap
@@ -330,6 +333,8 @@ func _build_portal(room: RoomData) -> void:
 	portal.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portal.position = _portal_position
 	portal.z_index = -8
+	# The ambience lights the portal through this group
+	portal.add_to_group(&"portal")
 	add_child(portal)
 	portal.play(&"default")
 

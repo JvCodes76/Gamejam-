@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://ui/run_summary.gd" id="1_summary"]
+[ext_resource type="Texture2D" uid="uid://cy5qn4ig6j3bx" path="res://assets/sprites/ui/NexHex_Title.png" id="2_logo"]
 
 [node name="RunSummary" type="CanvasLayer"]
 process_mode = 3
@@ -16,58 +17,66 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.75)
 
-[node name="Painel" type="PanelContainer" parent="."]
+; Game logo beside the panel (the statistics are too tall to stack it on top), both centered on the screen
+[node name="Conteudo" type="HBoxContainer" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -150.0
-offset_right = 150.0
-offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 16
+alignment = 1
 
-[node name="VBox" type="VBoxContainer" parent="Painel"]
+[node name="Logo" type="TextureRect" parent="Conteudo"]
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2_logo")
+
+[node name="Painel" type="PanelContainer" parent="Conteudo"]
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Conteudo/Painel"]
 layout_mode = 2
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="Titulo" type="Label" parent="Painel/VBox"]
+[node name="Titulo" type="Label" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 28
 horizontal_alignment = 1
 
-[node name="Subtitulo" type="Label" parent="Painel/VBox"]
+[node name="Subtitulo" type="Label" parent="Conteudo/Painel/VBox"]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Stats" type="GridContainer" parent="Painel/VBox"]
+[node name="Stats" type="GridContainer" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
 theme_override_constants/h_separation = 24
 theme_override_constants/v_separation = 0
 columns = 2
 
-[node name="Itens" type="Label" parent="Painel/VBox"]
+[node name="Itens" type="Label" parent="Conteudo/Painel/VBox"]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Botoes" type="HBoxContainer" parent="Painel/VBox"]
+[node name="Botoes" type="HBoxContainer" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="BotaoContinuar" type="Button" parent="Painel/VBox/Botoes"]
+[node name="BotaoContinuar" type="Button" parent="Conteudo/Painel/VBox/Botoes"]
 layout_mode = 2
 
-[node name="BotaoMenu" type="Button" parent="Painel/VBox/Botoes"]
+[node name="BotaoMenu" type="Button" parent="Conteudo/Painel/VBox/Botoes"]
 layout_mode = 2

@@ -11,6 +11,10 @@ func _ready() -> void:
 	_previous_item_scale = ItemManager.base_item_scale
 	ItemManager.base_item_scale = DEBUG_BASE_ITEM_SCALE
 	print("[Debug] - base_item_scale %.1f -> %.1f" % [_previous_item_scale, DEBUG_BASE_ITEM_SCALE])
+	# [DEBUG] Run directly (F6) nobody calls start_game(): without PLAYING the journal refuses to open
+	if GameManager.state == GameManager.State.MENU:
+		GameManager.state = GameManager.State.PLAYING
+		print("[Debug] - state forced to PLAYING (test scene)")
 
 
 # Restores the global value so it does not leak into the normal game

@@ -1,9 +1,9 @@
 extends CanvasLayer
 ## Pause menu: shows and hides according to EventBus.game_paused.
 
-@onready var _botao_continuar: Button = $Painel/VBox/BotaoContinuar
-@onready var _botao_config: Button = $Painel/VBox/BotaoConfig
-@onready var _botao_menu: Button = $Painel/VBox/BotaoMenu
+@onready var _botao_continuar: Button = $Conteudo/Painel/VBox/BotaoContinuar
+@onready var _botao_config: Button = $Conteudo/Painel/VBox/BotaoConfig
+@onready var _botao_menu: Button = $Conteudo/Painel/VBox/BotaoMenu
 
 var _settings: CanvasLayer
 
@@ -29,7 +29,7 @@ func _build_shake_toggle() -> void:
 	toggle.text = tr("Reduce screen shake")
 	toggle.button_pressed = GameManager.reduce_screen_shake
 	toggle.toggled.connect(_on_reduce_shake_toggled)
-	var vbox: VBoxContainer = $Painel/VBox as VBoxContainer
+	var vbox: VBoxContainer = $Conteudo/Painel/VBox as VBoxContainer
 	vbox.add_child(toggle)
 	vbox.move_child(toggle, _botao_menu.get_index())
 	_add_ui_sounds(toggle)

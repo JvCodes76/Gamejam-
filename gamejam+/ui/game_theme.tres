@@ -1,0 +1,81 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontFile" path="res://yoster-island/yoster.ttf" id="1_font"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/button_9patch.png" id="2_btn"]
+
+[sub_resource type="StyleBoxTexture" id="btn_normal"]
+texture = ExtResource("2_btn")
+texture_margin_left = 13.0
+texture_margin_top = 13.0
+texture_margin_right = 13.0
+texture_margin_bottom = 13.0
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+region_rect = Rect2(0, 0, 42, 42)
+
+[sub_resource type="StyleBoxTexture" id="btn_hover"]
+texture = ExtResource("2_btn")
+texture_margin_left = 13.0
+texture_margin_top = 13.0
+texture_margin_right = 13.0
+texture_margin_bottom = 13.0
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+region_rect = Rect2(0, 0, 42, 42)
+modulate_color = Color(1.25, 1.25, 1.25, 1)
+
+[sub_resource type="StyleBoxTexture" id="btn_pressed"]
+texture = ExtResource("2_btn")
+texture_margin_left = 13.0
+texture_margin_top = 13.0
+texture_margin_right = 13.0
+texture_margin_bottom = 13.0
+content_margin_left = 14.0
+content_margin_top = 11.0
+content_margin_right = 14.0
+content_margin_bottom = 9.0
+region_rect = Rect2(0, 0, 42, 42)
+modulate_color = Color(0.75, 0.75, 0.75, 1)
+
+[sub_resource type="StyleBoxTexture" id="btn_disabled"]
+texture = ExtResource("2_btn")
+texture_margin_left = 13.0
+texture_margin_top = 13.0
+texture_margin_right = 13.0
+texture_margin_bottom = 13.0
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+region_rect = Rect2(0, 0, 42, 42)
+modulate_color = Color(0.5, 0.5, 0.5, 0.8)
+
+[sub_resource type="StyleBoxEmpty" id="btn_focus"]
+
+[resource]
+default_font = ExtResource("1_font")
+default_font_size = 16
+Button/colors/font_color = Color(1, 0.97, 0.85, 1)
+Button/colors/font_disabled_color = Color(0.7, 0.7, 0.7, 1)
+Button/colors/font_focus_color = Color(1, 1, 1, 1)
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_hover_pressed_color = Color(1, 0.9, 0.3, 1)
+Button/colors/font_pressed_color = Color(1, 0.9, 0.3, 1)
+Button/styles/disabled = SubResource("btn_disabled")
+Button/styles/focus = SubResource("btn_focus")
+Button/styles/hover = SubResource("btn_hover")
+Button/styles/normal = SubResource("btn_normal")
+Button/styles/pressed = SubResource("btn_pressed")
+CheckButton/colors/font_color = Color(1, 0.97, 0.85, 1)
+CheckButton/colors/font_hover_color = Color(1, 1, 1, 1)
+CheckButton/colors/font_pressed_color = Color(1, 0.97, 0.85, 1)
+CheckButton/styles/disabled = SubResource("btn_disabled")
+CheckButton/styles/focus = SubResource("btn_focus")
+CheckButton/styles/hover = SubResource("btn_hover")
+CheckButton/styles/hover_pressed = SubResource("btn_hover")
+CheckButton/styles/normal = SubResource("btn_normal")
+CheckButton/styles/pressed = SubResource("btn_normal")

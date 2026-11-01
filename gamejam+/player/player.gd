@@ -30,6 +30,9 @@ var _laser: LaserBeam = null
 var _laser_firing: bool = false
 var _flame_shots: int = 0
 var _ammo_indicator: AmmoIndicator = null
+# Distance (px) the bullet is kept away from a wall when spawned against it
+const BULLET_WALL_PULLBACK: float = 2.0
+
 var _aim_direction: Vector2 = Vector2.RIGHT
 var _use_gamepad: bool = false
 var _mods: ProjectileModifiers = ProjectileModifiers.new()
@@ -50,15 +53,32 @@ var _dead: bool = false
 var _flash_materials: Array[ShaderMaterial] = []
 var _flash_tween: Tween
 
-# Sheet with 4 directions x 2 frames (idle/walking): down, right, left, up
-const FRAMES_PER_DIRECTION: int = 2
-enum Facing { DOWN, RIGHT, LEFT, UP }
+# Two sheets with 4 directions x 2 frames each:
+# cardinal (the Sprite2D texture): down, right, left, up — pairs [idle, walking]
+# diagonal: down-right, down-left, up-right, up-left — pairs [walking, idle]
+const DIAGONAL_SHEET: Texture2D = preload("res://assets/sprites/player/Player_WalkDiagonal-Sheet.png")
+# The 8 aim directions in angle order (0 = right, clockwise because +y points down);
+# the odd ones are the diagonals
+enum Facing { RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT, UP, UP_RIGHT }
+# Facing -> (idle frame, walking frame) in the sheet of that direction
+const FACING_FRAMES: Array[Vector2i] = [
+	Vector2i(2, 3), # RIGHT
+	Vector2i(1, 0), # DOWN_RIGHT
+	Vector2i(0, 1), # DOWN
+	Vector2i(3, 2), # DOWN_LEFT
+	Vector2i(4, 5), # LEFT
+	Vector2i(7, 6), # UP_LEFT
+	Vector2i(6, 7), # UP
+	Vector2i(5, 4), # UP_RIGHT
+]
+var _cardinal_sheet: Texture2D
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _cape: Sprite2D = $Cape
 @onready var _body_center: Marker2D = $BodyCenter
 @onready var _pivot: Node2D = $Pivot
 @onready var _muzzle: Marker2D = $Pivot/Muzzle
+@onready var _feet_collider: CollisionShape2D = $CollisionShape2D
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _crosshair: Crosshair = $Crosshair
 @onready var _camera: GameCamera = $Camera2D
@@ -75,6 +95,7 @@ var aim_origin: Vector2:
 
 func _ready() -> void:
 	_head_base_y = _sprite.position.y
+	_cardinal_sheet = _sprite.texture
 	_cape_base_position = _cape.position
 	_hurtbox.invulnerability_time = invulnerability_time
 	for sprite: Sprite2D in [_sprite, _cape]:
@@ -193,7 +214,7 @@ func _update_aim() -> void:
 	_camera.look_target = _crosshair.global_position
 
 
-## Picks the sprite direction from the aim and alternates the 2 frames while walking.
+## Picks the sprite direction (8 directions) from the aim and alternates the 2 frames while walking.
 func _update_sprite(delta: float) -> void:
 	var facing: Facing = _facing_from(_aim_direction)
 	if velocity.length() > 5.0:
@@ -208,7 +229,9 @@ func _update_sprite(delta: float) -> void:
 	_recoil_offset = _recoil_offset.move_toward(Vector2.ZERO, FeelConstants.SPRITE_RECOIL / FeelConstants.SPRITE_RECOIL_TIME * delta)
 	_sprite.position = Vector2(_recoil_offset.x, _head_base_y - (head_bob if _walk_frame == 1 else 0.0) + _recoil_offset.y)
 	_cape.position = _cape_base_position + _recoil_offset
-	_sprite.frame = facing * FRAMES_PER_DIRECTION + _walk_frame
+	_sprite.texture = DIAGONAL_SHEET if facing % 2 == 1 else _cardinal_sheet
+	var frames: Vector2i = FACING_FRAMES[facing]
+	_sprite.frame = frames.y if _walk_frame == 1 else frames.x
 
 
 ## Animates the cape: idle on frame 0, cycles the 4 frames while walking.
@@ -224,11 +247,9 @@ func _update_cape(delta: float, walking: bool) -> void:
 	_cape.frame = _cape_frame
 
 
-## Converts the aim direction into one of the sheet's 4 directions.
+## Converts the aim direction into one of the 8 directions (45° sectors centered on each one).
 func _facing_from(direction: Vector2) -> Facing:
-	if absf(direction.x) > absf(direction.y):
-		return Facing.RIGHT if direction.x > 0.0 else Facing.LEFT
-	return Facing.DOWN if direction.y > 0.0 else Facing.UP
+	return wrapi(roundi(direction.angle() / (PI / 4.0)), 0, 8) as Facing
 
 
 ## Direction of the shot: from the muzzle to the mouse (or the stick's aim).
@@ -240,11 +261,41 @@ func _shot_direction() -> Vector2:
 	return _aim_direction
 
 
+## Places the bullet at the muzzle. The shot leaves at body height (CombatConstants.BODY_HEIGHT above the feet), so
+## standing against a wall to the north (or behind a tree) the body is already inside that wall's collision: those
+## walls are handed to the bullet to be judged at ground level (Bullet.ignore_walls_at_spawn); before, the shot died on
+## leaving whatever the aim. Any other wall between the body and the muzzle (shooting point-blank at a wall) pulls the
+## bullet back to its surface, so it does not spawn inside the wall or on the other side of it.
+func _place_bullet(bullet: Bullet) -> void:
+	var space: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	var from: Vector2 = _pivot.global_position
+	var to: Vector2 = _muzzle.global_position
+	# Walls the bullet would already touch if it left from the body itself
+	var overlap: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+	overlap.shape = (bullet.get_node(^"CollisionShape2D") as CollisionShape2D).shape
+	overlap.transform = Transform2D(0.0, from)
+	overlap.collision_mask = PhysicsLayers.PROJECTILE_WALL_MASK
+	var inside: Array[Object] = []
+	for contact: Dictionary in space.intersect_shape(overlap, 8):
+		var obstacle: Object = Bullet.wall_owner(contact["collider"])
+		if not inside.has(obstacle):
+			inside.append(obstacle)
+	var hit: Dictionary = Bullet.cast_wall_ray(space, from, to, PhysicsLayers.PROJECTILE_WALL_MASK,
+		func(obstacle: Object) -> bool: return not inside.has(obstacle))
+	bullet.global_position = to
+	if not hit.is_empty():
+		bullet.global_position = Vector2(hit["position"]) + (from - to).normalized() * BULLET_WALL_PULLBACK
+	if not inside.is_empty():
+		# Ground track starts at the center of the feet collider: always at least its radius away from any wall (the feet
+		# themselves rest exactly on the edge of what they touch, and a ray grazing that edge counts as a hit)
+		bullet.ignore_walls_at_spawn(inside, _feet_collider.global_position)
+
+
 ## Fires a bullet in the aim direction (a flame with Dragon's Blood, a real bullet with the Gun).
 func _shoot() -> void:
 	var shot_dir: Vector2 = _shot_direction()
 	var bullet: Bullet = BULLET_SCENE.instantiate() as Bullet
-	bullet.global_position = _muzzle.global_position
+	_place_bullet(bullet)
 	bullet.damage = CombatConstants.WEAPON_BASE_DAMAGE
 	bullet.setup(shot_dir)
 	bullet.apply_modifiers(_mods, _health)

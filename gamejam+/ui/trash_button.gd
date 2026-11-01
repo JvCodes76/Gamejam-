@@ -41,4 +41,4 @@ func _draw() -> void:
 	for x: float in [7.0, 10.0, 13.0]:
 		draw_line(Vector2(x, 9), Vector2(x - (x - 10.0) * 0.1, 21), c.lightened(0.3), 1.0)
 	if _hover:
-		draw_string(ThemeDB.fallback_font, Vector2(-30, -4), hint_text, HORIZONTAL_ALIGNMENT_CENTER, 80, 8, Color(1, 1, 1))
+		draw_string(get_theme_default_font(), Vector2(-30, -4), hint_text, HORIZONTAL_ALIGNMENT_CENTER, 80, 8, Color(1, 1, 1))

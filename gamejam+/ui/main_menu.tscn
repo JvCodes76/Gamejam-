@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://b6r8suupkch2t"]
 
 [ext_resource type="Script" uid="uid://edd0x7du71vt" path="res://ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Texture2D" uid="uid://cy5qn4ig6j3bx" path="res://assets/sprites/ui/NexHex_Title.png" id="2_logo"]
+[ext_resource type="Script" path="res://ui/starry_sky.gd" id="3_sky"]
 
 [node name="MainMenu" type="Control" unique_id=111300943]
 layout_mode = 3
@@ -11,6 +13,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
+[node name="StarrySky" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_sky")
+
 [node name="VBox" type="VBoxContainer" parent="." unique_id=921929201]
 layout_mode = 1
 anchors_preset = 8
@@ -20,17 +32,17 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 6
 alignment = 1
 
-[node name="Titulo" type="Label" parent="VBox" unique_id=487001643]
+[node name="Logo" type="TextureRect" parent="VBox" unique_id=487001643]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "NexHex"
-horizontal_alignment = 1
+size_flags_horizontal = 4
+texture = ExtResource("2_logo")
 
 [node name="BotaoJogar" type="Button" parent="VBox" unique_id=1402477755]
 layout_mode = 2
-text = "Play"
+text = "New Hex"
 
 [node name="BotaoSurvivors" type="Button" parent="VBox" unique_id=1218219473]
 layout_mode = 2

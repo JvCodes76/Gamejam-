@@ -1,15 +1,18 @@
 extends CanvasLayer
-## Monster Survivors HUD: XP bar across the top of the screen, level number, current wave, rest countdown and wave announcements.
+## Monster Survivors HUD: XP bar across the top of the screen, level number, current wave,
+## "next wave" button during the rests (red before a boss) and wave announcements.
 
 const BAR_HEIGHT: float = 5.0
 const BAR_BACK: Color = Color(0.1, 0.0, 0.02, 0.85)
 const BAR_FILL: Color = Color(0.9, 0.1, 0.15)
+const BOSS_BUTTON_COLOR: Color = Color(1.0, 0.35, 0.35)
 
 var _back: ColorRect
 var _fill: ColorRect
 var _label: Label
 var _wave_label: Label
-var _break_label: Label
+var _next_button: Button
+var _next_tween: Tween
 var _announce_label: Label
 var _announce_tween: Tween
 var _tween: Tween
@@ -44,13 +47,12 @@ func _ready() -> void:
 	root.add_child(_label)
 	_wave_label = _centered_label(root, BAR_HEIGHT + 1.0, 12, Color(1.0, 0.9, 0.6))
 	_wave_label.text = "WAVE 1"
-	_break_label = _centered_label(root, BAR_HEIGHT + 20.0, 14, Color(0.7, 1.0, 0.7))
-	_break_label.visible = false
+	_next_button = _build_next_button(root, BAR_HEIGHT + 20.0)
 	_announce_label = _centered_label(root, 90.0, 28, Color(1.0, 0.9, 0.6))
 	_announce_label.modulate.a = 0.0
 	EventBus.xp_changed.connect(_on_xp_changed)
 	EventBus.wave_started.connect(_on_wave_started)
-	EventBus.wave_break_changed.connect(_on_wave_break_changed)
+	EventBus.wave_rest_changed.connect(_on_wave_rest_changed)
 
 
 # Label with outline, centered horizontally at the given height
@@ -62,6 +64,25 @@ func _centered_label(parent: Control, top: float, font_size: int, color: Color) 
 	label.offset_top = top
 	parent.add_child(label)
 	return label
+
+
+# Button that starts the next wave during the rests (hidden otherwise). No focus, so Space/Enter never press it by accident.
+func _build_next_button(parent: Control, top: float) -> Button:
+	var button: Button = Button.new()
+	button.text = tr("Next wave")
+	button.visible = false
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.add_theme_font_size_override("font_size", 14)
+	button.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	button.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	button.offset_top = top
+	button.mouse_entered.connect(EventBus.play_sfx_requested.emit.bind("ui_hover"))
+	button.pressed.connect(_on_next_wave_pressed)
+	# Pivot in the center so the pop does not drift (the size is only known after the layout)
+	button.resized.connect(func() -> void: button.pivot_offset = button.size * 0.5)
+	parent.add_child(button)
+	return button
 
 
 func _style(label: Label, font_size: int, color: Color) -> void:
@@ -88,14 +109,29 @@ func _on_wave_started(wave: int, is_boss: bool) -> void:
 	_announce_tween.tween_property(_announce_label, "modulate:a", 0.0, 0.5)
 
 
-# Rest countdown (negative = hide)
-func _on_wave_break_changed(seconds_left: float, boss_next: bool) -> void:
-	_break_label.visible = seconds_left >= 0.0
-	if not _break_label.visible:
+# Rest started/ended: shows the button with a pop (in red when a boss comes next), or hides it
+func _on_wave_rest_changed(resting: bool, boss_next: bool) -> void:
+	if _next_tween != null:
+		_next_tween.kill()
+	_next_button.visible = resting
+	_next_button.disabled = not resting
+	if not resting:
 		return
-	var seconds: int = ceili(seconds_left)
-	_break_label.text = (tr("BOSS INCOMING IN %d") if boss_next else tr("Next wave in %d")) % seconds
-	_break_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35) if boss_next else Color(0.7, 1.0, 0.7))
+	_next_button.text = tr("Face the boss") if boss_next else tr("Next wave")
+	for color_name: StringName in [&"font_color", &"font_hover_color", &"font_pressed_color"]:
+		if boss_next:
+			_next_button.add_theme_color_override(color_name, BOSS_BUTTON_COLOR)
+		else:
+			_next_button.remove_theme_color_override(color_name)
+	_next_button.scale = Vector2.ONE * 1.4
+	_next_tween = create_tween()
+	_next_tween.tween_property(_next_button, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _on_next_wave_pressed() -> void:
+	_next_button.disabled = true
+	EventBus.play_sfx_requested.emit("ui_click")
+	EventBus.next_wave_requested.emit()
 
 
 func _on_xp_changed(level: int, xp: int, xp_needed: int) -> void:

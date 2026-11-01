@@ -9,6 +9,10 @@ const FLAME_PARTICLE_COUNT: int = 12
 const FLAME_PARTICLE_LIFETIME: float = 0.3
 ## Flask spin while flying (rad/s)
 const FLASK_SPIN_SPEED: float = 14.0
+# Colliders a wall ray may skip before giving up (obstacles the caller is not interested in)
+const WALL_RAY_RETRIES: int = 4
+# After this age (s), spawn walls the bullet never touched stop being special (it left without overlapping them)
+const SPAWN_WALL_SETTLE_TIME: float = 0.05
 
 @export var speed: float = 300.0
 @export var lifetime: float = 1.5
@@ -38,6 +42,13 @@ var _holy: bool = false
 var _tint: Color = Color.WHITE
 var _mud_distance: float = 0.0
 var _cloud_distance: float = 0.0
+# Walls (obstacles, see wall_owner) the shooter's body was already overlapping when firing: while the bullet overlaps
+# them they are judged at ground level (its ground track against their footprint) instead of by its image.
+# See ignore_walls_at_spawn.
+var _spawn_walls: Array[Object] = []
+var _spawn_walls_touched: Array[Object] = []
+# Ground point at the last spawn wall check (starts at the shooter's feet)
+var _ground_prev: Vector2 = Vector2.ZERO
 # Trail (Line2D in global coordinates) with the bullet's latest points
 var _trail: Line2D
 var _spin_speed: float = FLASK_SPIN_SPEED
@@ -53,6 +64,7 @@ static var _flame_material: CanvasItemMaterial = null
 func _ready() -> void:
 	super()
 	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 	_build_trail()
 	# Spawns bigger and shrinks to the normal scale
 	var sprite: Sprite2D = $Sprite2D as Sprite2D
@@ -94,6 +106,8 @@ func _physics_process(delta: float) -> void:
 	if _homing > 0.0:
 		_steer_toward_enemy(delta)
 	global_position += direction * speed * delta
+	if not _spawn_walls.is_empty() and _check_spawn_walls():
+		return
 	($Sprite2D as Sprite2D).rotation += _spin_speed * delta
 	_update_trail()
 	if _aoe_radius > 0.0:
@@ -112,6 +126,57 @@ func _physics_process(delta: float) -> void:
 func setup(new_direction: Vector2) -> void:
 	direction = new_direction.normalized()
 	rotation = direction.angle()
+
+
+## The shooter fired with its body already inside the collision of "walls" (obstacles from wall_owner): standing
+## against a wall to the north or behind a tree, the shot is in front of or behind them, not inside. While the bullet
+## overlaps them it only dies if its ground track, starting at "ground_from" (a ground point under the shooter, clear of
+## every wall), crosses their footprint: shooting away from or along the wall works, shooting into it still hits it.
+## Call before add_child.
+func ignore_walls_at_spawn(walls: Array[Object], ground_from: Vector2) -> void:
+	_spawn_walls = walls.duplicate()
+	_ground_prev = ground_from
+
+
+## Obstacle a collider belongs to: the Prop for its footprint and its projectile volume, the collider itself otherwise
+## (room walls, whose single rectangle is both).
+static func wall_owner(collider: Object) -> Object:
+	var node: Node = collider as Node
+	if node != null and node.get_parent() is Prop:
+		return node.get_parent()
+	return collider
+
+
+## First hit of a ray on "mask" whose obstacle (wall_owner) passes "accept"; hits on other obstacles are skipped.
+static func cast_wall_ray(space: PhysicsDirectSpaceState2D, from: Vector2, to: Vector2, mask: int, accept: Callable) -> Dictionary:
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(from, to, mask)
+	var skipped: Array[RID] = []
+	for i: int in WALL_RAY_RETRIES:
+		var hit: Dictionary = space.intersect_ray(query)
+		if hit.is_empty() or accept.call(wall_owner(hit["collider"])):
+			return hit
+		skipped.append(hit["rid"])
+		query.exclude = skipped
+	return {}
+
+
+# Spawn walls at ground level: the ground track since the last frame against their footprints. True if one was hit
+# (the bullet is destroyed there).
+func _check_spawn_walls() -> bool:
+	if _age >= SPAWN_WALL_SETTLE_TIME:
+		for i: int in range(_spawn_walls.size() - 1, -1, -1):
+			if not _spawn_walls_touched.has(_spawn_walls[i]):
+				_spawn_walls.remove_at(i)
+	var ground: Vector2 = _ground_point()
+	var hit: Dictionary = cast_wall_ray(get_world_2d().direct_space_state, _ground_prev, ground, PhysicsLayers.MOVE_MASK,
+		func(obstacle: Object) -> bool: return _spawn_walls.has(obstacle))
+	_ground_prev = ground
+	if hit.is_empty():
+		return false
+	global_position = Vector2(hit["position"]) - Vector2(0.0, CombatConstants.BODY_HEIGHT)
+	_wall_feedback(global_position)
+	_impact(_roll_impact_damage())
+	return true
 
 
 ## Applies the potion modifiers: color, range, pierce, bounce, damage, lifesteal and DoTs.
@@ -342,6 +407,9 @@ func setup_child(parent: Bullet, new_direction: Vector2) -> void:
 	set_tint(parent._tint)
 	($Sprite2D as Sprite2D).scale = ($Sprite2D as Sprite2D).scale * 0.8
 	setup(new_direction)
+	# Leaves from where the parent is (position set before this call, still out of the tree): the walls the parent was
+	# flying in front of stay judged at ground level for the child too
+	ignore_walls_at_spawn(parent._spawn_walls, position + Vector2(0.0, CombatConstants.BODY_HEIGHT))
 
 
 ## Ground point under the bullet (it flies at the height of the player's body): mud and cloud stay on the ground, not in the air.
@@ -449,9 +517,26 @@ func _on_area_entered(area: Area2D) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemy") or _spent:
 		return
+	var obstacle: Object = wall_owner(body)
+	if _spawn_walls.has(obstacle):
+		# Judged at ground level while overlapping (_check_spawn_walls)
+		if not _spawn_walls_touched.has(obstacle):
+			_spawn_walls_touched.append(obstacle)
+		return
 	var wall: Dictionary = _probe_wall()
 	_wall_feedback(Vector2(wall["position"]))
 	_impact(_roll_impact_damage())
+
+
+# Out of a spawn wall (none of its bodies overlapped any more): from now on it is a normal wall for this bullet
+func _on_body_exited(body: Node2D) -> void:
+	var obstacle: Object = wall_owner(body)
+	if not _spawn_walls.has(obstacle):
+		return
+	for other: Node2D in get_overlapping_bodies():
+		if other != body and wall_owner(other) == obstacle:
+			return
+	_spawn_walls.erase(obstacle)
 
 
 ## Impact damage without a direct target (wall or end of range): no crit, with the bullet's damage fraction.

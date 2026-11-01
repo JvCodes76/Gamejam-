@@ -219,8 +219,9 @@ func close() -> void:
 	print("[Inventory] - Closed (%d in the bag, %d on the ground)" % [kept.size(), dropped])
 
 # Closes on death to restore the cursor and flags
+# (deferred: the death comes from a physics callback and close() frees physics bodies)
 func _on_player_died() -> void:
-	close()
+	close.call_deferred()
 
 
 # If it leaves the tree while open (level unloaded), releases the stuck state

@@ -38,8 +38,11 @@ signal ground_items_changed()
 signal wave_started(wave: int, is_boss: bool)
 # Monster Survivors: a wave was cleared
 signal wave_cleared(wave: int)
-# Monster Survivors: time left in the rest before the next wave (negative value = hide); boss_next = a boss comes next
-signal wave_break_changed(seconds_left: float, boss_next: bool)
+# Monster Survivors: rest with no timer started (true) or ended (false); the next wave waits for the player.
+# boss_next = the next wave is a boss wave
+signal wave_rest_changed(resting: bool, boss_next: bool)
+# Monster Survivors: the player asked for the next wave (HUD button during the rest)
+signal next_wave_requested()
 # Monster Survivors: XP orb collected (amount of XP)
 signal xp_collected(amount: int)
 # Monster Survivors: XP / level changed (level, xp in the level, xp needed for the next level)
@@ -99,3 +102,5 @@ signal potion_brewed(color: Color, position: Vector2)
 signal compendium_updated()
 # Request to open the journal
 signal journal_open_requested()
+# "Atmosphere effects" setting changed (night lighting, fog, particles, shadows); see AmbienceSettings
+signal ambience_toggled(enabled: bool)

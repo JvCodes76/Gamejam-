@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://ui/pause_menu.gd" id="1_pause"]
+[ext_resource type="Texture2D" uid="uid://cy5qn4ig6j3bx" path="res://assets/sprites/ui/NexHex_Title.png" id="2_logo"]
 
 [node name="PauseMenu" type="CanvasLayer"]
 process_mode = 3
@@ -16,7 +17,8 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Painel" type="PanelContainer" parent="."]
+; Game logo above the panel, both centered on the screen
+[node name="Conteudo" type="VBoxContainer" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -24,24 +26,34 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 6
+alignment = 1
 
-[node name="VBox" type="VBoxContainer" parent="Painel"]
+[node name="Logo" type="TextureRect" parent="Conteudo"]
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("2_logo")
+
+[node name="Painel" type="PanelContainer" parent="Conteudo"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Conteudo/Painel"]
 layout_mode = 2
 alignment = 1
 
-[node name="Titulo" type="Label" parent="Painel/VBox"]
+[node name="Titulo" type="Label" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
 text = "Paused"
 horizontal_alignment = 1
 
-[node name="BotaoContinuar" type="Button" parent="Painel/VBox"]
+[node name="BotaoContinuar" type="Button" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
 text = "Resume"
 
-[node name="BotaoConfig" type="Button" parent="Painel/VBox"]
+[node name="BotaoConfig" type="Button" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
 text = "Settings"
 
-[node name="BotaoMenu" type="Button" parent="Painel/VBox"]
+[node name="BotaoMenu" type="Button" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
 text = "Main menu"

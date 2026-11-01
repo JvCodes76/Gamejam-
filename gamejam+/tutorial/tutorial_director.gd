@@ -12,6 +12,8 @@ const ITEM_OFFSET: float = 28.0
 const MSG_MOVE: String = "Hello! Welcome! You, my friend, are a witch's apprentice, and monsters are invading your forest! Use WASD to move around."
 const MSG_SHOOT: String = "Shocker, but those monsters really want to hurt you! Don't worry though, you have your potions to defend yourself! Press M1 to shoot where you're looking."
 const MSG_PICK_UP: String = "Wow! Two items dropped!! Go up to them and press E to pick them up! If your bag is full, you can open it at any time with TAB and every item nearby will show up there, on the ground."
+const MSG_JOURNAL_1: String = "Every time you pick up an item (or get a synergy but we'll get tp that), it goes into the journal on the bottom right hand side of the screen!"
+const MSG_JOURNAL_2: String = "There, you can see what they do and a little description (that I frankly put a lot of love into :3), so check it out!"
 const MSG_CAULDRON: String = "This is your trusty cauldron, every graveyard has one, obviously. Press E to interact with it."
 const MSG_BREW: String = "This is the cauldron Screen! To make a new potion, drag the ingredients you want to use into the cauldron and hold ENTER"
 const MSG_BOTTLE: String = "When the potion is done brewing, press F to bottle it up."
@@ -73,6 +75,8 @@ func _on_item_picked_up(_item_id: StringName) -> void:
 		return
 	ItemManager.inventory_locked = false
 	print("[Tutorial] - inventory unlocked")
+	popup.show_message(MSG_JOURNAL_1)
+	popup.show_message(MSG_JOURNAL_2)
 
 
 func _on_cauldron_open_requested(_cauldron: Node) -> void:

@@ -83,7 +83,10 @@ func _update_shake(real_delta: float) -> void:
 # Hitstop takes priority (scale 0); then slow-motion, which smoothly returns to 1.0
 func _update_time_scale(now: int) -> void:
 	var scale: float = 1.0
-	if now < _hitstop_until:
+	# With the inventory/cauldron open the physical items must keep a normal time step (a zero step corrupts the physics)
+	if ItemManager.inventory_open:
+		pass
+	elif now < _hitstop_until:
 		scale = 0.0
 	elif now < _slowmo_until:
 		scale = _slowmo_scale

@@ -25,6 +25,11 @@ ItemManager="*res://autoloads/item_manager.gd"
 Juice="*res://autoloads/juice.gd"
 LootManager="*res://autoloads/loot_manager.gd"
 Compendium="*res://autoloads/compendium.gd"
+CrtFilter="*res://autoloads/crt_filter.gd"
+
+[gui]
+
+theme/custom="res://ui/game_theme.tres"
 
 [display]
 

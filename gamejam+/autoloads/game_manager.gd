@@ -64,6 +64,7 @@ func start_game(tutorial: bool = false, survivors: bool = false) -> void:
 	tutorial_mode = tutorial
 	survivors_mode = survivors
 	LootManager.progress_bonus = 0
+	LootManager.reset_pity()
 	score = 0
 	room_index = 1
 	cemetery_index = 1

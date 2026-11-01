@@ -68,6 +68,8 @@ func _capture() -> void:
 	var view: SubViewport = SubViewport.new()
 	view.size = Vector2i((_bounds.size * _capture_scale).ceil())
 	view.world_2d = get_viewport().world_2d
+	# Scenery only: no night lighting, fog, glows or shadows (they follow the main camera)
+	view.set_canvas_cull_mask_bit(AmbienceLayer.VISIBILITY_LAYER_BIT, false)
 	view.transparent_bg = false
 	view.render_target_update_mode = SubViewport.UPDATE_ONCE
 	var camera: Camera2D = Camera2D.new()

@@ -187,6 +187,32 @@ func build(root: Node2D, rooms: Array[RoomData], corridor_width_tiles: int, dens
 	print("[Dungeon] - map built: %d rooms, %d nodes inside, %d in the woods" % [rooms.size(), interior_props, props.get_child_count() - interior_props])
 
 
+## Closes a single hand-made arena (Monster Survivors) with the same fence, corners and walls as the rooms, with no doors.
+## "rect" is the arena floor in world px, aligned to the cells of "ground"; the ground cells outside it or behind the top
+## fence, and the wedges under the bottom corners, become grass. "top_gaps"/"bottom_gaps" (start, end in x) leave the
+## fence open where arches already stand; the walls stay closed.
+func build_enclosure(ground: TileMapLayer, walls: Node2D, props: Node2D, rect: Rect2, top_gaps: Array[Vector2], bottom_gaps: Array[Vector2], rng: RandomNumberGenerator) -> void:
+	_rng = rng
+	_ground = ground
+	_image = (load(TEXTURE_PATH) as Texture2D).get_image()
+	_collect_blue_cells()
+	var arena: RoomData = RoomData.new(Vector2i.ZERO)
+	arena.rect = rect
+	_build_room_walls(walls, arena)
+	_build_corner_walls(walls, arena)
+	top_gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	bottom_gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	_build_fence_ring(props, rect, top_gaps, bottom_gaps)
+	var top_base: float = rect.position.y + TOP_WALL_INSET
+	for cell: Vector2i in ground.get_used_cells():
+		var center: Vector2 = ground.to_global(ground.map_to_local(cell))
+		var in_last_row: bool = center.y > rect.end.y - TILE and center.y < rect.end.y
+		var under_corner: bool = in_last_row and (center.x < rect.position.x + TILE * 2.0 or center.x > rect.end.x - TILE * 2.0)
+		if not rect.has_point(center) or center.y < top_base or under_corner:
+			_set_grass(cell)
+	print("[Dungeon] - arena fenced: %s" % str(rect))
+
+
 # --- Corridors ---
 
 # Floor rectangles of the corridor between two rooms: straight (top/bottom neighbors) or U-shaped (side by side,
@@ -675,9 +701,22 @@ func _build_corner_walls(walls: Node2D, room: RoomData) -> void:
 	_add_wall(walls, Rect2(rect.end.x - CORNER_RIGHT_REACH, bottom, CORNER_RIGHT_REACH + t, bottom_height))
 
 
-# Room fence: straight pieces with gaps at the doors, corners, sides and an arch at each door.
+# Room fence: fence ring with gaps at the doors and an arch at each door.
 func _build_room_fences(props: Node2D, room: RoomData) -> void:
-	var rect: Rect2 = room.rect
+	var top_base: float = room.rect.position.y + TOP_WALL_INSET
+	var bottom_base: float = room.rect.end.y + FENCE_BOTTOM_DROP
+	_build_fence_ring(props, room.rect, _gaps(room, Vector2i.UP), _gaps(room, Vector2i.DOWN))
+	for door: RoomData.Door in room.doors:
+		var base_y: float = top_base if door.side == Vector2i.UP else bottom_base
+		var arch: Prop = PROP_SCENE.instantiate() as Prop
+		arch.kind = Prop.Kind.ARCH_OPEN
+		arch.position = Vector2(room.center().x + door.offset, base_y)
+		props.add_child(arch)
+		door.arch = arch
+
+
+# Fence around a rectangle: corners, top/bottom straight pieces minus the gaps (start, end in x, sorted) and sides.
+func _build_fence_ring(props: Node2D, rect: Rect2, top_gaps: Array[Vector2], bottom_gaps: Array[Vector2]) -> void:
 	var top_base: float = rect.position.y + TOP_WALL_INSET
 	var bottom_base: float = rect.end.y + FENCE_BOTTOM_DROP
 	var join_left: float = rect.position.x + CORNER_LEFT_REACH
@@ -690,22 +729,14 @@ func _build_room_fences(props: Node2D, room: RoomData) -> void:
 	_cover_corner_gap(props, join_left, rect.position.x + TILE * 2.0, rect.end.y)
 	_cover_corner_gap(props, join_right, rect.end.x - TILE * 2.0, rect.end.y)
 
-	for span: Vector2 in _spans(join_left, join_right, _gaps(room, Vector2i.UP)):
+	for span: Vector2 in _spans(join_left, join_right, top_gaps):
 		_add_fence_h(props, span.x, span.y, top_base, FENCE_H_TOP)
-	for span: Vector2 in _spans(join_left, join_right, _gaps(room, Vector2i.DOWN)):
+	for span: Vector2 in _spans(join_left, join_right, bottom_gaps):
 		_add_fence_h(props, span.x, span.y, bottom_base, FENCE_H_BOTTOM)
 	var y_from: float = top_base + CORNER_TOP_DROP
 	var y_to: float = bottom_base - CORNER_BOTTOM_RISE
 	_add_fence_v(props, y_from, y_to, rect.position.x - FENCE_V_LEFT.size.x / 2.0, FENCE_V_LEFT)
 	_add_fence_v(props, y_from, y_to, rect.end.x + FENCE_V_RIGHT.size.x / 2.0, FENCE_V_RIGHT)
-
-	for door: RoomData.Door in room.doors:
-		var base_y: float = top_base if door.side == Vector2i.UP else bottom_base
-		var arch: Prop = PROP_SCENE.instantiate() as Prop
-		arch.kind = Prop.Kind.ARCH_OPEN
-		arch.position = Vector2(room.center().x + door.offset, base_y)
-		props.add_child(arch)
-		door.arch = arch
 
 
 # Horizontal fence from x0 to x1 with the base at height "base_y" (32 px pieces; the last one is clipped).

@@ -137,6 +137,14 @@ func _input(event: InputEvent) -> void:
 				_rotate_by(-deg_to_rad(rotate_step_degrees))
 
 func _physics_process(_delta: float) -> void:
+	# A body with a NaN/infinite position poisons the physics (normalize and transform warnings): reports it and recovers
+	if not global_position.is_finite() or not linear_velocity.is_finite():
+		push_error("[Inventory] - item '%s' had an invalid position/velocity (scale %s); resetting it" % [item_data.id if item_data != null else "?", str(item_scale)])
+		linear_velocity = Vector2.ZERO
+		angular_velocity = 0.0
+		var parent_node: Node2D = get_parent() as Node2D
+		global_position = parent_node.global_position if parent_node != null else Vector2.ZERO
+		return
 	_update_hover()
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:

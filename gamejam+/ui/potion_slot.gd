@@ -65,4 +65,4 @@ func _draw() -> void:
 	if _ring_t > 0.0:
 		var ring_color: Color = Color(liquid_color if filled else active_border_color, 1.0 - _ring_t)
 		draw_arc(size * 0.5, size.y * (0.5 + _ring_t * 0.6), 0.0, TAU, 24, ring_color, 1.5)
-	draw_string(ThemeDB.fallback_font, Vector2(0, size.y + 10), label_text, HORIZONTAL_ALIGNMENT_CENTER, size.x, 8, Color(1, 1, 1, 0.9 if active else 0.5))
+	draw_string(get_theme_default_font(), Vector2(0, size.y + 10), label_text, HORIZONTAL_ALIGNMENT_CENTER, size.x, 8, Color(1, 1, 1, 0.9 if active else 0.5))

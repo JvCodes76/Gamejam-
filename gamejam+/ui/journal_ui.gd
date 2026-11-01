@@ -1,6 +1,6 @@
 class_name JournalUi
 extends CanvasLayer
-## Journal / compendium: an open book with 3 sections (items, elemental synergies, special synergies).
+## Journal / compendium: an open book with 3 sections (items, elemental synergies, special synergies) read page by page.
 ## Shows only what the player has discovered (see the Compendium autoload). Pauses the game while open.
 
 enum Section { ITEMS, ELEMENTAL, SPECIAL }
@@ -9,13 +9,12 @@ const SHEET: Texture2D = preload("res://ui/journal_ui-Sheet.png")
 const ELEMENTS: Texture2D = preload("res://ui/journal_ui_elements.png")
 
 # The sheet frame is 256x192; this is the part with the book (integer scale keeps the pixel art crisp)
-const BOOK_REGION: Rect2 = Rect2(16.0, 10.0, 224.0, 168.0)
+# (starts below the tabs drawn at the top of the sheet, which the book does not use)
+const BOOK_REGION: Rect2 = Rect2(16.0, 28.0, 224.0, 150.0)
 const BOOK_SCALE: float = 2.0
-# Page areas and tabs, in sheet-frame pixels
+# Page areas, in sheet-frame pixels
 const LEFT_PAGE: Rect2 = Rect2(36.0, 34.0, 84.0, 116.0)
 const RIGHT_PAGE: Rect2 = Rect2(135.0, 34.0, 84.0, 116.0)
-const TAB_RECTS: Array[Rect2] = [Rect2(38.0, 11.0, 21.0, 18.0), Rect2(68.0, 11.0, 21.0, 18.0), Rect2(98.0, 11.0, 21.0, 18.0)]
-const UNUSED_TAB_RECTS: Array[Rect2] = [Rect2(137.0, 11.0, 21.0, 18.0), Rect2(167.0, 11.0, 21.0, 18.0), Rect2(197.0, 11.0, 21.0, 18.0)]
 # Arrow sprites in the elements sheet: normal, hover, pressed
 const ARROW_LEFT: Array[Rect2] = [Rect2(4.0, 83.0, 7.0, 11.0), Rect2(20.0, 83.0, 7.0, 11.0), Rect2(36.0, 84.0, 7.0, 10.0)]
 const ARROW_RIGHT: Array[Rect2] = [Rect2(4.0, 99.0, 7.0, 11.0), Rect2(20.0, 99.0, 7.0, 11.0), Rect2(36.0, 100.0, 7.0, 10.0)]
@@ -40,10 +39,10 @@ var _root: Control
 var _book: TextureRect
 var _left: Control
 var _right: Control
-var _counter: Label
+var _left_label: Label
+var _right_label: Label
 var _prev_button: TextureButton
 var _next_button: TextureButton
-var _tab_dims: Array[ColorRect] = []
 
 
 func _ready() -> void:
@@ -105,8 +104,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		_turn(-1)
 	elif event.is_action_pressed("ui_right") or event.is_action_pressed("move_right"):
 		_turn(1)
-	elif event is InputEventKey and event.pressed and not event.echo and event.keycode >= KEY_1 and event.keycode <= KEY_3:
-		_set_section((event.keycode - KEY_1) as Section)
 	# Everything else stays blocked while the book is open
 	get_viewport().set_input_as_handled()
 
@@ -143,21 +140,15 @@ func _build() -> void:
 	_root.add_child(_book)
 	_left = _make_page(LEFT_PAGE)
 	_right = _make_page(RIGHT_PAGE)
-	for i: int in TAB_RECTS.size():
-		_make_tab(TAB_RECTS[i], i)
-	for rect: Rect2 in UNUSED_TAB_RECTS:
-		_dim_rect(rect, 0.35)
-	_prev_button = _make_arrow(ARROW_LEFT, Vector2(44.0, 292.0), -1)
-	_next_button = _make_arrow(ARROW_RIGHT, Vector2(book_size.x - 44.0 - 14.0, 292.0), 1)
-	_counter = Label.new()
-	_counter.position = Vector2(64.0, 292.0)
-	_counter.size = Vector2(book_size.x - 128.0, 22.0)
-	_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_counter.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_style(_counter, 9, INK)
-	_book.add_child(_counter)
+	var footer_y: float = book_size.y - 44.0
+	_prev_button = _make_arrow(ARROW_LEFT, Vector2(44.0, footer_y), -1)
+	_next_button = _make_arrow(ARROW_RIGHT, Vector2(book_size.x - 44.0 - 14.0, footer_y), 1)
+	# Section and page number at the foot of each page (between the arrows and the spine)
+	var spine: float = book_size.x * 0.5
+	_left_label = _make_footer(Vector2(64.0, footer_y), spine - 8.0 - 64.0)
+	_right_label = _make_footer(Vector2(spine + 8.0, footer_y), book_size.x - 64.0 - spine - 8.0)
 	var hint: Label = Label.new()
-	hint.text = tr("Arrows / A D: turn page  ·  1 2 3: sections  ·  Esc or J: close")
+	hint.text = tr("Arrows / A D: turn page  ·  Esc or J: close")
 	hint.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	hint.offset_top = -14.0
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -177,29 +168,16 @@ func _make_page(frame_rect: Rect2) -> Control:
 	return page
 
 
-func _make_tab(frame_rect: Rect2, index: int) -> void:
-	var local: Rect2 = _to_book(frame_rect)
-	var button: Button = Button.new()
-	button.flat = true
-	button.position = local.position
-	button.size = local.size
-	button.focus_mode = Control.FOCUS_NONE
-	button.tooltip_text = tr(SECTION_NAMES[index])
-	button.pressed.connect(_set_section.bind(index as Section))
-	_book.add_child(button)
-	_tab_dims.append(_dim_rect(frame_rect, 0.3))
-
-
-# Translucent overlay on a tab: dims the tabs that are not selected
-func _dim_rect(frame_rect: Rect2, alpha: float) -> ColorRect:
-	var local: Rect2 = _to_book(frame_rect)
-	var dim: ColorRect = ColorRect.new()
-	dim.color = Color(0.1, 0.03, 0.0, alpha)
-	dim.position = local.position
-	dim.size = local.size
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_book.add_child(dim)
-	return dim
+func _make_footer(pos: Vector2, width: float) -> Label:
+	var label: Label = Label.new()
+	label.position = pos
+	label.size = Vector2(width, 22.0)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.clip_text = true
+	_style(label, 9, INK)
+	_book.add_child(label)
+	return label
 
 
 func _make_arrow(sprites: Array[Rect2], pos: Vector2, direction: int) -> TextureButton:
@@ -233,20 +211,22 @@ func _to_book(frame_rect: Rect2) -> Rect2:
 
 # --- Navigation ---
 
-func _set_section(section: Section) -> void:
-	if section == _section and _spread == 0:
-		return
-	_section = section
-	_spread = 0
-	EventBus.play_sfx_requested.emit("ui_click")
-	_refresh()
-
-
+# Turns one page spread; past the end of a section the book continues in the next one (and back again)
 func _turn(direction: int) -> void:
-	var target: int = clampi(_spread + direction, 0, _spread_count() - 1)
-	if target == _spread:
-		return
-	_spread = target
+	var section: int = _section
+	var spread: int = _spread + direction
+	if spread < 0:
+		if section == Section.ITEMS:
+			return
+		section -= 1
+		spread = _spread_count_of(section as Section) - 1
+	elif spread >= _spread_count():
+		if section == Section.SPECIAL:
+			return
+		section += 1
+		spread = 0
+	_section = section as Section
+	_spread = spread
 	EventBus.play_sfx_requested.emit("ui_click")
 	_refresh()
 
@@ -263,7 +243,11 @@ func _on_compendium_updated() -> void:
 
 
 func _entries() -> Array:
-	match _section:
+	return _entries_of(_section)
+
+
+func _entries_of(section: Section) -> Array:
+	match section:
 		Section.ELEMENTAL:
 			return Compendium.discovered_elemental()
 		Section.SPECIAL:
@@ -272,7 +256,11 @@ func _entries() -> Array:
 
 
 func _spread_count() -> int:
-	return maxi(1, ceili(float(_entries().size()) / float(PER_PAGE[_section] * 2)))
+	return _spread_count_of(_section)
+
+
+func _spread_count_of(section: Section) -> int:
+	return maxi(1, ceili(float(_entries_of(section).size()) / float(PER_PAGE[section] * 2)))
 
 
 # --- Content ---
@@ -284,14 +272,14 @@ func _refresh() -> void:
 	var start: int = _spread * per_page * 2
 	_fill_page(_left, entries.slice(start, start + per_page))
 	_fill_page(_right, entries.slice(start + per_page, start + per_page * 2))
-	for i: int in _tab_dims.size():
-		_tab_dims[i].visible = i != _section
 	var count: int = _spread_count()
-	_prev_button.disabled = _spread <= 0
-	_next_button.disabled = _spread >= count - 1
+	_prev_button.disabled = _section == Section.ITEMS and _spread <= 0
+	_next_button.disabled = _section == Section.SPECIAL and _spread >= count - 1
 	_prev_button.modulate.a = 0.3 if _prev_button.disabled else 1.0
 	_next_button.modulate.a = 0.3 if _next_button.disabled else 1.0
-	_counter.text = "%s  ·  %d / %d" % [tr(SECTION_NAMES[_section]), _spread + 1, count]
+	var section_name: String = tr(SECTION_NAMES[_section])
+	_left_label.text = "%s  ·  %d / %d" % [section_name, _spread * 2 + 1, count * 2]
+	_right_label.text = "%s  ·  %d / %d" % [section_name, _spread * 2 + 2, count * 2]
 
 
 func _fill_page(page: Control, entries: Array) -> void:

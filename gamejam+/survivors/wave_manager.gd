@@ -1,8 +1,8 @@
 class_name WaveManager
 extends Node
 ## Monster Survivors waves: each wave spawns a quota of enemies (plus elites as the game gets harder) and ends when
-## everything is dead. A boss wave comes every "boss_every" waves; there is a rest every "rest_every" waves and a longer
-## preparation before a boss.
+## everything is dead. A boss wave comes every "boss_every" waves; there is a rest every "rest_every" waves and before
+## every boss, and the next wave only starts when the player presses the HUD button.
 
 const SWARM: Array[Dictionary] = [
 	{"scene": preload("res://enemies/skull.tscn"), "from_wave": 1},
@@ -17,16 +17,13 @@ const ELITES: Array[PackedScene] = [
 ]
 const BOSS: PackedScene = preload("res://enemies/boss_fallen_angel.tscn")
 
-enum Phase { BREAK, WAVE }
+enum Phase { BREAK, REST, WAVE }
 
 @export_group("Timing")
 ## Wait (s) before the first wave
 @export var first_wave_delay: float = 3.0
-## Rest (s) after every "rest_every" waves
-@export var rest_time: float = 15.0
+## Rest after every "rest_every" waves and before a boss: no timer, the player starts the next wave with a button
 @export var rest_every: int = 3
-## Preparation (s) before a boss wave
-@export var boss_prep_time: float = 20.0
 ## Short pause (s) between waves with no rest, so the "WAVE N" announcement can be read
 @export var wave_gap: float = 1.5
 ## A boss comes every N waves
@@ -82,9 +79,6 @@ var wave: int = 0
 
 var _phase: Phase = Phase.BREAK
 var _break_left: float = 0.0
-var _show_countdown: bool = false
-var _boss_next: bool = false
-var _last_shown_second: int = -1
 var _quota_left: int = 0
 var _elites_left: int = 0
 var _boss_pending: bool = false
@@ -96,7 +90,8 @@ var _elite_timer: float = 0.0
 func _ready() -> void:
 	if level == null:
 		level = get_parent() as Node2D
-	_begin_break(first_wave_delay, false, false)
+	EventBus.next_wave_requested.connect(_on_next_wave_requested)
+	_begin_break(first_wave_delay)
 
 
 func _process(delta: float) -> void:
@@ -105,6 +100,7 @@ func _process(delta: float) -> void:
 			_tick_break(delta)
 		Phase.WAVE:
 			_tick_wave(delta)
+		# Phase.REST: waits for the player (next_wave_requested)
 
 
 ## Quota of basic enemies of the wave.
@@ -124,28 +120,30 @@ func is_boss_wave(wave_number: int) -> bool:
 	return wave_number > 0 and wave_number % boss_every == 0
 
 
-# Starts the wait before the next wave
-func _begin_break(seconds: float, boss_next: bool, show_countdown: bool) -> void:
+# Short automatic wait before the next wave (first wave and between waves with no rest)
+func _begin_break(seconds: float) -> void:
 	_phase = Phase.BREAK
 	_break_left = seconds
-	_boss_next = boss_next
-	_show_countdown = show_countdown
-	_last_shown_second = -1
-	if show_countdown:
-		print("[Wave] - break of %.0fs before wave %d" % [seconds, wave + 1])
 
 
 func _tick_break(delta: float) -> void:
 	_break_left -= delta
-	if _show_countdown:
-		var second: int = ceili(maxf(_break_left, 0.0))
-		if second != _last_shown_second:
-			_last_shown_second = second
-			EventBus.wave_break_changed.emit(_break_left, _boss_next)
 	if _break_left <= 0.0:
-		if _show_countdown:
-			EventBus.wave_break_changed.emit(-1.0, false)
 		_start_wave()
+
+
+# Rest with no timer: the next wave only comes when the player asks for it
+func _begin_rest(boss_next: bool) -> void:
+	_phase = Phase.REST
+	print("[Wave] - rest before wave %d (boss: %s), waiting for the player" % [wave + 1, str(boss_next)])
+	EventBus.wave_rest_changed.emit(true, boss_next)
+
+
+func _on_next_wave_requested() -> void:
+	if _phase != Phase.REST:
+		return
+	EventBus.wave_rest_changed.emit(false, false)
+	_start_wave()
 
 
 func _start_wave() -> void:
@@ -199,12 +197,10 @@ func _check_wave_end() -> void:
 	EventBus.wave_cleared.emit(wave)
 	EventBus.play_sfx_requested.emit("room_clear")
 	var next_is_boss: bool = is_boss_wave(wave + 1)
-	if next_is_boss:
-		_begin_break(boss_prep_time, true, true)
-	elif wave % rest_every == 0:
-		_begin_break(rest_time, false, true)
+	if next_is_boss or wave % rest_every == 0:
+		_begin_rest(next_is_boss)
 	else:
-		_begin_break(wave_gap, false, false)
+		_begin_break(wave_gap)
 
 
 # Creates an enemy with a spawn warning; elites always get it, basic ones only when they are far from the player
