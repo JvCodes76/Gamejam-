@@ -2,7 +2,10 @@ extends CanvasLayer
 ## Pause menu: shows and hides according to EventBus.game_paused.
 
 @onready var _botao_continuar: Button = $Painel/VBox/BotaoContinuar
+@onready var _botao_config: Button = $Painel/VBox/BotaoConfig
 @onready var _botao_menu: Button = $Painel/VBox/BotaoMenu
+
+var _settings: CanvasLayer
 
 
 func _ready() -> void:
@@ -10,8 +13,11 @@ func _ready() -> void:
 	EventBus.game_paused.connect(_on_game_paused)
 	_botao_continuar.pressed.connect(_on_continuar_pressed)
 	_botao_menu.pressed.connect(_on_menu_pressed)
+	_settings = preload("res://ui/settings_menu.tscn").instantiate()
+	add_child(_settings)
+	_botao_config.pressed.connect(_settings.open)
 	_build_shake_toggle()
-	for button: BaseButton in [_botao_continuar, _botao_menu]:
+	for button: BaseButton in [_botao_continuar, _botao_config, _botao_menu]:
 		_add_ui_sounds(button)
 	print("[UI] - Pause menu ready")
 
@@ -41,7 +47,7 @@ func _on_reduce_shake_toggled(enabled: bool) -> void:
 
 # Handles the "pause" action (Esc / Start) to toggle the pause
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause") and not ItemManager.inventory_open:
+	if event.is_action_pressed("pause") and not ItemManager.inventory_open and not _settings.visible:
 		GameManager.toggle_pause()
 		get_viewport().set_input_as_handled()
 

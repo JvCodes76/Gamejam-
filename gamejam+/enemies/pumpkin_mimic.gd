@@ -4,7 +4,7 @@ extends EnemyBase
 ## Activates if it takes any damage or if the player gets within "wake_radius" px. While asleep, it does not count as an enemy
 ## (outside the "enemy" group), does not hurt the player and does not move; the hurtbox remains hittable.
 
-@export var wake_radius: float = 70.0
+@export var wake_radius: float = 210.0
 @export var anim_fps: float = 8.0
 
 var disguise_kind: Prop.Kind = Prop.Kind.PUMPKIN_PLAIN

@@ -44,7 +44,7 @@ const DEFS: Dictionary = {
 	Kind.GRAVE_CROSS: {"region": Rect2(98, 193, 29, 31), "rects": [Rect2(7, 20, 15, 9)], "shots": true, "vol": 18},
 	Kind.GRAVE_ROUND: {"region": Rect2(130, 196, 29, 28), "rects": [Rect2(5, 18, 19, 8)], "shots": true, "vol": 16},
 	Kind.GRAVE_BROKEN: {"region": Rect2(162, 197, 29, 27), "rects": [Rect2(5, 17, 19, 8)], "shots": true, "vol": 14},
-	Kind.DIRT_MOUND: {"region": Rect2(194, 192, 29, 31), "rects": []},
+	Kind.DIRT_MOUND: {"region": Rect2(194, 192, 29, 31), "rects": [], "z": -4},
 	Kind.CANDLES: {"region": Rect2(233, 204, 16, 16), "rects": []},
 	Kind.PUMPKIN_PLAIN: {"region": Rect2(258, 199, 27, 24), "rects": [Rect2(4, 15, 19, 8)]},
 	Kind.PUMPKIN_SMILE: {"region": Rect2(229, 231, 24, 20), "rects": [Rect2(3, 11, 18, 8)]},

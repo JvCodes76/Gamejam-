@@ -6,7 +6,7 @@ const PUMPKIN_KINDS: Array[Prop.Kind] = [Prop.Kind.PUMPKIN_PLAIN, Prop.Kind.PUMP
 
 @export var props_root: Node2D
 @export var mimic_scene: PackedScene
-@export_range(0.0, 1.0) var mimic_chance: float = 0.10
+@export_range(0.0, 1.0) var mimic_chance: float = 0.05
 ## Minimum number of mimics per run (if there are enough pumpkins).
 @export var min_mimics: int = 1
 

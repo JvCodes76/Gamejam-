@@ -9,6 +9,11 @@ const BOSS_MUSIC: String = "boss_theme"
 # Extensions tried in order (jsfxr exports .wav; .ogg is preferred if it exists)
 const SFX_EXTENSIONS: Array[String] = ["ogg", "wav"]
 const SFX_POOL_SIZE: int = 16
+# Music gain over the original files (2.0 = doubled, about +6 dB); the Music slider scales on top of it
+const MUSIC_GAIN_LINEAR: float = 2.0
+const SETTINGS_PATH: String = "user://settings.cfg"
+const SETTINGS_SECTION: String = "audio"
+const VOLUME_BUSES: Array[StringName] = [&"Master", &"Music", &"SFX"]
 # Volume (dB) per SFX name; anything not listed here plays at 0 dB
 const SFX_VOLUME_DB: Dictionary = {
 	"shoot": -8.0,
@@ -29,7 +34,7 @@ var _frame_counts: Dictionary = {}
 var _frame_id: int = -1
 # Music ducking: end (real ms) of the volume dip
 var _duck_until: int = 0
-var _music_base_db: float = 0.0
+var _music_base_db: float = linear_to_db(MUSIC_GAIN_LINEAR)
 # Name of the music currently playing (avoids restarting the same track)
 var _current_music: String = ""
 
@@ -39,6 +44,7 @@ func _ready() -> void:
 
 	_ensure_bus(&"Music")
 	_ensure_bus(&"SFX")
+	load_settings()
 
 	for _i: int in SFX_POOL_SIZE:
 		var sfx_player := AudioStreamPlayer.new()
@@ -176,6 +182,34 @@ func set_bus_volume(bus: StringName, linear: float) -> void:
 		return
 
 	AudioServer.set_bus_volume_db(idx, linear_to_db(clampf(linear, 0.0, 1.0)))
+
+
+# Returns the linear volume (0.0 to 1.0) of a bus
+func get_bus_volume(bus: StringName) -> float:
+	var idx: int = AudioServer.get_bus_index(bus)
+	if idx == -1:
+		return 1.0
+	return db_to_linear(AudioServer.get_bus_volume_db(idx))
+
+
+# Saves the volume of every bus to user://settings.cfg
+func save_settings() -> void:
+	var config := ConfigFile.new()
+	config.load(SETTINGS_PATH) # keeps other sections if the file exists
+	for bus: StringName in VOLUME_BUSES:
+		config.set_value(SETTINGS_SECTION, String(bus), get_bus_volume(bus))
+	var err: Error = config.save(SETTINGS_PATH)
+	if err != OK:
+		push_error("[Audio] - failed to save settings (error %d)" % err)
+
+
+# Applies the saved volumes (buses without a saved value stay at 100%)
+func load_settings() -> void:
+	var config := ConfigFile.new()
+	if config.load(SETTINGS_PATH) != OK:
+		return
+	for bus: StringName in VOLUME_BUSES:
+		set_bus_volume(bus, float(config.get_value(SETTINGS_SECTION, String(bus), 1.0)))
 
 
 # Creates the audio bus if it does not exist yet

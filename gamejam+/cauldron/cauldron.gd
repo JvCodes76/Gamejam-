@@ -6,6 +6,8 @@ extends Node2D
 @export var outline_width: float = 1.5
 @export var body_color: Color = Color(0.16, 0.16, 0.2)
 @export var rim_color: Color = Color(0.32, 0.32, 0.38)
+# Size of the cauldron in the world (scales the drawing, footprint and particles from the feet)
+@export var world_scale: float = 1.2
 # Extra reach distance of the interactor (the cauldron is bigger than an item)
 @export var interact_reach: float = 14.0
 # Bubble color with no potion ready
@@ -27,6 +29,7 @@ var _bubble_color: Color = Color.TRANSPARENT
 
 func _ready() -> void:
 	add_to_group("cauldron")
+	scale = Vector2.ONE * world_scale
 	_build_visual()
 	_build_footprint()
 	_build_particles()

@@ -32,6 +32,10 @@ horizontal_alignment = 1
 layout_mode = 2
 text = "Play"
 
+[node name="BotaoConfig" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Settings"
+
 [node name="BotaoSair" type="Button" parent="VBox"]
 layout_mode = 2
 text = "Quit"

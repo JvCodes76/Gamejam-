@@ -29,7 +29,7 @@ const BOSS_CAULDRON_MARGIN: Vector2 = Vector2(96.0, 96.0)
 @export var exterior_density: float = 1.0
 ## Pumpkins inside the rooms may become mimics (chance per pumpkin, at least min_mimics per graveyard)
 @export var pumpkin_mimic_scene: PackedScene = preload("res://enemies/pumpkin_mimic.tscn")
-@export_range(0.0, 1.0) var pumpkin_mimic_chance: float = 0.10
+@export_range(0.0, 1.0) var pumpkin_mimic_chance: float = 0.05
 @export var min_pumpkin_mimics: int = 1
 @export var void_color: Color = Color.BLACK
 
