@@ -1,7 +1,11 @@
 extends Node
 
 const SFX_PATH: String = "res://assets/audio/sfx/%s.%s"
-const MUSIC_PATH: String = "res://assets/audio/music/%s.ogg"
+const MUSIC_PATH: String = "res://assets/audio/music/%s.%s"
+const MUSIC_EXTENSIONS: Array[String] = ["ogg", "mp3"]
+# Música de fundo do jogo todo (menos a luta contra o boss) e música da bossfight
+const MAIN_MUSIC: String = "main_theme"
+const BOSS_MUSIC: String = "boss_theme"
 # Extensões tentadas na ordem (o jsfxr exporta .wav; .ogg tem preferência se existir)
 const SFX_EXTENSIONS: Array[String] = ["ogg", "wav"]
 const SFX_POOL_SIZE: int = 16
@@ -26,6 +30,8 @@ var _frame_id: int = -1
 # Ducking da música: fim (ms reais) do abaixamento
 var _duck_until: int = 0
 var _music_base_db: float = 0.0
+# Nome da música tocando agora (evita reiniciar a mesma faixa)
+var _current_music: String = ""
 
 
 func _ready() -> void:
@@ -48,6 +54,10 @@ func _ready() -> void:
 	EventBus.play_music_requested.connect(play_music)
 	EventBus.hitstop_requested.connect(_on_duck_requested)
 	EventBus.player_died.connect(_on_player_died)
+	EventBus.boss_spawned.connect(_on_boss_spawned)
+	EventBus.boss_defeated.connect(_on_boss_music_ended)
+	EventBus.scene_change_requested.connect(_on_scene_change_requested)
+	play_music(MAIN_MUSIC)
 	print("[Audio] - AudioManager pronto")
 
 
@@ -94,6 +104,21 @@ func _on_player_died() -> void:
 	duck_music(0.6)
 
 
+# Boss entrou na arena: troca para a música da bossfight
+func _on_boss_spawned(_boss: Node) -> void:
+	play_music(BOSS_MUSIC)
+
+
+# Boss derrotado: volta para a música principal
+func _on_boss_music_ended() -> void:
+	play_music(MAIN_MUSIC)
+
+
+# Troca de cena (menu, reinício, morte na bossfight): garante a música principal
+func _on_scene_change_requested(_path: String) -> void:
+	play_music(MAIN_MUSIC)
+
+
 # Stream do SFX pelo nome (cache; tenta .ogg e depois .wav; avisa só uma vez se não existir)
 func _get_sfx_stream(sfx_name: String) -> AudioStream:
 	if _stream_cache.has(sfx_name):
@@ -110,16 +135,27 @@ func _get_sfx_stream(sfx_name: String) -> AudioStream:
 	return stream
 
 
-# Toca uma música em loop no bus Music
+# Toca uma música em loop no bus Music (ignora se a mesma já estiver tocando)
 func play_music(music_name: String) -> void:
-	var stream: AudioStream = _load_stream(MUSIC_PATH % music_name)
-	if stream == null:
+	if music_name == _current_music and _music_player.playing:
 		return
 
-	var ogg: AudioStreamOggVorbis = stream as AudioStreamOggVorbis
-	if ogg != null:
-		ogg.loop = true
+	var stream: AudioStream = null
+	for ext: String in MUSIC_EXTENSIONS:
+		var path: String = MUSIC_PATH % [music_name, ext]
+		if ResourceLoader.exists(path):
+			stream = load(path) as AudioStream
+			break
+	if stream == null:
+		print("[Audio] - Aviso: música não encontrada: %s" % music_name)
+		return
 
+	if stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
+	elif stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = true
+
+	_current_music = music_name
 	_music_player.stream = stream
 	_music_player.play()
 	print("[Audio] - Música tocando: %s" % music_name)
@@ -128,6 +164,7 @@ func play_music(music_name: String) -> void:
 # Para a música atual
 func stop_music() -> void:
 	_music_player.stop()
+	_current_music = ""
 	print("[Audio] - Música parada")
 
 
@@ -150,15 +187,6 @@ func _ensure_bus(bus_name: StringName) -> void:
 	var idx: int = AudioServer.get_bus_count() - 1
 	AudioServer.set_bus_name(idx, bus_name)
 	print("[Audio] - Bus criado: %s" % bus_name)
-
-
-# Carrega o stream; se o arquivo não existir, apenas avisa e retorna null
-func _load_stream(path: String) -> AudioStream:
-	if not ResourceLoader.exists(path):
-		print("[Audio] - Aviso: arquivo não encontrado: %s" % path)
-		return null
-
-	return load(path) as AudioStream
 
 
 # Retorna um player livre do pool; se todos estiverem ocupados, usa o próximo em rodízio
