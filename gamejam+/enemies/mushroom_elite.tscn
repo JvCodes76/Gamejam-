@@ -27,7 +27,7 @@ texture = ExtResource("tex_0")
 hframes = 4
 
 [node name="HealthComponent" parent="." index="2"]
-max_health = 80
+max_health = 64
 
 [node name="CollisionShape2D" parent="Hurtbox" index="0"]
 position = Vector2(0, -26)

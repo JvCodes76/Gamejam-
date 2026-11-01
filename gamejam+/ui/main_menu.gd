@@ -24,6 +24,8 @@ func _ready() -> void:
 	_botao_survivors.pressed.connect(_on_survivors_pressed)
 	_botao_tutorial.pressed.connect(_on_tutorial_pressed)
 	_botao_sair.pressed.connect(_on_sair_pressed)
+	# In the browser quit() does nothing: the tab is closed by the player instead
+	_botao_sair.visible = not OS.has_feature("web")
 	for button: Button in [_botao_jogar, _botao_survivors, _botao_tutorial, _botao_config, _botao_sair]:
 		button.mouse_entered.connect(EventBus.play_sfx_requested.emit.bind("ui_hover"))
 		button.pressed.connect(EventBus.play_sfx_requested.emit.bind("ui_click"))

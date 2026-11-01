@@ -1,6 +1,6 @@
 [gd_resource type="Theme" format=3]
 
-[ext_resource type="FontFile" path="res://yoster-island/yoster.ttf" id="1_font"]
+[ext_resource type="FontFile" path="res://yoster-island/yoster_nexhex.ttf" id="1_font"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/button_9patch.png" id="2_btn"]
 
 [sub_resource type="StyleBoxTexture" id="btn_normal"]

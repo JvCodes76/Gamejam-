@@ -24,6 +24,9 @@ func _ready() -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	_load()
+	# Browsers only allow fullscreen from a click/key press, so the web build always opens windowed
+	if OS.has_feature("web"):
+		_mode = WindowMode.WINDOWED
 	_apply_all()
 
 
