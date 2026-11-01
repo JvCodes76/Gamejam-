@@ -1,0 +1,15 @@
+Hello! Welcome! You, my friend, are a witch's apprentice, and monsters are invading your forest! Use WASD to move around.
+
+Shocker, but those monsters really want to hurt you! Don't worry though, you have your potions to defend yourself! Press M1 to shoot where you're looking.
+
+Wow! Two items dropped!! Go up to them and press E to pick them up! If your bag is full, you can open it at any time with TAB and every item nearby will show up there, on the ground.
+
+This is your trusty cauldron, every graveyard has one, obviously. Press E to interact with it.
+
+This is the cauldron Screen! To make a new potion, drag the ingredients you want to use into the cauldron and hold ENTER
+
+When the potion is done brewing, press F to bottle it up.
+
+You're only an apprendice, so you just know the basics of every ingredient, to find out how they synergise and interact, experiment!
+
+That's the basics! Now go out there and get'em! And if you fail, remember, there's always the... next hex!!! Please laugh.
