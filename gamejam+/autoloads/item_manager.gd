@@ -15,6 +15,8 @@ var ground_entries: Array[Dictionary] = []
 var starting_items_seeded: bool = false
 # Items waiting on the inventory screen's floor (bag full)
 var pending_items: Array[ItemData] = []
+# Tutorial: the inventory cannot be opened by the player until the first item is picked up
+var inventory_locked: bool = false
 # True while the inventory screen is open
 var inventory_open: bool = false
 var shrink_upgrade_active: bool = false
@@ -121,6 +123,7 @@ func reset() -> void:
 	ground_entries.clear()
 	pending_items.clear()
 	starting_items_seeded = false
+	inventory_locked = false
 	shrink_upgrade_active = false
 	floor_level = 1
 	potion_slots = [null, null]

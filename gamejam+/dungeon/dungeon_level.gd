@@ -94,6 +94,8 @@ const BOSS_CAULDRON_MARGIN: Vector2 = Vector2(96.0, 96.0)
 @export var debug_boss_key: Key = KEY_B
 
 var enemy_root: Node2D
+## Tutorial script (null outside the tutorial)
+var tutorial: TutorialDirector = null
 var rooms: Array[RoomData] = []
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -116,8 +118,9 @@ func _ready() -> void:
 	_player = $Player as Node2D
 
 	var total: int = rooms_per_cemetery.size()
+	var is_tutorial: bool = GameManager.tutorial_mode
 	# [DEBUG] Boss fight shortcut: skips to the last graveyard
-	var jump_to_boss: bool = OS.is_debug_build() and (debug_start_at_boss or GameManager.debug_boss_requested)
+	var jump_to_boss: bool = not is_tutorial and OS.is_debug_build() and (debug_start_at_boss or GameManager.debug_boss_requested)
 	GameManager.debug_boss_requested = false
 	if jump_to_boss:
 		GameManager.cemetery_index = total
@@ -129,10 +132,19 @@ func _ready() -> void:
 		RoomData.Type.HORDE: horde_room_weight,
 		RoomData.Type.EMPTY: empty_room_weight,
 	}
-	rooms = DungeonGenerator.generate(rooms_per_cemetery[index - 1], is_final, weights, cell_pitch_tiles, DungeonBuilder.TILE, _rng)
+	if is_tutorial:
+		rooms = DungeonGenerator.generate_tutorial(cell_pitch_tiles, DungeonBuilder.TILE)
+		tutorial = TutorialDirector.new()
+		tutorial.name = "TutorialDirector"
+		add_child(tutorial)
+		tutorial.setup(self)
+	else:
+		rooms = DungeonGenerator.generate(rooms_per_cemetery[index - 1], is_final, weights, cell_pitch_tiles, DungeonBuilder.TILE, _rng)
 	var builder: DungeonBuilder = DungeonBuilder.new()
 	builder.build(self, rooms, corridor_width_tiles, prop_density, exterior_margin_tiles, exterior_density, _rng)
-	_spawn_pumpkin_mimics()
+	# The tutorial has no mimics
+	if not is_tutorial:
+		_spawn_pumpkin_mimics()
 	_populate_rooms()
 	if jump_to_boss:
 		_debug_place_at_boss()
@@ -142,6 +154,8 @@ func _ready() -> void:
 	if debug_room_colors:
 		_paint_debug_colors()
 	_print_layout(index, total)
+	if is_tutorial:
+		return
 	EventBus.cemetery_changed.emit(index, total)
 
 
@@ -151,7 +165,7 @@ func _exit_tree() -> void:
 
 # [DEBUG] Shortcut key: reloads the level already in the last graveyard, at the boss door.
 func _input(event: InputEvent) -> void:
-	if not OS.is_debug_build() or _leaving:
+	if not OS.is_debug_build() or _leaving or GameManager.tutorial_mode:
 		return
 	var key: InputEventKey = event as InputEventKey
 	if key == null or not key.pressed or key.echo or not key.shift_pressed:
@@ -192,6 +206,9 @@ func _physics_process(_delta: float) -> void:
 		_encounters[found].on_player_entered()
 	if _portal_position != Vector2.INF and feet.distance_to(_portal_position) <= portal_radius:
 		_leaving = true
+		if GameManager.tutorial_mode:
+			GameManager.finish_tutorial()
+			return
 		print("[Dungeon] - graveyard exit %d" % GameManager.cemetery_index)
 		GameManager.advance_cemetery()
 

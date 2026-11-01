@@ -2,6 +2,13 @@ class_name Bullet
 extends Hitbox
 
 const BULLET_SCENE_PATH: String = "res://projectiles/bullet.tscn"
+# Fire visual (Dragon's Blood): procedural glow texture, cached so the many flames share it
+const FLAME_TEXTURE_SIZE: int = 32
+const FLAME_SPRITE_SCALE: float = 0.55
+const FLAME_PARTICLE_COUNT: int = 12
+const FLAME_PARTICLE_LIFETIME: float = 0.3
+## Flask spin while flying (rad/s)
+const FLASK_SPIN_SPEED: float = 14.0
 
 @export var speed: float = 300.0
 @export var lifetime: float = 1.5
@@ -33,6 +40,10 @@ var _mud_distance: float = 0.0
 var _cloud_distance: float = 0.0
 # Trail (Line2D in global coordinates) with the bullet's latest points
 var _trail: Line2D
+var _spin_speed: float = FLASK_SPIN_SPEED
+
+static var _flame_texture: GradientTexture2D = null
+static var _flame_material: CanvasItemMaterial = null
 
 
 func _ready() -> void:
@@ -79,6 +90,7 @@ func _physics_process(delta: float) -> void:
 	if _homing > 0.0:
 		_steer_toward_enemy(delta)
 	global_position += direction * speed * delta
+	($Sprite2D as Sprite2D).rotation += _spin_speed * delta
 	_update_trail()
 	if _aoe_radius > 0.0:
 		_aoe_left -= delta
@@ -132,8 +144,77 @@ func setup_flame(new_direction: Vector2) -> void:
 	bounce_count = 0
 	_holy = false
 	set_tint(CombatConstants.FLAME_COLOR)
-	($Sprite2D as Sprite2D).scale *= 1.3
+	_apply_flame_visual()
 	setup(new_direction)
+
+
+## Replaces the placeholder icon with a glowing fire ball (additive) that flickers and sheds embers.
+func _apply_flame_visual() -> void:
+	var sprite: Sprite2D = $Sprite2D as Sprite2D
+	sprite.texture = _get_flame_texture()
+	sprite.material = _get_flame_material()
+	# The colors are already in the texture; the tint would darken it
+	sprite.modulate = Color.WHITE
+	sprite.scale = Vector2.ONE * FLAME_SPRITE_SCALE * randf_range(0.85, 1.2)
+	sprite.rotation = randf() * TAU
+	_spin_speed = 0.0
+	($Sprite2D/Liquid as Sprite2D).visible = false
+	add_child(_build_flame_particles())
+
+
+# Radial gradient: white-yellow core, orange body and red fading edge
+static func _get_flame_texture() -> GradientTexture2D:
+	if _flame_texture != null:
+		return _flame_texture
+	var gradient: Gradient = Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.3, 0.65, 1.0])
+	gradient.colors = PackedColorArray([
+		Color(1.0, 0.95, 0.6, 1.0),
+		Color(1.0, 0.55, 0.1, 0.9),
+		Color(0.85, 0.15, 0.02, 0.45),
+		Color(0.5, 0.0, 0.0, 0.0),
+	])
+	_flame_texture = GradientTexture2D.new()
+	_flame_texture.gradient = gradient
+	_flame_texture.fill = GradientTexture2D.FILL_RADIAL
+	_flame_texture.fill_from = Vector2(0.5, 0.5)
+	_flame_texture.fill_to = Vector2(1.0, 0.5)
+	_flame_texture.width = FLAME_TEXTURE_SIZE
+	_flame_texture.height = FLAME_TEXTURE_SIZE
+	return _flame_texture
+
+
+static func _get_flame_material() -> CanvasItemMaterial:
+	if _flame_material == null:
+		_flame_material = CanvasItemMaterial.new()
+		_flame_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return _flame_material
+
+
+# Embers that stay where they were born (global space) and rise while shrinking and turning dark red
+func _build_flame_particles() -> CPUParticles2D:
+	var particles: CPUParticles2D = CPUParticles2D.new()
+	particles.texture = _get_flame_texture()
+	particles.material = _get_flame_material()
+	particles.local_coords = false
+	particles.amount = FLAME_PARTICLE_COUNT
+	particles.lifetime = FLAME_PARTICLE_LIFETIME
+	particles.direction = Vector2.UP
+	particles.spread = 180.0
+	particles.initial_velocity_min = 6.0
+	particles.initial_velocity_max = 22.0
+	particles.gravity = Vector2(0.0, -45.0)
+	particles.scale_amount_min = 0.12
+	particles.scale_amount_max = 0.3
+	var shrink: Curve = Curve.new()
+	shrink.add_point(Vector2(0.0, 1.0))
+	shrink.add_point(Vector2(1.0, 0.0))
+	particles.scale_amount_curve = shrink
+	var ramp: Gradient = Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+	ramp.colors = PackedColorArray([Color(1.0, 0.85, 0.3, 1.0), Color(1.0, 0.4, 0.05, 0.8), Color(0.4, 0.05, 0.0, 0.0)])
+	particles.color_ramp = ramp
+	return particles
 
 
 ## Nearest living enemy not yet hit, within the homing range; null if none.
@@ -185,7 +266,8 @@ func _aoe_tick() -> void:
 ## Sets the bullet color (sprite and impact particles).
 func set_tint(color: Color) -> void:
 	_tint = color
-	($Sprite2D as Sprite2D).modulate = color
+	# The flask stays as drawn; only the liquid takes the color
+	($Sprite2D/Liquid as Sprite2D).modulate = color
 	if _trail != null:
 		_trail.gradient.set_color(0, Color(color, 0.0))
 		_trail.gradient.set_color(1, Color(color, 0.7))
