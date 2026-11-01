@@ -7,6 +7,9 @@ extends Node2D
 const ROOM_TRIGGER_INSET: float = 40.0
 # [DEBUG] Distance (px) from the player to the boss door, on the outside, in the debug shortcut
 const DEBUG_BOSS_DOOR_DISTANCE: float = 48.0
+# Portal sprite sheet (square frames side by side) and animation speed
+const PORTAL_SHEET_PATH: String = "res://assets/sprites/Portal-Sheet.png"
+const PORTAL_FPS: float = 10.0
 # Boss arena cauldron: distance (px) from the left wall and from the far wall
 const BOSS_CAULDRON_MARGIN: Vector2 = Vector2(96.0, 96.0)
 
@@ -62,7 +65,7 @@ const BOSS_CAULDRON_MARGIN: Vector2 = Vector2(96.0, 96.0)
 @export var boss_health_multiplier: float = 100.0
 @export var boss_scale: float = 2.6
 @export var boss_tint: Color = Color(1.0, 0.45, 0.45)
-@export var boss_move_speed_multiplier: float = 0.8
+@export var boss_move_speed_multiplier: float = 1.0
 @export var boss_points: int = 500
 
 @export_group("Modo infinito")
@@ -127,14 +130,15 @@ func _ready() -> void:
 		RoomData.Type.EMPTY: empty_room_weight,
 	}
 	rooms = DungeonGenerator.generate(rooms_per_cemetery[index - 1], is_final, weights, cell_pitch_tiles, DungeonBuilder.TILE, _rng)
-	DungeonBuilder.new().build(self, rooms, corridor_width_tiles, prop_density, exterior_margin_tiles, exterior_density, _rng)
+	var builder: DungeonBuilder = DungeonBuilder.new()
+	builder.build(self, rooms, corridor_width_tiles, prop_density, exterior_margin_tiles, exterior_density, _rng)
 	_spawn_pumpkin_mimics()
 	_populate_rooms()
 	if jump_to_boss:
 		_debug_place_at_boss()
 	var minimap: Minimap = get_node_or_null("Minimap") as Minimap
 	if minimap != null:
-		minimap.setup(rooms, _player)
+		minimap.setup(rooms, _player, builder.corridor_rects)
 	if debug_room_colors:
 		_paint_debug_colors()
 	_print_layout(index, total)
@@ -291,19 +295,26 @@ func _drop_boss_carryover(room: RoomData) -> void:
 	print("[Dungeon] - boss legendary brought to the spawn: %s" % item.id)
 
 
-# Purple portal at the center of the exit room (placeholder until the sprite exists).
+# Animated portal (sprite sheet of PORTAL_FRAMES frames) at the center of the exit room.
 func _build_portal(room: RoomData) -> void:
 	_portal_position = room.center()
-	var portal: Polygon2D = Polygon2D.new()
-	var points: PackedVector2Array = PackedVector2Array()
-	for i: int in 24:
-		var a: float = TAU * float(i) / 24.0
-		points.append(Vector2(cos(a) * portal_radius, sin(a) * portal_radius * 0.6))
-	portal.polygon = points
-	portal.color = RoomData.DEBUG_COLORS[RoomData.Type.EXIT]
+	var sheet: Texture2D = load(PORTAL_SHEET_PATH) as Texture2D
+	var frames: SpriteFrames = SpriteFrames.new()
+	frames.set_animation_speed(&"default", PORTAL_FPS)
+	frames.set_animation_loop(&"default", true)
+	var frame_size: int = sheet.get_height()
+	for i: int in sheet.get_width() / frame_size:
+		var atlas: AtlasTexture = AtlasTexture.new()
+		atlas.atlas = sheet
+		atlas.region = Rect2(i * frame_size, 0, frame_size, frame_size)
+		frames.add_frame(&"default", atlas)
+	var portal: AnimatedSprite2D = AnimatedSprite2D.new()
+	portal.sprite_frames = frames
+	portal.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portal.position = _portal_position
 	portal.z_index = -8
 	add_child(portal)
+	portal.play(&"default")
 
 
 # [DEBUG] Semi-transparent rectangle in the color of each room's type.

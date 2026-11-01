@@ -17,6 +17,8 @@ extends CanvasLayer
 @export var bag_position_normal: Vector2 = Vector2(200, 200)
 @export var bag_position_cauldron: Vector2 = Vector2(160, 200)
 @export var vessel_position: Vector2 = Vector2(470, 210)
+# Visual and physical size of the cauldron in the brewing menu (multiplies the cauldron's size_multiplier)
+@export var vessel_scale: float = 1.2
 @export var brew_time: float = 3.0
 # How many times faster the progress decays when releasing brew
 @export var brew_decay_speed: float = 3.0
@@ -269,7 +271,7 @@ func _viewport_to_global(p: Vector2) -> Vector2:
 func _open_vessel() -> void:
 	var state: CauldronState = _cauldron.state
 	_vessel = cauldron_vessel_scene.instantiate() as CauldronVessel
-	_vessel.size_multiplier = state.size_multiplier
+	_vessel.size_multiplier = state.size_multiplier * vessel_scale
 	_vessel.position = vessel_position
 	_viewport.add_child(_vessel)
 	for entry: Dictionary in state.entries:
@@ -648,7 +650,7 @@ func _set_brew_ui_visible(value: bool) -> void:
 
 # Positions the bar below the cauldron
 func _layout_brew_ui() -> void:
-	var bottom: float = vessel_position.y + 55.0 * _cauldron.state.size_multiplier + CauldronLayout.WALL_THICKNESS + 6.0
+	var bottom: float = vessel_position.y + 55.0 * _cauldron.state.size_multiplier * vessel_scale + CauldronLayout.WALL_THICKNESS + 6.0
 	_brew_bar.position = Vector2(vessel_position.x - 60.0, bottom)
 	_brew_label.position = Vector2(vessel_position.x - 80.0, bottom + 8.0)
 

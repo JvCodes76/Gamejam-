@@ -3,9 +3,13 @@ extends Area2D
 ## Healing orb (Unethical Butcher recipe): slightly attracts the player and heals when collected; disappears after a few seconds.
 
 const ORB_HOVER: float = 8.0
+const HEART_LIFETIME: float = 20.0
+const HEART_COLOR: Color = Color(0.95, 0.15, 0.25)
 
 var heal_amount: int = SynergyConstants.BUTCHER_ORB_HEAL
 var lifetime: float = SynergyConstants.BUTCHER_ORB_LIFETIME
+## Heart (boss drop): heals this fraction of the player's max health instead of heal_amount (0 = plain orb)
+var heal_fraction: float = 0.0
 
 var _age: float = 0.0
 var _collected: bool = false
@@ -20,6 +24,16 @@ static func spawn(scene: Node, pos: Vector2) -> HealOrb:
 	return orb
 
 
+## Heart dropped by the boss: lasts longer and heals a fraction of the player's max health.
+static func spawn_heart(scene: Node, pos: Vector2, fraction: float) -> HealOrb:
+	var orb: HealOrb = (load("res://combat/heal_orb.tscn") as PackedScene).instantiate() as HealOrb
+	orb.global_position = pos
+	orb.heal_fraction = fraction
+	orb.lifetime = HEART_LIFETIME
+	scene.add_child.call_deferred(orb)
+	return orb
+
+
 func _ready() -> void:
 	var shape: CircleShape2D = CircleShape2D.new()
 	shape.radius = SynergyConstants.BUTCHER_ORB_PICKUP_RADIUS
@@ -29,6 +43,9 @@ func _ready() -> void:
 
 
 func _draw() -> void:
+	if heal_fraction > 0.0:
+		_draw_heart()
+		return
 	var pulse: float = 0.5 + 0.5 * sin(_age * 8.0)
 	var glow: Color = SynergyConstants.BUTCHER_ORB_COLOR_A.lerp(SynergyConstants.BUTCHER_ORB_COLOR_B, pulse)
 	# The node origin is the ground (y-sort, z 0); the orb hovers ORB_HOVER px above, with a shadow on the ground
@@ -37,6 +54,21 @@ func _draw() -> void:
 	draw_circle(center, 6.0, Color(glow, 0.25))
 	draw_circle(center, 4.0, Color(SynergyConstants.BUTCHER_ORB_COLOR_A, 0.9))
 	draw_circle(center, 2.0, Color(SynergyConstants.BUTCHER_ORB_COLOR_B, 0.95))
+
+
+## Pixel-style heart: two lobes and a point, pulsing, with a shadow on the ground.
+func _draw_heart() -> void:
+	var beat: float = 1.0 + 0.12 * sin(_age * 7.0)
+	draw_circle(Vector2.ZERO, 4.0, Color(0.0, 0.0, 0.0, 0.25))
+	var c: Vector2 = Vector2(0.0, -ORB_HOVER - 2.0)
+	var points: PackedVector2Array = PackedVector2Array([
+		c + Vector2(0.0, 6.0) * beat, c + Vector2(-6.0, 0.0) * beat, c + Vector2(-6.0, -3.0) * beat,
+		c + Vector2(-3.5, -5.5) * beat, c + Vector2(0.0, -3.0) * beat, c + Vector2(3.5, -5.5) * beat,
+		c + Vector2(6.0, -3.0) * beat, c + Vector2(6.0, 0.0) * beat,
+	])
+	draw_circle(c, 9.0 * beat, Color(HEART_COLOR, 0.2))
+	draw_colored_polygon(points, HEART_COLOR)
+	draw_circle(c + Vector2(-3.0, -2.5), 1.2, Color(1.0, 0.8, 0.85, 0.9))
 
 
 func _physics_process(delta: float) -> void:
@@ -70,7 +102,10 @@ func _collect(player: Node2D) -> void:
 		return
 	_collected = true
 	var health: HealthComponent = player.get_node_or_null("HealthComponent") as HealthComponent
+	var amount: int = heal_amount
+	if heal_fraction > 0.0 and health != null:
+		amount = maxi(roundi(health.max_health * heal_fraction), 1)
 	if health != null:
-		health.heal(heal_amount)
-	print("[Synergy] - orb collected (+%d health)" % heal_amount)
+		health.heal(amount)
+	print("[Synergy] - orb collected (+%d health)" % amount)
 	queue_free()

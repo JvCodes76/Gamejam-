@@ -25,6 +25,10 @@ const DEATH_RECT_INTERVAL: float = 1.0
 @export var adapt_thresholds: Array[float] = [0.7, 0.25]
 ## Chance (0-1) of dropping an item on each damage taken
 @export_range(0.0, 1.0) var drop_chance_per_damage: float = 0.05
+## Chance (0-1) of dropping a heart on each damage taken (rolled separately from the item)
+@export_range(0.0, 1.0) var heart_chance_per_damage: float = 0.05
+## Fraction of the player's max health healed by the heart
+@export_range(0.0, 1.0) var heart_heal_fraction: float = 0.2
 
 @export_group("Animation")
 @export var idle_texture: Texture2D
@@ -47,7 +51,7 @@ const DEATH_RECT_INTERVAL: float = 1.0
 
 @export_group("Rage")
 ## Time (s) frozen (wings closed) at the last threshold, before coming back in rage
-@export var rage_freeze_time: float = 7.0
+@export var rage_freeze_time: float = 10.0
 ## Chase speed multiplier while in rage
 @export var rage_speed_multiplier: float = 1.6
 ## Sprite tint while in rage
@@ -59,12 +63,12 @@ const DEATH_RECT_INTERVAL: float = 1.0
 ## Time (s) between the end of an attack and the next one
 @export var attack_cooldown: float = 3.0
 ## When the player is closer than this (px), the explosion is also an option
-@export var explosion_trigger_range: float = 130.0
+@export var explosion_trigger_range: float = 180.0
 ## Chance (0-1) of choosing the explosion when the player is in range (otherwise the laser)
-@export_range(0.0, 1.0) var explosion_chance: float = 0.6
+@export_range(0.0, 1.0) var explosion_chance: float = 0.85
 ## Time (s) of the explosion telegraph (wings closing and circle filling)
-@export var explosion_windup: float = 1.1
-@export var explosion_radius: float = 120.0
+@export var explosion_windup: float = 0.7
+@export var explosion_radius: float = 165.0
 @export var explosion_damage: int = 30
 ## Time (s) with the wings open again before the boss moves
 @export var recover_time: float = 0.5
@@ -73,19 +77,21 @@ const DEATH_RECT_INTERVAL: float = 1.0
 @export var laser_texture: Texture2D
 @export var laser_frames: int = 6
 ## Time (s) of the laser charge
-@export var laser_charge_time: float = 1.3
+@export var laser_charge_time: float = 1.6
 ## Fraction of the charge during which the aim still follows the player (then it locks)
 @export_range(0.0, 1.0) var laser_track_fraction: float = 0.65
 ## Maximum turn speed (degrees/s) of the aim while tracking
-@export var laser_track_speed_degrees: float = 150.0
-@export var laser_fire_time: float = 0.8
+@export var laser_track_speed_degrees: float = 110.0
+@export var laser_fire_time: float = 0.6
 ## Angle (degrees) the beam sweeps while firing, in a random direction
 @export var laser_sweep_degrees: float = 45.0
-@export var laser_length: float = 520.0
-@export var laser_width: float = 14.0
-@export var laser_damage: int = 20
+@export var laser_length: float = 440.0
+@export var laser_width: float = 10.0
+@export var laser_damage: int = 12
 ## Interval (s) between hits on the player while inside the beam
 @export var laser_tick: float = 0.2
+## Fraction of the chase speed kept while charging or firing the laser (the explosion and adaptation keep it still)
+@export_range(0.0, 1.0) var laser_move_fraction: float = 0.4
 
 # Items the boss is immune to: id -> ItemData (equal ids = same item)
 var _immune: Dictionary = {}
@@ -140,11 +146,13 @@ func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 
 
-## Stationary while adapting (wings closed).
+## Stationary while adapting (wings closed) and during the explosion; keeps moving (slower) with the laser.
 func _chase_velocity(target: Node2D) -> Vector2:
-	if _anim_state != AnimState.IDLE:
-		return Vector2.ZERO
 	var speed: float = rage_speed_multiplier if _raging else 1.0
+	if _anim_state == AnimState.ATTACK and (_attack == Attack.LASER_CHARGE or _attack == Attack.LASER_FIRE):
+		speed *= laser_move_fraction
+	elif _anim_state != AnimState.IDLE:
+		return Vector2.ZERO
 	return super(target) * speed
 
 
@@ -228,11 +236,14 @@ func _play_adapt_feedback() -> void:
 	EventBus.play_sfx_requested.emit("room_lock")
 
 
-# 5% (default) chance of dropping an item on each damage taken.
+# 5% (default) chance of dropping an item and, separately, 5% of dropping a heart on each damage taken.
 func _on_damaged(_amount: int) -> void:
 	if randf() < drop_chance_per_damage:
 		print("[Boss] - damage dropped an item")
 		EventBus.item_drop_requested.emit(LootManager.Source.BOSS_HIT, global_position)
+	if randf() < heart_chance_per_damage:
+		print("[Boss] - damage dropped a heart")
+		HealOrb.spawn_heart(get_tree().current_scene, global_position + Vector2(randf_range(-24.0, 24.0), randf_range(8.0, 24.0)), heart_heal_fraction)
 
 
 # Idle in a loop; adaptation: closes the wings, holds and opens again.

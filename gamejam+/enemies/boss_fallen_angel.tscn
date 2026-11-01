@@ -23,7 +23,7 @@ script = ExtResource("2_boss")
 idle_texture = ExtResource("3_idle")
 wings_texture = ExtResource("4_wings")
 laser_texture = ExtResource("5_laser")
-move_speed = 45.0
+move_speed = 60.0
 
 [node name="CollisionShape2D" parent="." index="0"]
 position = Vector2(0, -10)

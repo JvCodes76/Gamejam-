@@ -22,9 +22,9 @@ const TARGET_AIM_OFFSET: Vector2 = Vector2(0.0, -12.0)
 @export var shot_count: int = 3
 ## Angle (degrees) between spores of the same volley
 @export var shot_spread_degrees: float = 14.0
-@export var shot_speed: float = 120.0
+@export var shot_speed: float = 85.0
 ## Lifetime of each spore (s); range = speed * lifetime
-@export var shot_lifetime: float = 2.5
+@export var shot_lifetime: float = 3.5
 @export var spore_damage: int = 15
 ## Maximum distance (px) to the target to shoot
 @export var shot_range: float = 320.0

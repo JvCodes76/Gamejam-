@@ -110,6 +110,8 @@ const EXTERIOR_CHANCE: float = 0.6
 const EXTERIOR_GAP_FILL_TILES: int = 10
 
 var corridor_width: float = 64.0
+## Corridor floor pieces per pair of connected rooms: Vector2i(lower index, higher index) -> Array[Rect2] (used by the minimap)
+var corridor_rects: Dictionary = {}
 
 var _rng: RandomNumberGenerator
 var _image: Image
@@ -154,6 +156,7 @@ func build(root: Node2D, rooms: Array[RoomData], corridor_width_tiles: int, dens
 				var other: RoomData = rooms[door.neighbor]
 				var pieces: Array[Rect2] = _corridor_rects(rooms[index], other, door, other.door_to(index))
 				corridors.append_array(pieces)
+				corridor_rects[Vector2i(index, door.neighbor)] = pieces
 				if pieces.size() == 1:
 					straight.append(pieces[0])
 	for room: RoomData in rooms:
