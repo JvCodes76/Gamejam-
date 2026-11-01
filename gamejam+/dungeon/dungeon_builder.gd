@@ -2,7 +2,7 @@ class_name DungeonBuilder
 extends RefCounted
 ## Builds the continuous map of a graveyard: varied floor (TileMapLayer), fence walls with doors
 ## (arches) only on the top/bottom walls, straight and U-shaped corridors, props inside and the woods around (exterior).
-## Outside the woods the void stays black.
+## The woods are wide enough to fill the camera view from anywhere the player can stand; beyond them the void stays black.
 
 const TILE: int = 16
 const TILESET_PATH: String = "res://assets/tilesets/halloween/halloween_tileset.tres"
@@ -108,6 +108,9 @@ const EXTERIOR_STEP_TILES: int = 4
 const EXTERIOR_CHANCE: float = 0.6
 # Holes/notches of void in the woods narrower than 2x this (tiles) become grass
 const EXTERIOR_GAP_FILL_TILES: int = 10
+# Woods around the Monster Survivors arena (tiles beyond the hand-painted ground): covers the camera view
+# (half of 640x360 plus the look-ahead) when the player stands at the fence
+const ENCLOSURE_EXTERIOR_TILES: int = 26
 
 var corridor_width: float = 64.0
 ## Corridor floor pieces per pair of connected rooms: Vector2i(lower index, higher index) -> Array[Rect2] (used by the minimap)
@@ -122,6 +125,8 @@ var _light_blue: Array[Vector2i] = []
 var _floor: Dictionary = {}
 var _claimed: Dictionary = {}
 var _exterior: Dictionary = {}
+# World position of the ground layer's (0, 0) cell corner (the survivors arena ground sits 8 px lower)
+var _ground_offset: Vector2 = Vector2.ZERO
 
 
 ## Builds everything inside "root" (Ground, Walls and Props nodes with y-sort).
@@ -183,7 +188,7 @@ func build(root: Node2D, rooms: Array[RoomData], corridor_width_tiles: int, dens
 		_decorate_floor(room)
 		_scatter_props(props, room, density)
 	var interior_props: int = props.get_child_count()
-	_scatter_exterior(props, rooms, corridors, exterior_density)
+	_scatter_exterior(props, _all_rects(rooms, corridors), exterior_density)
 	print("[Dungeon] - map built: %d rooms, %d nodes inside, %d in the woods" % [rooms.size(), interior_props, props.get_child_count() - interior_props])
 
 
@@ -210,7 +215,29 @@ func build_enclosure(ground: TileMapLayer, walls: Node2D, props: Node2D, rect: R
 		var under_corner: bool = in_last_row and (center.x < rect.position.x + TILE * 2.0 or center.x > rect.end.x - TILE * 2.0)
 		if not rect.has_point(center) or center.y < top_base or under_corner:
 			_set_grass(cell)
+	_paint_enclosure_exterior(props, rect)
 	print("[Dungeon] - arena fenced: %s" % str(rect))
+
+
+# Grass and woods (decoration only) all around the arena, so the view past the fence is never black void.
+func _paint_enclosure_exterior(props: Node2D, rect: Rect2) -> void:
+	_ground_offset = _ground.global_position
+	var used: Rect2i = _ground.get_used_rect()
+	var area: Rect2i = used.grow(ENCLOSURE_EXTERIOR_TILES)
+	for y: int in range(area.position.y, area.end.y):
+		for x: int in range(area.position.x, area.end.x):
+			var cell: Vector2i = Vector2i(x, y)
+			if used.has_point(cell) and _ground.get_cell_source_id(cell) != -1:
+				continue
+			_exterior[cell] = true
+			_set_grass(cell)
+	# The grass ring behind the fence (inside the hand-painted ground) also takes trees, past the clear margin
+	for cell: Vector2i in _ground.get_used_cells():
+		var center: Vector2 = _ground.to_global(_ground.map_to_local(cell))
+		if not rect.has_point(center):
+			_exterior[cell] = true
+	var keep_clear: Array[Rect2] = [rect]
+	_scatter_exterior(props, keep_clear, 1.0)
 
 
 # --- Corridors ---
@@ -611,12 +638,15 @@ func _all_rects(rooms: Array[RoomData], corridors: Array[Rect2]) -> Array[Rect2]
 
 
 # Trees, bushes, leaves and pumpkins in the woods, away from the fences (decoration only: no collision).
-func _scatter_exterior(props: Node2D, rooms: Array[RoomData], corridors: Array[Rect2], density: float) -> void:
+# "keep_clear" are the walkable areas (world px): no prop closer than EXTERIOR_CLEAR_TILES to them.
+func _scatter_exterior(props: Node2D, keep_clear: Array[Rect2], density: float) -> void:
 	if density <= 0.0:
 		return
 	var near: Dictionary = {}
-	for rect: Rect2 in _all_rects(rooms, corridors):
-		for cell: Vector2i in _cells_of(rect.grow(float(EXTERIOR_CLEAR_TILES * TILE))):
+	for rect: Rect2 in keep_clear:
+		var grown: Rect2 = rect.grow(float(EXTERIOR_CLEAR_TILES * TILE))
+		grown.position -= _ground_offset
+		for cell: Vector2i in _cells_of(grown):
 			near[cell] = true
 	var chance: float = clampf(EXTERIOR_CHANCE * density, 0.0, 1.0)
 	for cell: Vector2i in _exterior.keys():
@@ -625,7 +655,7 @@ func _scatter_exterior(props: Node2D, rooms: Array[RoomData], corridors: Array[R
 		if near.has(cell) or _rng.randf() > chance:
 			continue
 		var kind: Prop.Kind = _pick_kind(EXTERIOR_WEIGHTS)
-		var pos: Vector2 = ((Vector2(cell) + Vector2(_rng.randf(), _rng.randf())) * TILE).snapped(Vector2.ONE)
+		var pos: Vector2 = ((Vector2(cell) + Vector2(_rng.randf(), _rng.randf())) * TILE).snapped(Vector2.ONE) + _ground_offset
 		# The whole sprite must sit on grass (otherwise the tree canopy invades the black void)
 		if not _over_exterior(Rect2(pos + Prop.local_rect(kind).position, Prop.local_rect(kind).size)):
 			continue
@@ -638,6 +668,7 @@ func _scatter_exterior(props: Node2D, rooms: Array[RoomData], corridors: Array[R
 
 # True if all cells under the rectangle (px) are exterior grass.
 func _over_exterior(rect: Rect2) -> bool:
+	rect.position -= _ground_offset
 	var first: Vector2i = Vector2i(floori(rect.position.x / TILE), floori(rect.position.y / TILE))
 	var last: Vector2i = Vector2i(floori((rect.end.x - 1.0) / TILE), floori((rect.end.y - 1.0) / TILE))
 	for cy: int in range(first.y, last.y + 1):

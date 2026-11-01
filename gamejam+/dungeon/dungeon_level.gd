@@ -29,7 +29,7 @@ const AMBIENCE_SCENE: PackedScene = preload("res://ambience/ambience_layer.tscn"
 ## Multiplier for the amount of decorative props
 @export var prop_density: float = 1.0
 ## Width (in tiles) of the woods with grass, trees and bushes around the fences
-@export var exterior_margin_tiles: int = 12
+@export var exterior_margin_tiles: int = 24
 ## Multiplier for the amount of woods props (0 = no props)
 @export var exterior_density: float = 1.0
 ## Pumpkins inside the rooms may become mimics (chance per pumpkin, at least min_mimics per graveyard)

@@ -11,7 +11,7 @@ const BOB_AMPLITUDE: float = 5.0  # Pixels
 const BOB_SPEED: float = 1.3  # Radians per second
 
 var _settings: CanvasLayer
-var _bob_bases: Dictionary = {}  # Control -> position decided by the container
+var _bob_root: Control  # Wrapper around the VBox: moving a parent keeps children on integer local positions
 var _bob_time: float = 0.0
 
 
@@ -27,25 +27,22 @@ func _ready() -> void:
 	for button: Button in [_botao_jogar, _botao_survivors, _botao_tutorial, _botao_config, _botao_sair]:
 		button.mouse_entered.connect(EventBus.play_sfx_requested.emit.bind("ui_hover"))
 		button.pressed.connect(EventBus.play_sfx_requested.emit.bind("ui_click"))
-	# The container owns the children's positions: record them after each sort and bob on top of that
-	$VBox.sort_children.connect(_record_bob_bases)
-	_record_bob_bases()
+	# Wraps the VBox in a full-rect Control and bobs that: the offset becomes a smooth canvas translation
+	# (moving each child by fractional positions makes the text snap to whole pixels, which looks choppy)
+	_bob_root = Control.new()
+	_bob_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_bob_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box: Control = $VBox
+	remove_child(box)
+	_bob_root.add_child(box)
+	add_child(_bob_root)
 	print("[UI] - Main menu ready")
 
 
 func _process(delta: float) -> void:
 	_bob_time += delta
-	# Same offset for every element, so the logo and buttons move together as a single block
-	var offset: Vector2 = Vector2(0.0, sin(_bob_time * BOB_SPEED) * BOB_AMPLITUDE)
-	for child: Control in _bob_bases:
-		child.position = _bob_bases[child] + offset
-
-
-func _record_bob_bases() -> void:
-	_bob_bases.clear()
-	for child: Node in $VBox.get_children():
-		if child is Control:
-			_bob_bases[child] = child.position
+	# Same offset for the whole block, so the logo and buttons move together as one
+	_bob_root.position = Vector2(0.0, sin(_bob_time * BOB_SPEED) * BOB_AMPLITUDE)
 
 
 # Starts the game through the GameManager
