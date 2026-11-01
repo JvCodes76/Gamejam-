@@ -6,6 +6,12 @@ extends Node
 
 enum Kind { SWARM, ELITE, BOSS }
 
+# Tutorial enemies: basic skulls and a ghost elite
+const TUTORIAL_SKULL: PackedScene = preload("res://enemies/skull.tscn")
+const TUTORIAL_ELITE: PackedScene = preload("res://enemies/ghost_elite.tscn")
+const TUTORIAL_COMBAT_SKULLS: int = 3
+const TUTORIAL_FIGHT_SKULLS: int = 2
+
 var room: RoomData
 
 var _level: DungeonLevel
@@ -30,6 +36,9 @@ func on_player_entered() -> void:
 	_started = true
 	room.visited = true
 	print("[Dungeon] - room %s entered" % RoomData.Type.keys()[room.type])
+	if room.tutorial_step != RoomData.TutorialStep.NONE:
+		_enter_tutorial()
+		return
 	match room.type:
 		RoomData.Type.CAULDRON:
 			_lock()
@@ -49,6 +58,24 @@ func on_player_entered() -> void:
 			_spawn_boss()
 		_:
 			room.cleared = true
+
+
+# Tutorial rooms: fixed enemies (no mimics, no random elites) and the director's popups.
+func _enter_tutorial() -> void:
+	match room.tutorial_step:
+		RoomData.TutorialStep.COMBAT:
+			_lock()
+			for i: int in TUTORIAL_COMBAT_SKULLS:
+				_spawn(TUTORIAL_SKULL, Kind.SWARM)
+		RoomData.TutorialStep.FIGHT:
+			_lock()
+			_spawn(TUTORIAL_ELITE, Kind.ELITE)
+			for i: int in TUTORIAL_FIGHT_SKULLS:
+				_spawn(TUTORIAL_SKULL, Kind.SWARM)
+		_:
+			room.cleared = true
+	if _level.tutorial != null:
+		_level.tutorial.on_room_entered(room)
 
 
 func _process(delta: float) -> void:
@@ -187,6 +214,8 @@ func _on_enemy_gone() -> void:
 		_timer_active = false
 		set_process(false)
 		EventBus.horde_timer_changed.emit(-1.0)
+	if _level.tutorial != null:
+		_level.tutorial.on_room_cleared(room)
 	_unlock()
 
 

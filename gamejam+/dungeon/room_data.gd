@@ -6,6 +6,9 @@ extends RefCounted
 # ELITE blue, HORDE red, EMPTY white (passage with no enemies)
 enum Type { SPAWN, CAULDRON, ITEM, EXIT, BOSS, ELITE, HORDE, EMPTY }
 
+# Tutorial role of the room (NONE = normal room of the dungeon)
+enum TutorialStep { NONE, COMBAT, CAULDRON, FIGHT }
+
 # Size of each type in tiles (even values, so room centers align on the grid)
 const SIZES: Dictionary = {
 	Type.SPAWN: Vector2i(24, 16),
@@ -54,6 +57,8 @@ var neighbors: Dictionary = {}
 # Room doors: all on the top or bottom wall
 var doors: Array[Door] = []
 var visited: bool = false
+# Tutorial only: what the room teaches (see TutorialDirector)
+var tutorial_step: TutorialStep = TutorialStep.NONE
 var cleared: bool = false
 
 

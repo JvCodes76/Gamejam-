@@ -148,6 +148,9 @@ func open_cauldron(cauldron: Cauldron) -> void:
 func _begin_open(cauldron: Cauldron) -> void:
 	if _open or get_tree().paused:
 		return
+	# Tutorial: no inventory before the first item (the cauldron and items waiting for space still open it)
+	if ItemManager.inventory_locked and cauldron == null and ItemManager.pending_items.is_empty():
+		return
 	_open = true
 	_cauldron = cauldron
 	_bag.position = bag_position_cauldron if cauldron != null else bag_position_normal

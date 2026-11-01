@@ -19,6 +19,32 @@ static func generate(room_count: int, is_final: bool, filler_weights: Dictionary
 	return rooms
 
 
+## Tutorial: fixed vertical chain growing upward: spawn (bottom) -> combat -> cauldron -> fight -> teleporter (top).
+static func generate_tutorial(pitch_tiles: Vector2i, tile_px: int) -> Array[RoomData]:
+	var layout: Array[Array] = [
+		[RoomData.Type.SPAWN, RoomData.TutorialStep.NONE],
+		[RoomData.Type.HORDE, RoomData.TutorialStep.COMBAT],
+		[RoomData.Type.CAULDRON, RoomData.TutorialStep.CAULDRON],
+		[RoomData.Type.ELITE, RoomData.TutorialStep.FIGHT],
+		[RoomData.Type.EXIT, RoomData.TutorialStep.NONE],
+	]
+	var rooms: Array[RoomData] = []
+	for i: int in layout.size():
+		var room: RoomData = RoomData.new(Vector2i(0, -i))
+		room.set_type(layout[i][0])
+		room.tutorial_step = layout[i][1]
+		rooms.append(room)
+	for i: int in rooms.size():
+		if i > 0:
+			rooms[i].neighbors[Vector2i.DOWN] = i - 1
+		if i < rooms.size() - 1:
+			rooms[i].neighbors[Vector2i.UP] = i + 1
+	for room: RoomData in rooms:
+		room.make_doors()
+		room.place(pitch_tiles, tile_px)
+	return rooms
+
+
 # Grows a tree: each new room is born in a free cell next to an existing room.
 static func _grow(count: int, rng: RandomNumberGenerator) -> Array[RoomData]:
 	var rooms: Array[RoomData] = [RoomData.new(Vector2i.ZERO)]

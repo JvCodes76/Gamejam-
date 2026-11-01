@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://projectiles/bullet.gd" id="1"]
-[ext_resource type="Texture2D" path="res://icon.svg" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/Flask.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/potion_flask_liquid_mask.png" id="3"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_bullet"]
 radius = 3.0
@@ -15,6 +16,14 @@ script = ExtResource("1")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_bullet")
 
+; Potion flask: the liquid (tinted with the potion color) sits behind the flask and skips the neck rows (top 7 px)
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.06, 0.06)
+scale = Vector2(0.6, 0.6)
 texture = ExtResource("2")
+
+[node name="Liquid" type="Sprite2D" parent="Sprite2D"]
+show_behind_parent = true
+position = Vector2(0, 3.5)
+texture = ExtResource("3")
+region_enabled = true
+region_rect = Rect2(0, 7, 16, 9)

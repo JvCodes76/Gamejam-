@@ -21,6 +21,8 @@ var run_seed: int = 0
 var loop_index: int = 0
 # Accessibility: turns off screen shake
 var reduce_screen_shake: bool = false
+# Tutorial run: fixed rooms, no mimics, the teleporter returns to the main menu
+var tutorial_mode: bool = false
 # [DEBUG] Request to skip to the boss fight on the next level load (read and cleared by the DungeonLevel)
 var debug_boss_requested: bool = false
 
@@ -54,8 +56,9 @@ func _process(_delta: float) -> void:
 	_last_tick_msec = now
 
 
-## Resets the state and loads the main level.
-func start_game() -> void:
+## Resets the state and loads the main level (tutorial = fixed tutorial rooms instead of the dungeon).
+func start_game(tutorial: bool = false) -> void:
+	tutorial_mode = tutorial
 	score = 0
 	room_index = 1
 	cemetery_index = 1
@@ -63,11 +66,13 @@ func start_game() -> void:
 	run_seed = randi()
 	_reset_stats()
 	ItemManager.reset()
+	# The tutorial teaches the inventory: it stays locked until the first item is picked up
+	ItemManager.inventory_locked = tutorial
 	EventBus.score_changed.emit(score)
 	state = State.PLAYING
 	get_tree().paused = false
 	EventBus.scene_change_requested.emit(LEVEL_PATH)
-	print("[Game] - run started")
+	print("[Game] - run started (tutorial: %s)" % tutorial)
 
 
 ## Advances to the next room and notifies the EventBus.
@@ -132,9 +137,17 @@ func quit_to_menu() -> void:
 	EventBus.scene_change_requested.emit(MENU_PATH)
 
 
-## Restarts the current run (used after game over).
+## Restarts the current run (used after game over); a tutorial restarts as a tutorial.
 func restart() -> void:
-	start_game()
+	start_game(tutorial_mode)
+
+
+## Tutorial teleporter: goes back to the main menu.
+func finish_tutorial() -> void:
+	print("[Game] - tutorial finished")
+	tutorial_mode = false
+	ItemManager.inventory_locked = false
+	quit_to_menu()
 
 
 # Resets the counters shown in the run summary
