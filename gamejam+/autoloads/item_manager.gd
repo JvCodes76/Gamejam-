@@ -19,8 +19,8 @@ var pending_items: Array[ItemData] = []
 var inventory_open: bool = false
 var shrink_upgrade_active: bool = false
 var shrink_scale: float = 0.6
-# Base scale of the sprites on the inventory screen (16 px -> 19 px; was 6.0 = 96 px, 5x smaller)
-var base_item_scale: float = 1.2
+# Base scale of the sprites on the inventory screen (16 px -> 96 px)
+var base_item_scale: float = 6.0
 # Current floor (1 = first); each floor shrinks items by 1/FLOOR_SHRINK_FACTOR
 var floor_level: int = 1
 const FLOOR_SHRINK_FACTOR: float = 1.25

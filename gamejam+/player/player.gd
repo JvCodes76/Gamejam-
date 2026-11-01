@@ -24,6 +24,8 @@ var _reload_left: float = 0.0
 # Brimstone (laser): charge time held, active beam and Dragon's Blood shot counter (sfx/camera only every few flames)
 var _laser_charge: float = 0.0
 var _laser: LaserBeam = null
+# True from the moment the beam is released until it finishes (the charge no longer advances)
+var _laser_firing: bool = false
 var _flame_shots: int = 0
 var _ammo_indicator: AmmoIndicator = null
 var _aim_direction: Vector2 = Vector2.RIGHT
@@ -298,18 +300,19 @@ func _refresh_ammo_indicator() -> void:
 
 ## Brimstone: holding the button charges the laser; once charged the beam fires, then the cooldown starts.
 func _update_laser(delta: float, wants_fire: bool) -> void:
-	if _laser != null and is_instance_valid(_laser):
+	if _laser_firing:
 		return
 	if not wants_fire or _fire_timer > 0.0:
 		_cancel_laser()
 		return
-	if _laser == null:
+	if _laser == null or not is_instance_valid(_laser):
 		_laser = LaserBeam.new()
 		_laser.setup(_mods, CombatConstants.WEAPON_BASE_DAMAGE, _health)
 		_muzzle.add_child(_laser)
 	_laser_charge += delta * _mods.fire_rate_multiplier
 	_laser.set_charge(_laser_charge / CombatConstants.LASER_CHARGE_TIME)
 	if _laser_charge >= CombatConstants.LASER_CHARGE_TIME:
+		_laser_firing = true
 		_laser.finished.connect(_on_laser_finished)
 		_laser.fire()
 		_muzzle_flash.flash(_mods.color)
@@ -317,6 +320,7 @@ func _update_laser(delta: float, wants_fire: bool) -> void:
 
 
 func _on_laser_finished() -> void:
+	_laser_firing = false
 	_laser = null
 	_laser_charge = 0.0
 	_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
@@ -324,6 +328,7 @@ func _on_laser_finished() -> void:
 
 ## Drops the charge (button released, potion swapped, death).
 func _cancel_laser() -> void:
+	_laser_firing = false
 	_laser_charge = 0.0
 	if _laser != null and is_instance_valid(_laser):
 		_laser.queue_free()

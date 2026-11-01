@@ -1,5 +1,6 @@
 [gd_scene format=4]
 
+[ext_resource type="Script" path="res://levels/main_level.gd" id="0_mainlevel"]
 [ext_resource type="TileSet" path="res://assets/tilesets/halloween/halloween_tileset.tres" id="1_e7pw0"]
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://levels/props/prop.tscn" id="2_eb63m"]
@@ -46,6 +47,7 @@ size = Vector2(1280, 32)
 size = Vector2(32, 720)
 
 [node name="MainLevel" type="Node2D" unique_id=2104289636]
+script = ExtResource("0_mainlevel")
 y_sort_enabled = true
 
 [node name="Ground" type="TileMapLayer" parent="." unique_id=600570232]
