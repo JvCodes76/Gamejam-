@@ -119,6 +119,8 @@ const MAGIC_ARC_WIDTH: float = 2.0
 # --- EVIL ---
 # Damage bonus per enemy killed (+0.5%)
 const EVIL_RAGE_PER_KILL: float = 0.005
+## Monster Survivors: waves that count as a "floor" for the rage reset of Evil tier 6
+const EVIL_RAGE_RESET_WAVES: int = 3
 
 # ===== SPECIAL SYNERGIES (ingredient recipes). Values marked [N] were made up. =====
 

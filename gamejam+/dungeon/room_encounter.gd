@@ -36,7 +36,7 @@ func on_player_entered() -> void:
 	_started = true
 	room.visited = true
 	print("[Dungeon] - room %s entered" % RoomData.Type.keys()[room.type])
-	if room.tutorial_step != RoomData.TutorialStep.NONE:
+	if _level.tutorial != null:
 		_enter_tutorial()
 		return
 	match room.type:
@@ -72,10 +72,21 @@ func _enter_tutorial() -> void:
 			_spawn(TUTORIAL_ELITE, Kind.ELITE)
 			for i: int in TUTORIAL_FIGHT_SKULLS:
 				_spawn(TUTORIAL_SKULL, Kind.SWARM)
+		RoomData.TutorialStep.CAULDRON:
+			# The gates stay shut until the player interacts with the cauldron
+			room.cleared = true
+			_lock()
+			EventBus.cauldron_open_requested.connect(_on_tutorial_cauldron_used, CONNECT_ONE_SHOT)
 		_:
 			room.cleared = true
 	if _level.tutorial != null:
 		_level.tutorial.on_room_entered(room)
+
+
+# Tutorial: the player used the cauldron, so the gates open
+func _on_tutorial_cauldron_used(_cauldron: Node) -> void:
+	_unlock()
+	print("[Tutorial] - cauldron used, gates open")
 
 
 func _process(delta: float) -> void:

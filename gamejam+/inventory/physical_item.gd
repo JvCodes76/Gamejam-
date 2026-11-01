@@ -15,6 +15,8 @@ signal released(item: PhysicalItem)
 @export var rest_bounce: float = 0.1
 @export var rotate_step_degrees: float = 45.0
 @export var polygon_epsilon: float = 1.0
+## Smallest scale an item can have (a zero scale makes the transform non-invertible)
+const MIN_ITEM_SCALE: float = 0.05
 
 # Item currently held (only one at a time)
 static var current_grabbed: PhysicalItem = null
@@ -86,6 +88,10 @@ func _end_scaling() -> void:
 
 # Applies the scale to the sprite and recreates a CollisionPolygon2D per polygon
 func _rebuild_colliders(new_scale: float) -> void:
+	# Invalid scales (zero, negative, NaN) would break hover tests and the physics
+	if not is_finite(new_scale) or new_scale < MIN_ITEM_SCALE:
+		push_warning("[Inventory] - invalid item scale %s, using %.2f" % [str(new_scale), MIN_ITEM_SCALE])
+		new_scale = MIN_ITEM_SCALE
 	item_scale = new_scale
 	if _sprite:
 		_sprite.scale = Vector2.ONE * new_scale
@@ -103,6 +109,10 @@ func _rebuild_colliders(new_scale: float) -> void:
 
 # Tests whether a global point is inside any of the item's polygons
 func contains_point(global_point: Vector2) -> bool:
+	# Degenerate transform (scale 0 or NaN position): cannot be inverted, nothing is "inside"
+	var xform: Transform2D = global_transform
+	if not xform.origin.is_finite() or is_zero_approx(xform.determinant()):
+		return false
 	var local: Vector2 = to_local(global_point)
 	for poly: PackedVector2Array in _base_polygons:
 		var scaled := PackedVector2Array()

@@ -34,6 +34,18 @@ signal inventory_open_requested()
 signal inventory_closed()
 # Items on the ground changed
 signal ground_items_changed()
+# Monster Survivors: a wave started (number and whether it is a boss wave)
+signal wave_started(wave: int, is_boss: bool)
+# Monster Survivors: a wave was cleared
+signal wave_cleared(wave: int)
+# Monster Survivors: time left in the rest before the next wave (negative value = hide); boss_next = a boss comes next
+signal wave_break_changed(seconds_left: float, boss_next: bool)
+# Monster Survivors: XP orb collected (amount of XP)
+signal xp_collected(amount: int)
+# Monster Survivors: XP / level changed (level, xp in the level, xp needed for the next level)
+signal xp_changed(level: int, xp: int, xp_needed: int)
+# Monster Survivors: the player reached a new level
+signal player_leveled_up(level: int)
 # Item drop request (source = LootManager.Source); the LootManager rolls and drops it on the ground
 signal item_drop_requested(source: int, position: Vector2)
 # Item picked up from the ground
@@ -83,3 +95,7 @@ signal room_cleared()
 signal item_collected(item_id: StringName, position: Vector2)
 # Potion brewed in the cauldron
 signal potion_brewed(color: Color, position: Vector2)
+# Journal: a new entry was discovered (item or synergy)
+signal compendium_updated()
+# Request to open the journal
+signal journal_open_requested()

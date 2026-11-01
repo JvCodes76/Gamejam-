@@ -158,6 +158,15 @@ static func summary(aspect_counts: Dictionary, specials: Array[StringName] = [])
 	return ", ".join(parts)
 
 
+## Effect text (translated) of one tier (1-4) of an aspect; empty if that tier has no effect.
+static func tier_text(aspect: int, tier: int) -> String:
+	var texts: Array = _tier_texts(aspect)
+	if tier < 1 or tier > texts.size():
+		return ""
+	var text: String = String(texts[tier - 1])
+	return TranslationServer.translate(text) if text != "" else ""
+
+
 static func _aspect_name(aspect: int) -> String:
 	return String(ItemEnums.Aspect.keys()[aspect]).capitalize()
 

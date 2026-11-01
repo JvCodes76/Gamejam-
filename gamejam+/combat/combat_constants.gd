@@ -95,6 +95,9 @@ const SLOW_DEFAULT_DURATION: float = 2.0
 
 # --- Weapon: player base damage (same as the scene's Bullet.damage); base for explosions and synergy DoTs ---
 const WEAPON_BASE_DAMAGE: int = 15
+## Monster Survivors: damage added per level (0.05 = +5% of the base) and health added per level
+const LEVEL_DAMAGE_BONUS: float = 0.05
+const LEVEL_HEALTH_BONUS: int = 8
 
 # --- Health scale: all health and damage were multiplied by this (1 HUD block = this much health) ---
 const HEALTH_SCALE: int = 15

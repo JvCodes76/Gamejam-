@@ -14,8 +14,8 @@ extends CanvasLayer
 @export var cauldron_spawn_area: Rect2 = Rect2(274, 0, 100, 200)
 @export var cauldron_spawn_columns: int = 2
 @export var cauldron_spawn_row_step: float = 40.0
-@export var bag_position_normal: Vector2 = Vector2(200, 200)
-@export var bag_position_cauldron: Vector2 = Vector2(160, 200)
+@export var bag_position_normal: Vector2 = Vector2(200, 224)
+@export var bag_position_cauldron: Vector2 = Vector2(160, 224)
 @export var vessel_position: Vector2 = Vector2(470, 210)
 # Visual and physical size of the cauldron in the brewing menu (multiplies the cauldron's size_multiplier)
 @export var vessel_scale: float = 1.2
@@ -159,6 +159,7 @@ func _begin_open(cauldron: Cauldron) -> void:
 	_prev_mouse_mode = Input.mouse_mode
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	ItemManager.inventory_open = true
+	ItemManager.cauldron_open = cauldron != null
 	for entry: Dictionary in ItemManager.bag_entries:
 		_track(_bag.spawn_item(entry["item"], entry["position"], entry.get("rotation", 0.0), entry.get("scale", ItemManager.current_item_scale(entry["item"]))))
 	_spawn_index = 0
@@ -213,6 +214,7 @@ func close() -> void:
 	visible = false
 	Input.mouse_mode = _prev_mouse_mode
 	ItemManager.inventory_open = false
+	ItemManager.cauldron_open = false
 	EventBus.inventory_closed.emit()
 	print("[Inventory] - Closed (%d in the bag, %d on the ground)" % [kept.size(), dropped])
 
@@ -228,6 +230,7 @@ func _exit_tree() -> void:
 	_open = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	ItemManager.inventory_open = false
+	ItemManager.cauldron_open = false
 	print("[Inventory] - Unloaded with the screen open")
 
 
@@ -473,6 +476,7 @@ func _complete_brew(items: Array[PhysicalItem]) -> void:
 	_toast_message("Potion brewed! Press F to bottle")
 	EventBus.potion_brewed.emit(state.potion.color, _cauldron.global_position)
 	print("[Cauldron] - Brewing finished (%d items, volume %.1f)" % [datas.size(), state.potion.volume])
+	Compendium.register_brew(state.potion)
 	_announce_special_synergies(state.potion)
 
 

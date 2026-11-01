@@ -9,11 +9,17 @@ const ITEM_PATHS: Array[String] = [
 ]
 const ITEM_OFFSET: float = 28.0
 
-const MSG_MOVE_SHOOT: String = "Move with W A S D (or the arrow keys).\nAim with the mouse and hold LEFT CLICK to shoot.\n\nDefeat the enemies to open the doors!"
-const MSG_PICK_UP: String = "Two items dropped!\nStand next to an item and press E to pick it up."
-const MSG_INVENTORY: String = "You can open your inventory at any time.\nPress TAB or I to open and close it."
-const MSG_CAULDRON: String = "This is the cauldron.\nStand next to it and press E to interact."
-const MSG_BREW: String = "Brewing: DRAG items with the mouse into the cauldron (grab and drop).\nWheel rotates an item.\nHold ENTER to brew, F to bottle the potion.\nTAB or ESC closes."
+const MSG_MOVE: String = "Hello! Welcome! You, my friend, are a witch's apprentice, and monsters are invading your forest! Use WASD to move around."
+const MSG_SHOOT: String = "Shocker, but those monsters really want to hurt you! Don't worry though, you have your potions to defend yourself! Press M1 to shoot where you're looking."
+const MSG_PICK_UP: String = "Wow! Two items dropped!! Go up to them and press E to pick them up! If your bag is full, you can open it at any time with TAB and every item nearby will show up there, on the ground."
+const MSG_CAULDRON: String = "This is your trusty cauldron, every graveyard has one, obviously. Press E to interact with it."
+const MSG_BREW: String = "This is the cauldron Screen! To make a new potion, drag the ingredients you want to use into the cauldron and hold ENTER"
+const MSG_BOTTLE: String = "When the potion is done brewing, press F to bottle it up."
+const MSG_EXPERIMENT: String = "You're only an apprendice, so you just know the basics of every ingredient, to find out how they synergise and interact, experiment!"
+const MSG_FINISH: String = "That's the basics! Now go out there and get'em! And if you fail, remember, there's always the... next hex!!! Please laugh."
+
+# Seconds before the first popup (lets the scene fade-in finish)
+const START_DELAY: float = 0.6
 
 var popup: TutorialPopup
 
@@ -32,11 +38,18 @@ func setup(level: DungeonLevel) -> void:
 
 ## The player entered a tutorial room.
 func on_room_entered(room: RoomData) -> void:
+	# First thing the player sees: starts in the spawn room, after the scene fade-in
+	if room.type == RoomData.Type.SPAWN:
+		await get_tree().create_timer(START_DELAY, true, false, true).timeout
+		popup.show_message(MSG_MOVE)
+		return
 	match room.tutorial_step:
 		RoomData.TutorialStep.COMBAT:
-			popup.show_message(MSG_MOVE_SHOOT)
+			popup.show_message(MSG_SHOOT)
 		RoomData.TutorialStep.CAULDRON:
 			popup.show_message(MSG_CAULDRON)
+		RoomData.TutorialStep.FINISH:
+			popup.show_message(MSG_FINISH)
 
 
 ## The enemies of a tutorial room were all defeated.
@@ -60,7 +73,6 @@ func _on_item_picked_up(_item_id: StringName) -> void:
 		return
 	ItemManager.inventory_locked = false
 	print("[Tutorial] - inventory unlocked")
-	popup.show_message(MSG_INVENTORY)
 
 
 func _on_cauldron_open_requested(_cauldron: Node) -> void:
@@ -68,3 +80,5 @@ func _on_cauldron_open_requested(_cauldron: Node) -> void:
 		return
 	_brew_taught = true
 	popup.show_message(MSG_BREW)
+	popup.show_message(MSG_BOTTLE)
+	popup.show_message(MSG_EXPERIMENT)

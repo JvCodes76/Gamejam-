@@ -46,6 +46,9 @@ enum Source {
 @export var normal_drop_chance_cap: float = 0.2
 @export var elite_drop_chance_cap: float = 0.6
 
+## Extra "completed graveyards" granted by other modes (Monster Survivors: player level)
+var progress_bonus: int = 0
+
 ## Graveyards per loop (updated by the cemetery_changed signal)
 var cemeteries_per_loop: int = 5
 
@@ -64,7 +67,7 @@ func _ready() -> void:
 
 ## Graveyards completed in the whole run (the current loop counts the ones before it).
 func cemeteries_completed() -> int:
-	return GameManager.loop_index * cemeteries_per_loop + maxi(GameManager.cemetery_index - 1, 0)
+	return GameManager.loop_index * cemeteries_per_loop + maxi(GameManager.cemetery_index - 1, 0) + progress_bonus
 
 
 ## Rarity weights already improved by the run's progress.

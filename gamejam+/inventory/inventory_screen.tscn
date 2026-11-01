@@ -1,48 +1,46 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bl2ybmuduork5"]
 
-[ext_resource type="Script" path="res://inventory/inventory_screen.gd" id="1"]
+[ext_resource type="Script" uid="uid://s7pkjr5n5js" path="res://inventory/inventory_screen.gd" id="1"]
 [ext_resource type="PackedScene" path="res://inventory/bag.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://inventory/item_tooltip.tscn" id="3"]
 
-[node name="InventoryScreen" type="CanvasLayer"]
+[node name="InventoryScreen" type="CanvasLayer" unique_id=1370277964]
 process_mode = 3
 layer = 50
 visible = false
 script = ExtResource("1")
 
-[node name="Dim" type="ColorRect" parent="."]
-mouse_filter = 2
+[node name="Dim" type="ColorRect" parent="." unique_id=415674225]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 color = Color(0, 0, 0, 0.7)
 
-[node name="ViewportContainer" type="SubViewportContainer" parent="."]
+[node name="ViewportContainer" type="SubViewportContainer" parent="." unique_id=1288859469]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="ViewportContainer"]
-own_world_2d = true
+[node name="SubViewport" type="SubViewport" parent="ViewportContainer" unique_id=1100691545]
 transparent_bg = true
-handle_input_locally = true
+handle_input_locally = false
 size = Vector2i(640, 360)
-render_target_update_mode = 4
+render_target_update_mode = 0
 
-[node name="Bag" parent="ViewportContainer/SubViewport" instance=ExtResource("2")]
+[node name="Bag" parent="ViewportContainer/SubViewport" unique_id=1766543113 instance=ExtResource("2")]
 position = Vector2(200, 200)
 
-[node name="HelpLabel" type="Label" parent="."]
+[node name="HelpLabel" type="Label" parent="." unique_id=2115514875]
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -18.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_font_sizes/font_size = 10
 text = "Drag items with left click · Mouse wheel rotates · Anything outside the bag is left on the ground · Tab/Esc to close"
 horizontal_alignment = 1
 
-[node name="ItemTooltip" parent="." instance=ExtResource("3")]
+[node name="ItemTooltip" parent="." unique_id=2094338917 instance=ExtResource("3")]

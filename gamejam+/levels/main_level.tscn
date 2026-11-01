@@ -4,7 +4,6 @@
 [ext_resource type="TileSet" path="res://assets/tilesets/halloween/halloween_tileset.tres" id="1_e7pw0"]
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://levels/props/prop.tscn" id="2_eb63m"]
-[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="2_enemy"]
 [ext_resource type="Script" path="res://enemies/enemy_spawner.gd" id="3_spawner"]
 [ext_resource type="PackedScene" path="res://enemies/pumpkin_mimic.tscn" id="2_mimic"]
 [ext_resource type="Script" path="res://levels/props/pumpkin_mimic_spawner.gd" id="3_mimicspawn"]
@@ -880,8 +879,8 @@ position = Vector2(120, -47)
 [node name="EnemySpawner" type="Node2D" parent="." unique_id=1116562369]
 y_sort_enabled = true
 script = ExtResource("3_spawner")
-enemy_scene = ExtResource("2_enemy")
-extra_enemy_scenes = Array[PackedScene]([ExtResource("2_skull"), ExtResource("2_bat")])
+enemy_scene = ExtResource("2_skull")
+extra_enemy_scenes = Array[PackedScene]([ExtResource("2_bat")])
 
 [node name="PumpkinMimicSpawner" type="Node" parent="." node_paths=PackedStringArray("props_root")]
 script = ExtResource("3_mimicspawn")

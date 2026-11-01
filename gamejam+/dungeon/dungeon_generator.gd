@@ -26,7 +26,7 @@ static func generate_tutorial(pitch_tiles: Vector2i, tile_px: int) -> Array[Room
 		[RoomData.Type.HORDE, RoomData.TutorialStep.COMBAT],
 		[RoomData.Type.CAULDRON, RoomData.TutorialStep.CAULDRON],
 		[RoomData.Type.ELITE, RoomData.TutorialStep.FIGHT],
-		[RoomData.Type.EXIT, RoomData.TutorialStep.NONE],
+		[RoomData.Type.EXIT, RoomData.TutorialStep.FINISH],
 	]
 	var rooms: Array[RoomData] = []
 	for i: int in layout.size():

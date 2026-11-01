@@ -49,7 +49,6 @@ var _item: PhysicalItem
 @onready var _rarity_label: Label = $VBox/RarityLabel
 @onready var _aspects_label: RichTextLabel = $VBox/AspectsLabel
 @onready var _effects_label: Label = $VBox/EffectsLabel
-@onready var _desc_label: Label = $VBox/DescLabel
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -105,8 +104,6 @@ func _fill(data: ItemData) -> void:
 	_aspects_label.text = _aspects_text(data)
 	_effects_label.text = _effects_text(data)
 	_effects_label.visible = _effects_label.text != ""
-	_desc_label.text = data.description
-	_desc_label.visible = data.description.strip_edges() != ""
 
 # Groups repeated aspects, each in its own color (BBCode): "Animal x2, Plant"
 func _aspects_text(data: ItemData) -> String:

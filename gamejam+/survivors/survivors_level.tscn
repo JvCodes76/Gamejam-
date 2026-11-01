@@ -4,14 +4,12 @@
 [ext_resource type="TileSet" path="res://assets/tilesets/halloween/halloween_tileset.tres" id="1_e7pw0"]
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://levels/props/prop.tscn" id="2_eb63m"]
-[ext_resource type="PackedScene" path="res://enemies/enemy_base.tscn" id="2_enemy"]
-[ext_resource type="Script" path="res://enemies/enemy_spawner.gd" id="3_spawner"]
 [ext_resource type="PackedScene" path="res://enemies/pumpkin_mimic.tscn" id="2_mimic"]
 [ext_resource type="Script" path="res://levels/props/pumpkin_mimic_spawner.gd" id="3_mimicspawn"]
-[ext_resource type="PackedScene" path="res://enemies/skull.tscn" id="2_skull"]
-[ext_resource type="PackedScene" path="res://enemies/bat.tscn" id="2_bat"]
 [ext_resource type="Script" path="res://levels/props/prop.gd" id="3_tc8q2"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
+[ext_resource type="Script" path="res://survivors/survivors_hud.gd" id="30_shud"]
+[ext_resource type="PackedScene" path="res://ui/run_summary.tscn" id="31_summary"]
 [ext_resource type="Script" path="res://inventory/ground_item_spawner.gd" id="5_gis"]
 [ext_resource type="PackedScene" path="res://cauldron/cauldron.tscn" id="7_cauldron"]
 
@@ -848,12 +846,6 @@ script = ExtResource("3_tc8q2")
 [node name="Cauldron" parent="." unique_id=2107533240 instance=ExtResource("7_cauldron")]
 position = Vector2(120, -47)
 
-[node name="EnemySpawner" type="Node2D" parent="." unique_id=1116562369]
-y_sort_enabled = true
-script = ExtResource("3_spawner")
-enemy_scene = ExtResource("2_enemy")
-extra_enemy_scenes = Array[PackedScene]([ExtResource("2_skull"), ExtResource("2_bat")])
-
 [node name="PumpkinMimicSpawner" type="Node" parent="." node_paths=PackedStringArray("props_root")]
 script = ExtResource("3_mimicspawn")
 props_root = NodePath("../Props")
@@ -863,4 +855,9 @@ mimic_scene = ExtResource("2_mimic")
 script = ExtResource("5_gis")
 seed_on_first_load = false
 
+[node name="SurvivorsHud" type="CanvasLayer" parent="."]
+script = ExtResource("30_shud")
+
 [node name="HUD" parent="." unique_id=998489572 instance=ExtResource("4_hud")]
+
+[node name="RunSummary" parent="." instance=ExtResource("31_summary")]

@@ -47,7 +47,7 @@ func _on_reduce_shake_toggled(enabled: bool) -> void:
 
 # Handles the "pause" action (Esc / Start) to toggle the pause
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause") and not ItemManager.inventory_open and not _settings.visible:
+	if event.is_action_pressed("pause") and not ItemManager.inventory_open and not ItemManager.journal_open and not _settings.visible:
 		GameManager.toggle_pause()
 		get_viewport().set_input_as_handled()
 

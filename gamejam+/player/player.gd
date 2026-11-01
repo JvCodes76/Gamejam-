@@ -17,6 +17,8 @@ const BULLET_SCENE: PackedScene = preload("res://projectiles/bullet.tscn")
 @export var invulnerability_time: float = 0.8
 @export var knockback_impulse: float = FeelConstants.PLAYER_KNOCKBACK_IMPULSE
 
+# Monster Survivors: damage multiplier from the level (1.0 = level 1)
+var _level_damage_multiplier: float = 1.0
 var _fire_timer: float = 0.0
 # Gun (real bullets): rounds left and remaining reload time (> 0 = reloading)
 var _ammo: int = CombatConstants.MAGAZINE_SIZE
@@ -93,6 +95,7 @@ func _ready() -> void:
 	EventBus.player_health_changed.emit.call_deferred(_health.current_health, _health.max_health)
 	EventBus.game_paused.connect(_on_game_paused)
 	EventBus.potion_selected.connect(_on_potion_selected)
+	EventBus.player_leveled_up.connect(_on_leveled_up)
 	EventBus.potion_slots_changed.connect(_recalculate_modifiers)
 	EventBus.active_effects_changed.connect(_recalculate_modifiers)
 	_recalculate_modifiers()
@@ -145,6 +148,11 @@ func _physics_process(delta: float) -> void:
 
 ## Moves the player in 8 directions with acceleration and friction.
 func _handle_movement(delta: float) -> void:
+	# Brewing at the cauldron: the player stands still
+	if ItemManager.cauldron_open:
+		velocity = Vector2.ZERO
+		_knockback = Vector2.ZERO
+		return
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if input_dir != Vector2.ZERO:
 		velocity = velocity.move_toward(input_dir * move_speed, acceleration * delta)
@@ -250,6 +258,7 @@ func _shoot() -> void:
 		_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
 		if _mods.real_bullets:
 			bullet.speed *= CombatConstants.REAL_BULLET_SPEED_MULT
+			bullet.setup_real_bullet()
 		if _mods.synergy.rainbow_colors:
 			if not bullet.is_holy():
 				bullet.set_tint(SynergyConstants.RAINBOW_COLORS[_rainbow_index % SynergyConstants.RAINBOW_COLORS.size()])
@@ -343,6 +352,7 @@ func _recalculate_modifiers() -> void:
 	if potion != null:
 		_mods.color = potion.color
 		_mods.source_items = potion.items
+	_mods.damage_multiplier *= _level_damage_multiplier
 	_cancel_laser()
 	_ammo = CombatConstants.MAGAZINE_SIZE
 	_reload_left = 0.0
@@ -352,6 +362,15 @@ func _recalculate_modifiers() -> void:
 	_crosshair.queue_redraw()
 	_crosshair.pulse()
 	print("[Potion] - modifiers: damage x%.2f, range x%.2f, fire rate x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])
+
+
+## Level up (Monster Survivors): a little more damage and a bit more health. Does not reset ammo or the laser.
+func _on_leveled_up(level: int) -> void:
+	var new_multiplier: float = 1.0 + CombatConstants.LEVEL_DAMAGE_BONUS * (level - 1)
+	_mods.damage_multiplier *= new_multiplier / _level_damage_multiplier
+	_level_damage_multiplier = new_multiplier
+	_health.increase_max_health(CombatConstants.LEVEL_HEALTH_BONUS)
+	print("[Player] - level %d: damage x%.2f, max health %d" % [level, _level_damage_multiplier, _health.max_health])
 
 
 ## Recomputes the modifiers when swapping potions.

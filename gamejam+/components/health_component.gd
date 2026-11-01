@@ -101,6 +101,15 @@ func heal(amount: int) -> void:
 	health_changed.emit(current_health, max_health)
 
 
+# Raises the maximum health and heals the same amount.
+func increase_max_health(amount: int) -> void:
+	if _is_dead or amount <= 0:
+		return
+	max_health += amount
+	current_health += amount
+	health_changed.emit(current_health, max_health)
+
+
 # Returns true if already dead.
 func is_dead() -> bool:
 	return _is_dead

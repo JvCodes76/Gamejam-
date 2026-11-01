@@ -26,6 +26,7 @@ func setup(player: Node2D, health: HealthComponent) -> void:
 	EventBus.enemy_dot_ticked.connect(_on_enemy_dot_ticked)
 	EventBus.room_changed.connect(_on_room_changed)
 	EventBus.floor_changed.connect(_on_floor_changed)
+	EventBus.wave_started.connect(_on_wave_started)
 
 
 ## Receives the active potion's modifiers (and its synergies) and applies what depends on the state.
@@ -160,6 +161,13 @@ func _on_enemy_killed(_points: int) -> void:
 ## Resets the rage every room, except with Evil tier 6 (resets per floor).
 func _on_room_changed(_index: int) -> void:
 	if not _state.rage_resets_per_floor:
+		_reset_rage()
+
+
+## Monster Survivors: waves replace rooms and floors. The rage resets every wave, or only every
+## EVIL_RAGE_RESET_WAVES waves (at the start of waves 4, 7, 10...) with Evil tier 6.
+func _on_wave_started(wave: int, _is_boss: bool) -> void:
+	if not _state.rage_resets_per_floor or (wave - 1) % SynergyConstants.EVIL_RAGE_RESET_WAVES == 0:
 		_reset_rage()
 
 

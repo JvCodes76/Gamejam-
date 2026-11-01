@@ -42,6 +42,10 @@ var _cloud_distance: float = 0.0
 var _trail: Line2D
 var _spin_speed: float = FLASK_SPIN_SPEED
 
+# True for the Gun's real bullets (drawn as a bullet instead of a potion flask)
+var _is_real_bullet: bool = false
+
+static var _bullet_texture: ImageTexture = null
 static var _flame_texture: GradientTexture2D = null
 static var _flame_material: CanvasItemMaterial = null
 
@@ -133,6 +137,41 @@ func _draw() -> void:
 	if _aoe_radius > 0.0:
 		draw_circle(Vector2.ZERO, _aoe_radius, Color(_tint, 0.16))
 		draw_arc(Vector2.ZERO, _aoe_radius, 0.0, TAU, 32, Color(_tint, 0.45), 1.0)
+
+
+## Gun: draws a brass bullet instead of the potion flask (the potion color stays on the trail and impact).
+func setup_real_bullet() -> void:
+	_is_real_bullet = true
+	_spin_speed = 0.0
+	var sprite: Sprite2D = $Sprite2D as Sprite2D
+	sprite.texture = _get_bullet_texture()
+	sprite.scale = Vector2.ONE * 1.2
+	sprite.rotation = 0.0
+	($Sprite2D/Liquid as Sprite2D).visible = false
+
+
+# Small pixel-art bullet pointing right (10x5): dark base, brass casing and copper tip
+static func _get_bullet_texture() -> ImageTexture:
+	if _bullet_texture != null:
+		return _bullet_texture
+	var image: Image = Image.create_empty(10, 5, false, Image.FORMAT_RGBA8)
+	var base: Color = Color(0.55, 0.4, 0.12)
+	var brass: Color = Color(0.9, 0.7, 0.22)
+	var shine: Color = Color(1.0, 0.9, 0.5)
+	var copper: Color = Color(0.8, 0.45, 0.2)
+	for x: int in 10:
+		var half: int = 2
+		if x == 8:
+			half = 1
+		elif x == 9:
+			half = 0
+		for y: int in range(2 - half, 3 + half):
+			var color: Color = base if x < 2 else (brass if x < 6 else copper)
+			if y == 1 and x >= 2 and x < 8:
+				color = shine
+			image.set_pixel(x, y, color)
+	_bullet_texture = ImageTexture.create_from_image(image)
+	return _bullet_texture
 
 
 ## Flame of the Dragon's Blood fire breath: short-lived, pierces everything, a fraction of the damage per flame.
@@ -287,6 +326,8 @@ func is_holy() -> bool:
 ## Configures this bullet as a child of Weird Eye Drops: inherits color, effects and reduced damage, without splitting again.
 func setup_child(parent: Bullet, new_direction: Vector2) -> void:
 	split_child = true
+	if parent._is_real_bullet:
+		setup_real_bullet()
 	damage = parent.damage
 	damage_factor = SynergyConstants.SPLIT_DAMAGE_FRACTION
 	modifiers = parent.modifiers

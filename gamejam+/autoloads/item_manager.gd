@@ -19,12 +19,19 @@ var pending_items: Array[ItemData] = []
 var inventory_locked: bool = false
 # True while the inventory screen is open
 var inventory_open: bool = false
+# True while the cauldron (brewing) screen is open: the player stands still
+var cauldron_open: bool = false
+# True while the journal (compendium) is open
+var journal_open: bool = false
 var shrink_upgrade_active: bool = false
 var shrink_scale: float = 0.6
 # Base scale of the sprites on the inventory screen (16 px -> 96 px)
 var base_item_scale: float = 6.0
 # Current floor (1 = first); each floor shrinks items by 1/FLOOR_SHRINK_FACTOR
 var floor_level: int = 1
+# Monster Survivors: extra item shrink from leveling up (1.0 = none, lower = smaller items)
+var bag_optimization: float = 1.0
+const MIN_BAG_OPTIMIZATION: float = 0.3
 const FLOOR_SHRINK_FACTOR: float = 1.25
 # Potion slots (2) and the active index
 var potion_slots: Array[PotionData] = [null, null]
@@ -124,8 +131,10 @@ func reset() -> void:
 	pending_items.clear()
 	starting_items_seeded = false
 	inventory_locked = false
+	cauldron_open = false
 	shrink_upgrade_active = false
 	floor_level = 1
+	bag_optimization = 1.0
 	potion_slots = [null, null]
 	active_potion_index = 0
 	EventBus.potion_slots_changed.emit()
@@ -134,7 +143,18 @@ func reset() -> void:
 
 # Scale per floor: each floor shrinks items by 1/FLOOR_SHRINK_FACTOR
 func floor_scale() -> float:
-	return pow(1.0 / FLOOR_SHRINK_FACTOR, floor_level - 1)
+	return pow(1.0 / FLOOR_SHRINK_FACTOR, floor_level - 1) * bag_optimization
+
+
+# Shrinks every item (current and future ones) by 1/factor; returns the ratio actually applied (1.0 = hit the limit)
+func optimize_bag(factor: float) -> float:
+	var previous: float = bag_optimization
+	bag_optimization = maxf(bag_optimization / factor, MIN_BAG_OPTIMIZATION)
+	var ratio: float = bag_optimization / previous
+	for entry: Dictionary in bag_entries:
+		entry["scale"] = float(entry["scale"]) * ratio
+	print("[Items] - bag optimized (scale %.3f)" % floor_scale())
+	return ratio
 
 
 # Advances the floor; items already in the bag shrink along with it

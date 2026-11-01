@@ -3,6 +3,7 @@ extends Node
 enum State { MENU, PLAYING, PAUSED, GAME_OVER, VICTORY }
 
 const LEVEL_PATH: String = "res://levels/dungeon_level.tscn"
+const SURVIVORS_LEVEL_PATH: String = "res://survivors/survivors_level.tscn"
 const MENU_PATH: String = "res://ui/main_menu.tscn"
 
 ## Wait (s) between the player's death and the run summary
@@ -21,6 +22,8 @@ var run_seed: int = 0
 var loop_index: int = 0
 # Accessibility: turns off screen shake
 var reduce_screen_shake: bool = false
+# Monster Survivors run: single arena, XP and levels instead of graveyards
+var survivors_mode: bool = false
 # Tutorial run: fixed rooms, no mimics, the teleporter returns to the main menu
 var tutorial_mode: bool = false
 # [DEBUG] Request to skip to the boss fight on the next level load (read and cleared by the DungeonLevel)
@@ -57,8 +60,10 @@ func _process(_delta: float) -> void:
 
 
 ## Resets the state and loads the main level (tutorial = fixed tutorial rooms instead of the dungeon).
-func start_game(tutorial: bool = false) -> void:
+func start_game(tutorial: bool = false, survivors: bool = false) -> void:
 	tutorial_mode = tutorial
+	survivors_mode = survivors
+	LootManager.progress_bonus = 0
 	score = 0
 	room_index = 1
 	cemetery_index = 1
@@ -71,8 +76,8 @@ func start_game(tutorial: bool = false) -> void:
 	EventBus.score_changed.emit(score)
 	state = State.PLAYING
 	get_tree().paused = false
-	EventBus.scene_change_requested.emit(LEVEL_PATH)
-	print("[Game] - run started (tutorial: %s)" % tutorial)
+	EventBus.scene_change_requested.emit(SURVIVORS_LEVEL_PATH if survivors else LEVEL_PATH)
+	print("[Game] - run started (tutorial: %s, survivors: %s)" % [tutorial, survivors])
 
 
 ## Advances to the next room and notifies the EventBus.
@@ -139,7 +144,7 @@ func quit_to_menu() -> void:
 
 ## Restarts the current run (used after game over); a tutorial restarts as a tutorial.
 func restart() -> void:
-	start_game(tutorial_mode)
+	start_game(tutorial_mode, survivors_mode)
 
 
 ## Tutorial teleporter: goes back to the main menu.
@@ -199,7 +204,8 @@ func _on_player_died() -> void:
 
 # Final boss defeated: closes the current loop and offers to end the run or continue in infinite mode
 func _on_boss_defeated() -> void:
-	if state != State.PLAYING:
+	# Monster Survivors has no ending: bosses are just milestones of the waves
+	if state != State.PLAYING or survivors_mode:
 		return
 	state = State.VICTORY
 	bosses_defeated += 1

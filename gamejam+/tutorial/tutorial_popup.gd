@@ -16,6 +16,7 @@ var _showing: bool = false
 var _closing: bool = false
 var _shown_at_msec: int = 0
 var _dim: ColorRect
+var _center: CenterContainer
 var _panel: PanelContainer
 var _label: Label
 var _hint: Label
@@ -32,12 +33,18 @@ func _ready() -> void:
 	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_dim.modulate.a = 0.0
 	add_child(_dim)
+	# The container centers the panel by itself, whatever size the wrapped text ends up with
+	_center = CenterContainer.new()
+	_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_center)
 	_panel = PanelContainer.new()
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.modulate.a = 0.0
 	var box: VBoxContainer = VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	_label = Label.new()
+	_label.custom_minimum_size = Vector2(PANEL_WIDTH, 0.0)
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.add_theme_font_size_override("font_size", 14)
@@ -48,7 +55,7 @@ func _ready() -> void:
 	box.add_child(_label)
 	box.add_child(_hint)
 	_panel.add_child(box)
-	add_child(_panel)
+	_center.add_child(_panel)
 	_panel.visible = false
 	set_process(false)
 
@@ -68,13 +75,9 @@ func _next() -> void:
 	_closing = false
 	_label.text = _queue.pop_front()
 	_hint.text = HINT_WAIT
-	_panel.custom_minimum_size = Vector2(PANEL_WIDTH, 0.0)
-	_panel.size = Vector2(PANEL_WIDTH, 0.0)
 	_panel.visible = true
-	# Waits a frame so the panel takes its final size (and a menu opened by the same event gets to open first)
+	# Waits a frame so the text is laid out (and a menu opened by the same event gets to open first)
 	await get_tree().process_frame
-	var screen: Vector2 = get_viewport().get_visible_rect().size
-	_panel.position = ((screen - _panel.size) * 0.5).round()
 	get_tree().paused = true
 	_shown_at_msec = Time.get_ticks_msec()
 	set_process(true)

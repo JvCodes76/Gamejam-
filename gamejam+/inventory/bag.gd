@@ -52,6 +52,8 @@ func _build_walls() -> void:
 		var b: Vector2 = pts[(i + 1) % pts.size()]
 		if mouth_rect.grow(1.0).has_point((a + b) * 0.5):
 			continue
+		if a.distance_squared_to(b) < 0.0001:
+			continue
 		var dir: Vector2 = (b - a).normalized()
 		var n: Vector2 = Vector2(-dir.y, dir.x)
 		if Geometry2D.is_point_in_polygon((a + b) * 0.5 + n * 0.5, pts):

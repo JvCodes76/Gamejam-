@@ -7,7 +7,7 @@ extends RefCounted
 enum Type { SPAWN, CAULDRON, ITEM, EXIT, BOSS, ELITE, HORDE, EMPTY }
 
 # Tutorial role of the room (NONE = normal room of the dungeon)
-enum TutorialStep { NONE, COMBAT, CAULDRON, FIGHT }
+enum TutorialStep { NONE, COMBAT, CAULDRON, FIGHT, FINISH }
 
 # Size of each type in tiles (even values, so room centers align on the grid)
 const SIZES: Dictionary = {
