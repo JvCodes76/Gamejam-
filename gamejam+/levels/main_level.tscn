@@ -891,5 +891,7 @@ script = ExtResource("5_gis")
 starting_items = Array[ExtResource("6_idata")]([ExtResource("i_carrot"), ExtResource("i_mushroom"), ExtResource("i_cinnamon"), ExtResource("i_salt"), ExtResource("i_wolf_tooth"), ExtResource("i_obsidian"), ExtResource("i_rose_quartz"), ExtResource("i_salamander_tail"), ExtResource("i_poisonous_mushroom"), ExtResource("i_rose_petal"), ExtResource("i_star_anise"), ExtResource("i_spider_gland"), ExtResource("i_graveyard_dirt"), ExtResource("i_tree_sap"), ExtResource("i_gilded_mint_sprig"), ExtResource("i_eye_of_giant_newt"), ExtResource("i_wolfsbane"), ExtResource("i_mandrake_root"), ExtResource("i_deathcap"), ExtResource("i_unicorn_horn_shavings"), ExtResource("i_brimstone"), ExtResource("i_gunpowder"), ExtResource("i_dragons_blood"), ExtResource("i_gun")])
 ; [DEBUG] Test: all items scattered on the ground and a larger radius
 max_radius = 300.0
+; [DEBUG] Test: items 5x smaller
+item_scale = 0.2
 
 [node name="HUD" parent="." unique_id=998489572 instance=ExtResource("4_hud")]

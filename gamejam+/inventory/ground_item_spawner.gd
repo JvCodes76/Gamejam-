@@ -9,6 +9,8 @@ const SPAWN_ATTEMPTS: int = 8
 @export var seed_on_first_load: bool = true
 @export var min_radius: float = 80.0
 @export var max_radius: float = 160.0
+## Scale of the ground items' visuals (1 = normal); the position is not affected
+@export var item_scale: float = 1.0
 
 var _nodes: Dictionary = {}  # entry (Dictionary) -> GroundItem
 
@@ -52,4 +54,5 @@ func _sync() -> void:
 		var node: GroundItem = GROUND_ITEM_SCENE.instantiate()
 		add_child(node)
 		node.setup(entry)
+		node.scale = Vector2.ONE * item_scale
 		_nodes[entry] = node
