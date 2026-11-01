@@ -435,6 +435,12 @@ func _drop_cloud(step: float) -> void:
 	CloudTrail.spawn(get_tree().current_scene, _ground_point(), SynergyConstants.CLOUD_TRAIL_RADIUS, SynergyConstants.CLOUD_TRAIL_LIFETIME, modifiers.synergy.cloud_slow)
 
 
+# Easter egg: a critical with the Gun item (real bullets) plays an eagle scream, at most once per scream length
+const EAGLE_SFX: String = "eagle_scream"
+const EAGLE_COOLDOWN_MS: int = 1800
+static var _last_eagle_ms: int = -EAGLE_COOLDOWN_MS
+
+
 ## Applies damage (with crit per hit), status effects and lifesteal; consumes the bullet if no pierce remains.
 func apply_hit(area: Area2D) -> void:
 	if not area is Hurtbox:
@@ -455,6 +461,8 @@ func apply_hit(area: Area2D) -> void:
 			print("[Combat] - critical! damage %d" % dealt)
 	hurtbox.receive_hit(dealt, direction, crit)
 	EventBus.play_sfx_requested.emit("crit" if crit else "hit")
+	if crit and mods.real_bullets:
+		_play_eagle()
 	if mods != null:
 		mods.apply_on_hit_effects(hurtbox, damage)
 		if _holy:
@@ -474,6 +482,14 @@ func apply_hit(area: Area2D) -> void:
 		return
 	else:
 		_impact(dealt, true)
+
+
+func _play_eagle() -> void:
+	var now: int = Time.get_ticks_msec()
+	if now - _last_eagle_ms < EAGLE_COOLDOWN_MS:
+		return
+	_last_eagle_ms = now
+	EventBus.play_sfx_requested.emit(EAGLE_SFX)
 
 
 ## Bounce: redirects the bullet to the nearest enemy not yet hit and refunds part of its range. False if none is near.

@@ -9,6 +9,15 @@ const XP_ORB_SCENE: GDScript = preload("res://survivors/xp_orb.gd")
 const AMBIENCE_SCENE: PackedScene = preload("res://ambience/ambience_layer.tscn")
 # Arches standing up to this distance (px) from the top/bottom fence line become gates of the fence
 const ARCH_SNAP_DISTANCE: float = 48.0
+# Intro shown at the start of every run (one freezing popup per paragraph, same popup as the tutorial)
+const INTRO_MESSAGES: Array[String] = [
+	"Welcome to the bonus mode! Here, waves of enemies will come to try to hurt you, so be careful!",
+	"Don’t worry though, I’ve given you a few bonuses, such as base lifesteal, extra enemy drops, and every enemy drops xp, granting you levels to increase your bag capacity!",
+	"Every three waves, you’ll get time to relax, enjoy the music, and, you know, actually use the ingredients you got to make new potions.",
+	"Beware, though! With every fifteenth wave comes a nefarious boss to end your run!\n\nGood luck!",
+]
+# Seconds before the intro (lets the scene fade-in finish)
+const INTRO_DELAY: float = 0.6
 
 ## XP needed for level 2; each following level needs "xp_growth" more
 @export var base_xp_to_level: int = 5
@@ -43,7 +52,18 @@ func _ready() -> void:
 	add_child(AMBIENCE_SCENE.instantiate())
 	# Deferred so the HUD (which comes later in the tree) is already connected
 	_emit_xp.call_deferred()
+	_show_intro()
 	print("[Survivors] - mode started")
+
+
+# The popup pauses the tree, so the first wave's countdown only starts after the intro is closed
+func _show_intro() -> void:
+	var popup: TutorialPopup = TutorialPopup.new()
+	popup.name = "IntroPopup"
+	add_child(popup)
+	await get_tree().create_timer(INTRO_DELAY, true, false, true).timeout
+	for message: String in INTRO_MESSAGES:
+		popup.show_message(tr(message))
 
 
 # Resets the loot bonus so it does not leak into the normal game

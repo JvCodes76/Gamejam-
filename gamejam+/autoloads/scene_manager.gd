@@ -18,6 +18,11 @@ func _ready() -> void:
 	EventBus.scene_change_requested.connect(change_scene)
 
 
+## True while a fade/scene change is running (new requests are ignored until it ends).
+func is_changing() -> bool:
+	return _changing
+
+
 ## Scene change with fade out/in. Ignores requests during a change.
 func change_scene(path: String) -> void:
 	if _changing:

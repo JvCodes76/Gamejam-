@@ -1,5 +1,6 @@
 extends CanvasLayer
-## Settings screen: Master, Music and SFX volume sliders, the "Atmosphere effects" toggle and the CRT filter.
+## Settings screen in three tabs: Audio (volume sliders), Video (windowed/fullscreen, VSync,
+## pixel-perfect scaling) and Effects (atmosphere toggle and CRT filter).
 ## Instantiated by the main menu and the pause menu; call open() to show it.
 
 signal closed()
@@ -11,7 +12,10 @@ const VOLUME_ROWS: Array[Dictionary] = [
 	{"bus": &"SFX", "label": "SFX Volume"},
 ]
 
-@onready var _rows: VBoxContainer = $Conteudo/Painel/VBox/Linhas
+@onready var _tabs: TabContainer = $Conteudo/Painel/VBox/Abas
+@onready var _audio_rows: VBoxContainer = $Conteudo/Painel/VBox/Abas/Audio
+@onready var _video_rows: VBoxContainer = $Conteudo/Painel/VBox/Abas/Video
+@onready var _effects_rows: VBoxContainer = $Conteudo/Painel/VBox/Abas/Efeitos
 @onready var _botao_voltar: Button = $Conteudo/Painel/VBox/BotaoVoltar
 
 var _sliders: Dictionary = {}
@@ -20,14 +24,22 @@ var _ambience_toggle: CheckButton
 var _crt_toggle: CheckButton
 var _crt_slider: HSlider
 var _crt_value_label: Label
+var _mode_option: OptionButton
+var _vsync_toggle: CheckButton
+var _pixel_perfect_toggle: CheckButton
 
 
 func _ready() -> void:
 	visible = false
 	for row: Dictionary in VOLUME_ROWS:
 		_build_row(row["bus"] as StringName, row["label"] as String)
+	_build_display_controls()
 	_build_ambience_toggle()
 	_build_crt_controls()
+	_tabs.set_tab_title(0, tr("Audio"))
+	_tabs.set_tab_title(1, tr("Video"))
+	_tabs.set_tab_title(2, tr("Effects"))
+	DisplaySettings.changed.connect(_sync_display_controls)
 	_botao_voltar.pressed.connect(close)
 	_add_ui_sounds(_botao_voltar)
 	print("[UI] - Settings menu ready")
@@ -40,6 +52,8 @@ func open() -> void:
 		_update_label(bus, slider.value)
 	_ambience_toggle.set_pressed_no_signal(AmbienceSettings.is_enabled())
 	_sync_crt_controls()
+	_sync_display_controls()
+	_tabs.current_tab = 0
 	visible = true
 	(_sliders[VOLUME_ROWS[0]["bus"]] as HSlider).grab_focus()
 	print("[UI] - Settings opened")
@@ -87,7 +101,7 @@ func _build_row(bus: StringName, label_text: String) -> void:
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(value_label)
 
-	_rows.add_child(row)
+	_audio_rows.add_child(row)
 	_sliders[bus] = slider
 	_value_labels[bus] = value_label
 	slider.set_value_no_signal(AudioManager.get_bus_volume(bus))
@@ -101,7 +115,7 @@ func _build_ambience_toggle() -> void:
 	_ambience_toggle.tooltip_text = tr("Night lighting, fog, particles and shadows")
 	_ambience_toggle.button_pressed = AmbienceSettings.is_enabled()
 	_ambience_toggle.toggled.connect(_on_ambience_toggled)
-	_rows.add_child(_ambience_toggle)
+	_effects_rows.add_child(_ambience_toggle)
 	_add_ui_sounds(_ambience_toggle)
 
 
@@ -111,7 +125,7 @@ func _build_crt_controls() -> void:
 	_crt_toggle.text = tr("CRT filter")
 	_crt_toggle.tooltip_text = tr("Scanlines, screen curvature and vignette")
 	_crt_toggle.toggled.connect(_on_crt_toggled)
-	_rows.add_child(_crt_toggle)
+	_effects_rows.add_child(_crt_toggle)
 	_add_ui_sounds(_crt_toggle)
 
 	var row := HBoxContainer.new()
@@ -135,8 +149,63 @@ func _build_crt_controls() -> void:
 	_crt_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(_crt_value_label)
 
-	_rows.add_child(row)
+	_effects_rows.add_child(row)
 	_sync_crt_controls()
+
+
+# Window mode, VSync and pixel-perfect scaling (applied live, saved by DisplaySettings)
+func _build_display_controls() -> void:
+	_mode_option = OptionButton.new()
+	for i: int in DisplaySettings.MODE_LABELS.size():
+		_mode_option.add_item(tr(DisplaySettings.MODE_LABELS[i]), i)
+	_mode_option.item_selected.connect(_on_mode_selected)
+	_video_rows.add_child(_labeled_row("Window Mode", _mode_option))
+	_add_ui_sounds(_mode_option)
+
+	_vsync_toggle = CheckButton.new()
+	_vsync_toggle.text = tr("VSync")
+	_vsync_toggle.tooltip_text = tr("Syncs the frame rate with the monitor to avoid tearing")
+	_vsync_toggle.toggled.connect(DisplaySettings.set_vsync)
+	_video_rows.add_child(_vsync_toggle)
+	_add_ui_sounds(_vsync_toggle)
+
+	if DisplaySettings.is_window_locked():
+		var note := Label.new()
+		note.text = tr("Window options only apply outside the editor's Game tab")
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		note.custom_minimum_size = Vector2(280, 0)
+		note.modulate = Color(1.0, 0.8, 0.4)
+		_video_rows.add_child(note)
+
+	_pixel_perfect_toggle = CheckButton.new()
+	_pixel_perfect_toggle.text = tr("Pixel perfect scaling")
+	_pixel_perfect_toggle.tooltip_text = tr("Integer scaling only: sharper pixels, may add black borders")
+	_pixel_perfect_toggle.toggled.connect(DisplaySettings.set_pixel_perfect)
+	_video_rows.add_child(_pixel_perfect_toggle)
+	_add_ui_sounds(_pixel_perfect_toggle)
+
+	_sync_display_controls()
+
+
+func _labeled_row(label_text: String, control: Control) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = tr(label_text)
+	label.custom_minimum_size = Vector2(110, 0)
+	row.add_child(label)
+	control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(control)
+	return row
+
+
+func _sync_display_controls() -> void:
+	_mode_option.select(int(DisplaySettings.get_mode()))
+	_vsync_toggle.set_pressed_no_signal(DisplaySettings.is_vsync_enabled())
+	_pixel_perfect_toggle.set_pressed_no_signal(DisplaySettings.is_pixel_perfect())
+
+
+func _on_mode_selected(index: int) -> void:
+	DisplaySettings.set_mode(index as DisplaySettings.WindowMode)
 
 
 func _sync_crt_controls() -> void:

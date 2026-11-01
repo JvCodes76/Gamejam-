@@ -22,6 +22,7 @@ const SFX_VOLUME_DB: Dictionary = {
 	"enemy_die": -4.0,
 	"ui_hover": -12.0,
 	"ui_click": -6.0,
+	"eagle_scream": -4.0,
 }
 
 var _sfx_players: Array[AudioStreamPlayer] = []

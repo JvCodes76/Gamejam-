@@ -111,6 +111,9 @@ func _format_time(seconds: float) -> String:
 # Infinite mode: goes back to the first graveyard with items kept
 func _on_continuar_pressed() -> void:
 	print("[UI] - Continue in infinite mode pressed")
+	# Ignored during a fade: keep the summary up so the player is not left on a paused screen
+	if SceneManager.is_changing():
+		return
 	visible = false
 	GameManager.continue_endless()
 

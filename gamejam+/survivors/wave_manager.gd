@@ -205,7 +205,7 @@ func _check_wave_end() -> void:
 
 # Creates an enemy with a spawn warning; elites always get it, basic ones only when they are far from the player
 func _spawn(scene: PackedScene, elite: bool) -> void:
-	var point: Vector2 = _random_point()
+	var point: Vector2 = _random_point(-1.0, SpawnCheck.clearance_of(scene))
 	if elite:
 		var marker: SpawnMarker = SpawnMarker.new()
 		marker.duration = FeelConstants.SPAWN_WARNING_TIME + 0.3
@@ -286,13 +286,19 @@ func _on_boss_died(boss: Node2D) -> void:
 
 
 # Free point around the player, inside the arena and away from walls and props
-func _random_point(radius: float = -1.0) -> Vector2:
+# Free point around the player with "clearance" px free of collisions; falls back to the default clearance.
+func _random_point(radius: float = -1.0, clearance: float = SpawnCheck.ENEMY_CLEARANCE) -> Vector2:
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
 	var origin: Vector2 = player.global_position if player != null else Vector2.ZERO
 	var point: Vector2 = origin
-	for attempt: int in spawn_attempts:
+	var fallback: Vector2 = Vector2.INF
+	for attempt: int in SpawnCheck.attempts_for(spawn_attempts, clearance):
 		var distance: float = radius if radius > 0.0 else spawn_radius * randf_range(0.8, 1.2)
 		point = (origin + Vector2.from_angle(randf() * TAU) * distance).clamp(spawn_bounds.position, spawn_bounds.end)
-		if point.distance_to(origin) >= min_spawn_distance and SpawnCheck.is_free(level, point, 12.0):
+		if point.distance_to(origin) < min_spawn_distance:
+			continue
+		if SpawnCheck.is_free(level, point, clearance):
 			return point
-	return point
+		if fallback == Vector2.INF and SpawnCheck.is_free(level, point, SpawnCheck.ENEMY_CLEARANCE):
+			fallback = point
+	return fallback if fallback != Vector2.INF else point

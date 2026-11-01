@@ -61,6 +61,10 @@ func _process(_delta: float) -> void:
 
 ## Resets the state and loads the main level (tutorial = fixed tutorial rooms instead of the dungeon).
 func start_game(tutorial: bool = false, survivors: bool = false) -> void:
+	# During a fade the scene change would be ignored: resetting now would leave the menu in PLAYING state
+	if SceneManager.is_changing():
+		print("[Game] - start ignored: scene change in progress")
+		return
 	tutorial_mode = tutorial
 	survivors_mode = survivors
 	LootManager.progress_bonus = 0
@@ -110,7 +114,7 @@ func debug_go_to_boss() -> void:
 
 ## Infinite mode: goes back to the first graveyard keeping items, potions and score, with stronger enemies.
 func continue_endless() -> void:
-	if state != State.VICTORY:
+	if state != State.VICTORY or SceneManager.is_changing():
 		return
 	loop_index += 1
 	cemetery_index = 1
@@ -129,6 +133,9 @@ func continue_endless() -> void:
 func toggle_pause() -> void:
 	if state != State.PLAYING and state != State.PAUSED:
 		return
+	# Pausing mid-fade would carry the paused tree into the next scene without its pause menu
+	if SceneManager.is_changing():
+		return
 	var paused: bool = state == State.PLAYING
 	state = State.PAUSED if paused else State.PLAYING
 	get_tree().paused = paused
@@ -137,6 +144,9 @@ func toggle_pause() -> void:
 
 ## Unpauses and returns to the main menu.
 func quit_to_menu() -> void:
+	if SceneManager.is_changing():
+		print("[Game] - quit to menu ignored: scene change in progress")
+		return
 	get_tree().paused = false
 	state = State.MENU
 	EventBus.game_paused.emit(false)

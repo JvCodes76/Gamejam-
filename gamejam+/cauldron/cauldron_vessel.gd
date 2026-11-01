@@ -3,8 +3,11 @@ extends Bag
 ## Physical cauldron vessel: reuses the bag, with thick walls, liquid and lid.
 
 @export var size_multiplier: float = 1.0
-# Optional sprite that replaces the placeholder drawing
+# Optional sprite that replaces the placeholder drawing; scale and offset are for size_multiplier 1 (they grow with it)
+# and make the sprite cover the whole CauldronLayout interior
 @export var vessel_texture: Texture2D
+@export var vessel_texture_scale: float = CauldronLayout.SPRITE_SCALE
+@export var vessel_texture_offset: Vector2 = Vector2.ZERO
 @export var wall_color: Color = Color(0.2, 0.2, 0.25)
 @export var wall_line_color: Color = Color(0.42, 0.42, 0.5)
 @export var liquid_wobble: float = 1.2
@@ -40,11 +43,13 @@ func _process(delta: float) -> void:
 # Draws the cauldron: thick walls + interior background (or sprite)
 func _build_visual() -> void:
 	if vessel_texture != null:
-		var sprite := Sprite2D.new()
-		sprite.texture = vessel_texture
-		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		sprite.z_index = -3
-		add_child(sprite)
+		add_child(_make_sprite(vessel_texture, vessel_texture_scale * size_multiplier, vessel_texture_offset * size_multiplier, -3))
+		var shade := Polygon2D.new()
+		shade.polygon = interior
+		shade.color = sprite_interior_shade
+		shade.z_index = -2
+		add_child(shade)
+		return
 	else:
 		for quad: PackedVector2Array in _wall_quads():
 			var wall := Polygon2D.new()
@@ -137,6 +142,13 @@ func _build_bubbles() -> void:
 	bubbles.color = Color(1, 1, 1, 0.55)
 	bubbles.z_index = 2
 	add_child(bubbles)
+
+
+## Lowest point (local y) of the drawing: bottom of the sprite, or of the walls without one.
+func visual_bottom() -> float:
+	if vessel_texture != null:
+		return (vessel_texture_offset.y + vessel_texture.get_height() * 0.5 * vessel_texture_scale) * size_multiplier
+	return CauldronLayout.INTERIOR[9].y * size_multiplier + wall_thickness
 
 
 ## Turns the brewing bubbles on or off.

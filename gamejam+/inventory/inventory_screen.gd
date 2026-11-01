@@ -14,8 +14,8 @@ extends CanvasLayer
 @export var cauldron_spawn_area: Rect2 = Rect2(274, 0, 100, 200)
 @export var cauldron_spawn_columns: int = 2
 @export var cauldron_spawn_row_step: float = 40.0
-@export var bag_position_normal: Vector2 = Vector2(200, 224)
-@export var bag_position_cauldron: Vector2 = Vector2(160, 224)
+@export var bag_position_normal: Vector2 = Vector2(202, 209)
+@export var bag_position_cauldron: Vector2 = Vector2(162, 209)
 @export var vessel_position: Vector2 = Vector2(470, 210)
 # Visual and physical size of the cauldron in the brewing menu (multiplies the cauldron's size_multiplier)
 @export var vessel_scale: float = 1.2
@@ -658,7 +658,7 @@ func _set_brew_ui_visible(value: bool) -> void:
 
 # Positions the bar below the cauldron
 func _layout_brew_ui() -> void:
-	var bottom: float = vessel_position.y + 55.0 * _cauldron.state.size_multiplier * vessel_scale + CauldronLayout.WALL_THICKNESS + 6.0
+	var bottom: float = vessel_position.y + (_vessel.visual_bottom() if _vessel != null else 55.0 * _cauldron.state.size_multiplier * vessel_scale + CauldronLayout.WALL_THICKNESS) + 6.0
 	_brew_bar.position = Vector2(vessel_position.x - 60.0, bottom)
 	_brew_label.position = Vector2(vessel_position.x - 80.0, bottom + 8.0)
 

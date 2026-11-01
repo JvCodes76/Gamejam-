@@ -1,7 +1,7 @@
 class_name FireSkullElite
 extends EnemyBase
 ## Blue fire skull (elite): chases the player and, from time to time, stops, flashes and charges in a straight line.
-## The sheet has 16 frames of 32x32 that loop (hframes on the Sprite2D).
+## The sheet has 16 frames of 32x32 (hframes on the Sprite2D), played in Skull.SPIN_FRAMES order.
 
 enum State { CHASE, WINDUP, DASH }
 
@@ -28,7 +28,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var speed_up: float = 2.0 if _state == State.DASH else 1.0
 	_anim_time += delta * speed_up
-	_sprite.frame = int(_anim_time * anim_fps) % _sprite.hframes
+	_sprite.frame = Skull.SPIN_FRAMES[int(_anim_time * anim_fps) % Skull.SPIN_FRAMES.size()]
 
 
 func _physics_process(delta: float) -> void:

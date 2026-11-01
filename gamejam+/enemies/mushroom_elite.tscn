@@ -16,6 +16,7 @@ idle_texture = ExtResource("tex_0")
 attack_texture = ExtResource("tex_1")
 move_speed = 0.0
 knockback_resistance = 1.0
+spawn_clearance = 56.0
 points = 60
 
 [node name="Sprite2D" parent="." index="1"]

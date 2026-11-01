@@ -19,6 +19,8 @@ const CRIT_MULT_PER_POINT: float = 0.5
 # --- Lifesteal: chance = SCALE * ln(1+lifesteal) * (1+ln(1+luck)); heal = max(1% damage, 1% max health) ---
 const LIFESTEAL_CHANCE_SCALE: float = 0.35
 const LIFESTEAL_HEAL_FRACTION: float = 0.01
+# Free lifesteal level in Monster Survivors, added to the items' (1.0 = ~24% chance per hit with no luck)
+const SURVIVORS_BASE_LIFESTEAL: float = 1.0
 
 # --- Poison: needs a POISON ingredient; dps = base_damage * (1 + PER_POINT * POISON_DAMAGE); stacks (each stack adds its dps, refreshes the duration) ---
 const POISON_HIT_CHANCE: float = 0.20

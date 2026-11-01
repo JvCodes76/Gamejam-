@@ -24,6 +24,7 @@ cloud_damage = 10
 cloud_cooldown = 4.5
 move_speed = 0.0
 knockback_resistance = 1.0
+spawn_clearance = 40.0
 points = 30
 
 [node name="Sprite2D" parent="." index="1"]

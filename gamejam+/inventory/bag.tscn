@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" path="res://inventory/bag.gd" id="1"]
 [ext_resource type="PackedScene" path="res://inventory/physical_item.tscn" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/CraftingItemBag.png" id="3"]
 
 [node name="Bag" type="Node2D"]
 process_mode = 3
 script = ExtResource("1")
 item_scene = ExtResource("2")
+bag_texture = ExtResource("3")

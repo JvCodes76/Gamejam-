@@ -128,7 +128,7 @@ func _spawn(scene: PackedScene, kind: Kind, point: Vector2 = Vector2.INF) -> voi
 	marker.duration = FeelConstants.SPAWN_WARNING_TIME + randf_range(0.0, 0.2)
 	marker.finished.connect(_spawn_now.bind(scene, kind))
 	_level.add_child(marker)
-	marker.global_position = point if point != Vector2.INF else _random_point()
+	marker.global_position = point if point != Vector2.INF else _random_point(SpawnCheck.clearance_of(scene))
 	_alive += 1
 
 
@@ -187,19 +187,25 @@ func _apply_loop_scaling(enemy: EnemyBase, health: HealthComponent) -> void:
 	enemy.points = roundi(enemy.points * _level.loop_points_multiplier())
 
 
-# Random free point inside the room, away from the player.
-func _random_point() -> Vector2:
+# Random free point inside the room, away from the player, with "clearance" px free of collisions around it.
+# If no point has the full clearance, falls back to one with the default clearance.
+func _random_point(clearance: float = SpawnCheck.ENEMY_CLEARANCE) -> Vector2:
 	var area: Rect2 = room.rect.grow(-48.0)
 	area.position.y += 40.0
 	area.size.y -= 40.0
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
 	var point: Vector2 = area.get_center()
-	for attempt: int in _level.spawn_attempts:
+	var fallback: Vector2 = Vector2.INF
+	for attempt: int in SpawnCheck.attempts_for(_level.spawn_attempts, clearance):
 		point = Vector2(randf_range(area.position.x, area.end.x), randf_range(area.position.y, area.end.y))
 		var far_enough: bool = player == null or point.distance_to(player.global_position) >= _level.min_spawn_distance
-		if far_enough and SpawnCheck.is_free(_level, point, 12.0):
+		if not far_enough:
+			continue
+		if SpawnCheck.is_free(_level, point, clearance):
 			return point
-	return point
+		if fallback == Vector2.INF and SpawnCheck.is_free(_level, point, SpawnCheck.ENEMY_CLEARANCE):
+			fallback = point
+	return fallback if fallback != Vector2.INF else point
 
 
 func _on_enemy_gone() -> void:

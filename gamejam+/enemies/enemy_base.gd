@@ -15,6 +15,8 @@ const ENEMY_MASK: int = 4
 @export var spawn_grace: float = FeelConstants.SPAWN_GRACE
 ## Elite with its own art: the room does not enlarge or tint the sprite (only applies elite health and resistance)
 @export var has_elite_art: bool = false
+## Free radius (px) around the feet required at the spawn point (static enemies ask for more, see SpawnCheck.clearance_of)
+@export var spawn_clearance: float = SpawnCheck.ENEMY_CLEARANCE
 
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _hitbox: Hitbox = $Hitbox

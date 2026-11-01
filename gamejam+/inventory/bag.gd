@@ -8,6 +8,13 @@ signal item_left_bag(item: PhysicalItem)
 @export var shrink_tween_time: float = 0.15
 @export var bag_fill_color: Color = Color(0.35, 0.22, 0.12, 0.6)
 @export var bag_line_color: Color = Color(0.6, 0.4, 0.2)
+## Sprite drawn behind the items (replaces the placeholder polygon). Scale and offset (local px) place it so it
+## covers the whole interior; the physics shape (BagLayout) stays the same.
+@export var bag_texture: Texture2D
+@export var bag_texture_scale: float = BagLayout.SPRITE_SCALE
+@export var bag_texture_offset: Vector2 = BagLayout.SPRITE_OFFSET
+## Darkening over the sprite inside the interior, so the usable area reads clearly
+@export var sprite_interior_shade: Color = Color(0, 0, 0, 0.22)
 
 # Vessel geometry (subclasses, like the cauldron, change these values before super._ready)
 var interior: PackedVector2Array = BagLayout.INTERIOR
@@ -24,8 +31,16 @@ func _ready() -> void:
 	_build_walls()
 	_build_zones()
 
-# Draws the bag (fill + outline)
+# Draws the bag: sprite + interior shade, or the placeholder fill + outline
 func _build_visual() -> void:
+	if bag_texture != null:
+		add_child(_make_sprite(bag_texture, bag_texture_scale, bag_texture_offset, -2))
+		var shade := Polygon2D.new()
+		shade.polygon = interior
+		shade.color = sprite_interior_shade
+		shade.z_index = -1
+		add_child(shade)
+		return
 	var fill := Polygon2D.new()
 	fill.polygon = interior
 	fill.color = bag_fill_color
@@ -37,6 +52,18 @@ func _build_visual() -> void:
 	line.width = 2.0
 	line.default_color = bag_line_color
 	add_child(line)
+
+# Pixel-art sprite centered at "offset"
+func _make_sprite(texture: Texture2D, sprite_scale: float, offset: Vector2, z: int) -> Sprite2D:
+	var sprite := Sprite2D.new()
+	sprite.name = "Sprite"
+	sprite.texture = texture
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.scale = Vector2(sprite_scale, sprite_scale)
+	sprite.position = offset
+	sprite.z_index = z
+	return sprite
+
 
 # Builds walls around the INTERIOR, with no wall at the mouth
 func _build_walls() -> void:

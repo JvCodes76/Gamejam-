@@ -26,6 +26,7 @@ Juice="*res://autoloads/juice.gd"
 LootManager="*res://autoloads/loot_manager.gd"
 Compendium="*res://autoloads/compendium.gd"
 CrtFilter="*res://autoloads/crt_filter.gd"
+DisplaySettings="*res://autoloads/display_settings.gd"
 
 [gui]
 

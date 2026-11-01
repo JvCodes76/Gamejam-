@@ -46,8 +46,23 @@ layout_mode = 2
 text = "Settings"
 horizontal_alignment = 1
 
-[node name="Linhas" type="VBoxContainer" parent="Conteudo/Painel/VBox"]
+[node name="Abas" type="TabContainer" parent="Conteudo/Painel/VBox"]
 layout_mode = 2
+current_tab = 0
+
+[node name="Audio" type="VBoxContainer" parent="Conteudo/Painel/VBox/Abas"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Video" type="VBoxContainer" parent="Conteudo/Painel/VBox/Abas"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Efeitos" type="VBoxContainer" parent="Conteudo/Painel/VBox/Abas"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
 
 [node name="BotaoVoltar" type="Button" parent="Conteudo/Painel/VBox"]
 layout_mode = 2

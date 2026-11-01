@@ -14,6 +14,15 @@ const PORTAL_FPS: float = 10.0
 const BOSS_CAULDRON_MARGIN: Vector2 = Vector2(96.0, 96.0)
 # Night atmosphere (lights, fog, particles, shadows), behind the "Atmosphere effects" setting
 const AMBIENCE_SCENE: PackedScene = preload("res://ambience/ambience_layer.tscn")
+# Intro shown once per run, in the first graveyard of the first loop (same freezing popup as the tutorial)
+const INTRO_MESSAGES: Array[String] = [
+	"It is the night of tricks and treats, and evil monsters are invading your forest!",
+	"Your goal is to get to the next cemetery via a one way portal and get to their leader, saving the world and all that or something equally dramatic.",
+	"Every graveyard gives you more bag space and heals you, so keep that in mind!",
+	"Have fun, and don’t be afraid to experiment and fail! Good luck!",
+]
+# Seconds before the intro (lets the scene fade-in finish)
+const INTRO_DELAY: float = 0.6
 
 @export_group("Graveyards")
 ## Number of rooms in each graveyard (the array size is the number of graveyards)
@@ -160,6 +169,18 @@ func _ready() -> void:
 	if is_tutorial:
 		return
 	EventBus.cemetery_changed.emit(index, total)
+	if index == 1 and GameManager.loop_index == 0 and not jump_to_boss:
+		_show_intro()
+
+
+# New run only: the popup pauses the tree, so nothing happens until the intro is closed
+func _show_intro() -> void:
+	var popup: TutorialPopup = TutorialPopup.new()
+	popup.name = "IntroPopup"
+	add_child(popup)
+	await get_tree().create_timer(INTRO_DELAY, true, false, true).timeout
+	for message: String in INTRO_MESSAGES:
+		popup.show_message(tr(message))
 
 
 func _exit_tree() -> void:
@@ -207,7 +228,9 @@ func _physics_process(_delta: float) -> void:
 		_current_room = found
 		GameManager.advance_room()
 		_encounters[found].on_player_entered()
-	if _portal_position != Vector2.INF and feet.distance_to(_portal_position) <= portal_radius:
+	# Waits for any running fade: a request made now would be ignored and leave the player stuck here
+	if _portal_position != Vector2.INF and feet.distance_to(_portal_position) <= portal_radius \
+			and not SceneManager.is_changing():
 		_leaving = true
 		if GameManager.tutorial_mode:
 			GameManager.finish_tutorial()

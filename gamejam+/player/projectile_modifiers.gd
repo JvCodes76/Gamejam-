@@ -59,6 +59,8 @@ static func from_totals(totals: Dictionary, aspects: Dictionary = {}, specials: 
 	m.fire_rate_multiplier = 1.0 + _total(totals, ItemEffect.EffectType.FIRE_RATE) * CombatConstants.FIRE_RATE_PER_POINT
 	m.luck = _total(totals, ItemEffect.EffectType.LUCK)
 	m.lifesteal_level = _total(totals, ItemEffect.EffectType.LIFESTEAL)
+	if GameManager.survivors_mode:
+		m.lifesteal_level += CombatConstants.SURVIVORS_BASE_LIFESTEAL
 	m.crit_damage_level = _total(totals, ItemEffect.EffectType.CRIT_DAMAGE)
 	m.charm_level = _total(totals, ItemEffect.EffectType.CHARM_CHANCE)
 	m.poison_level = _total(totals, ItemEffect.EffectType.POISON_DAMAGE)

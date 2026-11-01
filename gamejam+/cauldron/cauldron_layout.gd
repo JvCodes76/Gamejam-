@@ -1,16 +1,24 @@
 class_name CauldronLayout
 extends RefCounted
 
-# Wide cauldron (~143x103), local coordinates: origin at the center, y down
+# Local coordinates: origin at the center, y down. Traced from the bowl of the CraftingCauldron sprite (48x32 at
+# SPRITE_SCALE, centered at the origin), 1 sprite px inside its outline: the mouth is the neck under the rim,
+# the sides follow the belly (handles and legs stay outside).
 const INTERIOR: PackedVector2Array = [
-	Vector2(-47, -52), Vector2(47, -52),
-	Vector2(64, -30), Vector2(71, 0),
-	Vector2(64, 32), Vector2(43, 52),
-	Vector2(-43, 52), Vector2(-64, 32),
-	Vector2(-71, 0), Vector2(-64, -30),
+	Vector2(-66, -72), Vector2(66, -72),
+	Vector2(66, -36), Vector2(77, -22),
+	Vector2(82, -12), Vector2(82, 12),
+	Vector2(72, 22), Vector2(66, 36),
+	Vector2(55, 50), Vector2(50, 61),
+	Vector2(-50, 61), Vector2(-55, 50),
+	Vector2(-66, 36), Vector2(-72, 22),
+	Vector2(-82, 12), Vector2(-82, -12),
+	Vector2(-77, -22), Vector2(-66, -36),
 ]
-# Mouth at the top (94 px)
-const MOUTH_RECT: Rect2 = Rect2(-47, -68, 94, 16)
+# Mouth at the top (the whole neck, 132 px)
+const MOUTH_RECT: Rect2 = Rect2(-66, -88, 132, 16)
+# Sprite scale (at size multiplier 1) the INTERIOR was traced with
+const SPRITE_SCALE: float = 5.5
 const WALL_THICKNESS: float = 16.0
 
 

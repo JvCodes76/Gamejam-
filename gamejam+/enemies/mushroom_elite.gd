@@ -2,7 +2,8 @@ class_name MushroomElite
 extends EnemyBase
 ## Poisonous mushroom (elite): static and tanky. Keeps shooting volleys of spores toward the target and, when the
 ## target gets close, inflates its cap and releases a lingering cloud of spores around itself.
-## 32x32 sheets: idle with 4 frames and attack with 6 (the last is the burst).
+## 32x32 sheets: idle with 4 frames and attack with 6 (the last is the burst). Both attacks (volley and cloud)
+## play the attack sheet as a wind-up and release on its last frame.
 
 const SPORE_COLOR: Color = Color(0.55, 0.85, 0.25)
 # Point (px from the feet) where the spores leave the cap and where the cloud is centered
@@ -28,6 +29,8 @@ const TARGET_AIM_OFFSET: Vector2 = Vector2(0.0, -12.0)
 @export var spore_damage: int = 15
 ## Maximum distance (px) to the target to shoot
 @export var shot_range: float = 320.0
+## Wind-up (s) of the attack animation before the volley leaves the cap
+@export var shot_windup: float = 0.45
 
 @export_group("Spore cloud")
 ## Distance (px) to the target that triggers the cloud
@@ -43,8 +46,12 @@ const TARGET_AIM_OFFSET: Vector2 = Vector2(0.0, -12.0)
 ## Time (s) between clouds, counted from the release
 @export var cloud_cooldown: float = 3.5
 
+enum Attack { CLOUD, SHOT }
+
 var _anim_time: float = 0.0
 var _attacking: bool = false
+var _attack_kind: Attack = Attack.CLOUD
+var _attack_duration: float = 0.0
 var _attack_elapsed: float = 0.0
 var _shot_left: float = 0.0
 var _cloud_left: float = 0.0
@@ -74,9 +81,9 @@ func _physics_process(delta: float) -> void:
 		if target != null:
 			var distance: float = global_position.distance_to(target.global_position)
 			if distance <= cloud_trigger_radius and _cloud_left <= 0.0:
-				_start_attack()
+				_start_attack(Attack.CLOUD)
 			elif distance <= shot_range and _shot_left <= 0.0:
-				_shoot(target)
+				_start_attack(Attack.SHOT)
 	super._physics_process(delta)
 
 
@@ -101,28 +108,40 @@ func _shoot(target: Node2D) -> void:
 	ImpactEffect.spawn_burst(scene, origin, 10.0, SPORE_COLOR, 8, 0.3, 1.0, 0.6)
 
 
-func _start_attack() -> void:
+func _start_attack(kind: Attack) -> void:
 	_attacking = true
+	_attack_kind = kind
 	_attack_elapsed = 0.0
+	_attack_duration = attack_time if kind == Attack.CLOUD else shot_windup
 	_set_sheet(attack_texture, 6)
-	EventBus.play_sfx_requested.emit("mushroom_charge")
+	if kind == Attack.CLOUD:
+		EventBus.play_sfx_requested.emit("mushroom_charge")
 
 
-# Advances the charge animation; stun cancels it without releasing the cloud
+# Advances the attack animation; stun cancels it without releasing anything
 func _tick_attack(delta: float) -> void:
 	if not _status.can_act():
 		_end_attack()
 		return
 	_attack_elapsed += delta
 	var last: int = _sprite.hframes - 1
-	_sprite.frame = mini(int(_attack_elapsed / attack_time * last), last)
-	if _attack_elapsed >= attack_time:
+	_sprite.frame = mini(int(_attack_elapsed / maxf(_attack_duration, 0.01) * last), last)
+	if _attack_elapsed < _attack_duration:
+		return
+	if _attack_kind == Attack.CLOUD:
 		_release_cloud()
-		_end_attack()
+	else:
+		var target: Node2D = _find_target()
+		if target != null:
+			_shoot(target)
+		else:
+			_shot_left = shot_interval
+	_end_attack()
 
 
 func _end_attack() -> void:
 	_attacking = false
+	_anim_time = 0.0
 	_set_sheet(idle_texture, 4)
 
 
