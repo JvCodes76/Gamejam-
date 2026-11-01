@@ -4,6 +4,10 @@ Shocker, but those monsters really want to hurt you! Don't worry though, you hav
 
 Wow! Two items dropped!! Go up to them and press E to pick them up! If your bag is full, you can open it at any time with TAB and every item nearby will show up there, on the ground.
 
+Every time you pick up an item (or get a synergy but we'll get tp that), it goes into the journal on the bottom right hand side of the screen!
+
+There, you can see what they do and a little description (that I frankly put a lot of love into :3), so check it out!
+
 This is your trusty cauldron, every graveyard has one, obviously. Press E to interact with it.
 
 This is the cauldron Screen! To make a new potion, drag the ingredients you want to use into the cauldron and hold ENTER
