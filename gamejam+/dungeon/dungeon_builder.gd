@@ -84,7 +84,7 @@ const U_BAND_MIN_DROP: float = 64.0
 # --- Props inside the graveyard ---
 const PROP_WEIGHTS: Dictionary = {
 	Prop.Kind.GRAVE_CROSS: 4.0, Prop.Kind.GRAVE_ROUND: 4.0, Prop.Kind.GRAVE_BROKEN: 3.0, Prop.Kind.DIRT_MOUND: 2.0,
-	Prop.Kind.CANDLES: 2.0, Prop.Kind.PUMPKIN_PLAIN: 2.0, Prop.Kind.PUMPKIN_SMILE: 1.0, Prop.Kind.PUMPKIN_GRIN: 1.0,
+	Prop.Kind.CANDLES: 2.0, Prop.Kind.PUMPKIN_PLAIN: 5.0, Prop.Kind.PUMPKIN_SMILE: 4.0, Prop.Kind.PUMPKIN_GRIN: 4.0,
 	Prop.Kind.BUSH_A: 2.0, Prop.Kind.BUSH_B: 2.0, Prop.Kind.LEAVES_A: 2.0, Prop.Kind.LEAVES_B: 2.0,
 	Prop.Kind.HOLLOW_TREE_A: 1.0, Prop.Kind.HOLLOW_TREE_B: 1.0, Prop.Kind.LAMP_POST: 1.0, Prop.Kind.BENCH: 1.0,
 }

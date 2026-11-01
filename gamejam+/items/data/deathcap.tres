@@ -9,12 +9,17 @@ script = ExtResource("2")
 effect_type = 1
 magnitude = 3
 
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("2")
+effect_type = 18
+
 [resource]
 script = ExtResource("1")
 id = &"deathcap"
 display_name = "Deathcap"
+description = "Great for sleep, if you plan on doing it forever."
 icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([1, 1, 1])
-effects = Array[ExtResource("2")]([SubResource("e1")])
+effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])
 color = Color(0.8588, 0.8353, 0.7647, 1)

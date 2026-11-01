@@ -19,12 +19,18 @@ const TICK_EPSILON: float = 0.001
 
 # Damage taken multiplier (e.g. marked); the fraction is accumulated
 var damage_taken_multiplier: float = 1.0
+# Resistance of the owner (e.g. the boss): damage_scale applies to all damage (hits and DoT), direct_damage_scale
+# only to direct hits (take_damage, not DoT ticks). Separate from damage_taken_multiplier, which statuses overwrite.
+var damage_scale: float = 1.0
+var direct_damage_scale: float = 1.0
 # Chance to completely negate incoming damage (0 = never)
 var negate_chance: float = 0.0
 
 # source -> { dps, time, tick_every, tick_left, carry }; different sources stack
 var _dots: Dictionary = {}
 var _taken_carry: float = 0.0
+var _direct_carry: float = 0.0
+var _scale_carry: float = 0.0
 # True while a DoT tick applies damage (hit feedback ignores this damage)
 var applying_dot: bool = false
 
@@ -36,6 +42,12 @@ func _ready() -> void:
 
 # Reduces health and emits the corresponding signals.
 func take_damage(amount: int) -> void:
+	if direct_damage_scale != 1.0:
+		_direct_carry += amount * direct_damage_scale
+		amount = int(_direct_carry)
+		_direct_carry -= amount
+		if amount <= 0:
+			return
 	_apply_damage(amount)
 
 
@@ -46,6 +58,12 @@ func _apply_damage(amount: int) -> int:
 	if negate_chance > 0.0 and randf() < negate_chance:
 		damage_negated.emit(amount)
 		return 0
+	if damage_scale != 1.0:
+		_scale_carry += amount * damage_scale
+		amount = int(_scale_carry)
+		_scale_carry -= amount
+		if amount <= 0:
+			return 0
 	if damage_taken_multiplier != 1.0:
 		_taken_carry += amount * damage_taken_multiplier
 		amount = int(_taken_carry)
@@ -87,12 +105,20 @@ func is_dead() -> bool:
 
 
 # Damage over time per source: renews the duration and uses the highest dps of the same source, without stacking on it.
-func apply_dot(dps: float, duration: float, source: StringName = &"dot", tick: float = DOT_TICK) -> void:
+# max_stacks > 1 makes the source stack: each application adds its dps (up to max_stacks) and resets the duration.
+func apply_dot(dps: float, duration: float, source: StringName = &"dot", tick: float = DOT_TICK, max_stacks: int = 1) -> void:
 	if _is_dead or dps <= 0.0:
 		return
-	var dot: Dictionary = _dots.get(source, {"dps": 0.0, "time": 0.0, "tick_every": tick, "tick_left": tick, "carry": 0.0})
-	dot["dps"] = maxf(float(dot["dps"]), dps)
-	dot["time"] = maxf(float(dot["time"]), duration)
+	var dot: Dictionary = _dots.get(source, {"dps": 0.0, "time": 0.0, "tick_every": tick, "tick_left": tick, "carry": 0.0, "stacks": 0})
+	if max_stacks > 1:
+		var stacks: int = int(dot.get("stacks", 0))
+		if stacks < max_stacks:
+			dot["dps"] = float(dot["dps"]) + dps
+			dot["stacks"] = stacks + 1
+		dot["time"] = duration
+	else:
+		dot["dps"] = maxf(float(dot["dps"]), dps)
+		dot["time"] = maxf(float(dot["time"]), duration)
 	_dots[source] = dot
 	set_process(true)
 

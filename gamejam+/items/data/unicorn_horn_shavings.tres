@@ -11,14 +11,19 @@ magnitude = 2
 
 [sub_resource type="Resource" id="e2"]
 script = ExtResource("2")
-effect_type = 11
+effect_type = 8
+
+[sub_resource type="Resource" id="e3"]
+script = ExtResource("2")
+effect_type = 17
 
 [resource]
 script = ExtResource("1")
 id = &"unicorn_horn_shavings"
 display_name = "Unicorn Horn Shavings"
+description = "Highly illegal in a lot of places, for obvious reasons."
 icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([7, 6, 4])
-effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2")])
+effects = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2"), SubResource("e3")])
 color = Color(0.9412, 0.851, 1, 1)

@@ -17,6 +17,7 @@ effect_type = 7
 script = ExtResource("1")
 id = &"gilded_mint_sprig"
 display_name = "Gilded Mint Sprig"
+description = "Legends say it sprouted without ever being sown."
 icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([0, 6, 7])

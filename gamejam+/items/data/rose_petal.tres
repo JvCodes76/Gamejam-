@@ -16,6 +16,7 @@ effect_type = 8
 script = ExtResource("1")
 id = &"rose_petal"
 display_name = "Rose Petal"
+description = "Note to self: Don't forget to give it to a loved one later."
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([0, 0])

@@ -56,7 +56,7 @@ static func _distances(rooms: Array[RoomData], start: int) -> Array[int]:
 	return dist
 
 
-# Rolls the role of each room: spawn and exit in distant dead ends, item in a dead end, cauldron in the rest.
+# Rolls the role of each room: spawn and exit in distant dead ends, cauldron next to the spawn, item in a dead end.
 static func _assign_types(rooms: Array[RoomData], is_final: bool, filler_weights: Dictionary, rng: RandomNumberGenerator) -> void:
 	var unassigned: Array[int] = []
 	for i: int in rooms.size():
@@ -65,6 +65,11 @@ static func _assign_types(rooms: Array[RoomData], is_final: bool, filler_weights
 	var spawn: int = _pick(unassigned, rooms, true, rng)
 	rooms[spawn].set_type(RoomData.Type.SPAWN)
 	unassigned.erase(spawn)
+
+	# Cauldron: always the second room, right next to the spawn (the spawn is a dead end, so it has a single neighbor)
+	var cauldron: int = rooms[spawn].neighbors.values()[0]
+	rooms[cauldron].set_type(RoomData.Type.CAULDRON)
+	unassigned.erase(cauldron)
 
 	# Exit: the dead end farthest from the spawn (ties randomized)
 	var dist: Array[int] = _distances(rooms, spawn)
@@ -84,10 +89,6 @@ static func _assign_types(rooms: Array[RoomData], is_final: bool, filler_weights
 	var item: int = _pick(unassigned, rooms, true, rng)
 	rooms[item].set_type(RoomData.Type.ITEM)
 	unassigned.erase(item)
-
-	var cauldron: int = _pick(unassigned, rooms, false, rng)
-	rooms[cauldron].set_type(RoomData.Type.CAULDRON)
-	unassigned.erase(cauldron)
 
 	for i: int in unassigned:
 		rooms[i].set_type(_pick_weighted(filler_weights, rng))

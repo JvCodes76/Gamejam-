@@ -16,6 +16,7 @@ effect_type = 3
 script = ExtResource("1")
 id = &"obsidian"
 display_name = "Obsidian"
+description = "Making a portal doesn't work. I tried."
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([3, 5])

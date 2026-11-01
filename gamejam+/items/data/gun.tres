@@ -12,6 +12,7 @@ effect_type = 15
 script = ExtResource("1")
 id = &"gun"
 display_name = "Gun"
+description = "what"
 icon = ExtResource("3")
 rarity = 3
 aspects = Array[int]([8, 8, 8, 8])

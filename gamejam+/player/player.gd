@@ -18,6 +18,14 @@ const BULLET_SCENE: PackedScene = preload("res://projectiles/bullet.tscn")
 @export var knockback_impulse: float = FeelConstants.PLAYER_KNOCKBACK_IMPULSE
 
 var _fire_timer: float = 0.0
+# Gun (real bullets): rounds left and remaining reload time (> 0 = reloading)
+var _ammo: int = CombatConstants.MAGAZINE_SIZE
+var _reload_left: float = 0.0
+# Brimstone (laser): charge time held, active beam and Dragon's Blood shot counter (sfx/camera only every few flames)
+var _laser_charge: float = 0.0
+var _laser: LaserBeam = null
+var _flame_shots: int = 0
+var _ammo_indicator: AmmoIndicator = null
 var _aim_direction: Vector2 = Vector2.RIGHT
 var _use_gamepad: bool = false
 var _mods: ProjectileModifiers = ProjectileModifiers.new()
@@ -72,6 +80,9 @@ func _ready() -> void:
 	_health.health_changed.connect(_on_health_changed)
 	_health.damaged.connect(_on_damaged)
 	_health.died.connect(_on_died)
+	_ammo_indicator = AmmoIndicator.new()
+	_ammo_indicator.position = Vector2(0.0, -48.0)
+	add_child(_ammo_indicator)
 	_director = SynergyDirector.new()
 	_director.name = "SynergyDirector"
 	add_child(_director)
@@ -100,7 +111,12 @@ func _input(event: InputEvent) -> void:
 
 ## Switches the active potion with the mouse scroll.
 func _unhandled_input(event: InputEvent) -> void:
-	if _dead or ItemManager.inventory_open or not event is InputEventMouseButton:
+	if _dead or ItemManager.inventory_open:
+		return
+	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_R:
+		_start_reload()
+		return
+	if not event is InputEventMouseButton:
 		return
 	var mouse: InputEventMouseButton = event as InputEventMouseButton
 	if not mouse.pressed:
@@ -117,7 +133,11 @@ func _physics_process(delta: float) -> void:
 	_update_sprite(delta)
 	_update_blink(delta)
 	_fire_timer -= delta
-	if Input.is_action_pressed("shoot") and _fire_timer <= 0.0 and not ItemManager.inventory_open:
+	_update_reload(delta)
+	var wants_fire: bool = Input.is_action_pressed("shoot") and not ItemManager.inventory_open
+	if _mods.laser:
+		_update_laser(delta, wants_fire)
+	elif wants_fire and _fire_timer <= 0.0 and _reload_left <= 0.0:
 		_shoot()
 
 
@@ -201,28 +221,113 @@ func _facing_from(direction: Vector2) -> Facing:
 	return Facing.DOWN if direction.y > 0.0 else Facing.UP
 
 
-## Fires a bullet in the aim direction.
-func _shoot() -> void:
-	_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
-	var bullet: Bullet = BULLET_SCENE.instantiate() as Bullet
-	bullet.global_position = _muzzle.global_position
-	var shot_dir: Vector2 = _aim_direction
+## Direction of the shot: from the muzzle to the mouse (or the stick's aim).
+func _shot_direction() -> Vector2:
 	if not _use_gamepad:
 		var to_mouse: Vector2 = get_global_mouse_position() - _muzzle.global_position
 		if to_mouse.length() > 1.0:
-			shot_dir = to_mouse.normalized()
+			return to_mouse.normalized()
+	return _aim_direction
+
+
+## Fires a bullet in the aim direction (a flame with Dragon's Blood, a real bullet with the Gun).
+func _shoot() -> void:
+	var shot_dir: Vector2 = _shot_direction()
+	var bullet: Bullet = BULLET_SCENE.instantiate() as Bullet
+	bullet.global_position = _muzzle.global_position
 	bullet.damage = CombatConstants.WEAPON_BASE_DAMAGE
 	bullet.setup(shot_dir)
 	bullet.apply_modifiers(_mods, _health)
-	if _mods.synergy.rainbow_colors:
-		if not bullet.is_holy():
-			bullet.set_tint(SynergyConstants.RAINBOW_COLORS[_rainbow_index % SynergyConstants.RAINBOW_COLORS.size()])
-		_rainbow_index += 1
+	var loud: bool = true
+	if _mods.fire_breath:
+		_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier / CombatConstants.FLAME_RATE_DIVISOR
+		bullet.setup_flame(shot_dir.rotated(deg_to_rad(randf_range(-CombatConstants.FLAME_SPREAD_DEG, CombatConstants.FLAME_SPREAD_DEG))))
+		_flame_shots += 1
+		loud = _flame_shots % 3 == 1
+	else:
+		_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
+		if _mods.real_bullets:
+			bullet.speed *= CombatConstants.REAL_BULLET_SPEED_MULT
+		if _mods.synergy.rainbow_colors:
+			if not bullet.is_holy():
+				bullet.set_tint(SynergyConstants.RAINBOW_COLORS[_rainbow_index % SynergyConstants.RAINBOW_COLORS.size()])
+			_rainbow_index += 1
 	get_tree().current_scene.add_child(bullet)
 	_muzzle_flash.flash(bullet.get_tint())
-	_recoil_offset = -shot_dir * FeelConstants.SPRITE_RECOIL
-	_camera.kick(shot_dir)
-	EventBus.play_sfx_requested.emit("shoot")
+	_recoil_offset = -shot_dir * FeelConstants.SPRITE_RECOIL * (1.0 if loud else 0.4)
+	if loud:
+		_camera.kick(shot_dir)
+		EventBus.play_sfx_requested.emit("shoot")
+	if _mods.real_bullets:
+		_ammo -= 1
+		if _ammo <= 0:
+			_start_reload()
+		else:
+			_refresh_ammo_indicator()
+
+
+## Gun: starts the reload (also with R); ignored without a magazine, with a full one or already reloading.
+func _start_reload() -> void:
+	if not _mods.real_bullets or _reload_left > 0.0 or _ammo >= CombatConstants.MAGAZINE_SIZE:
+		return
+	_reload_left = CombatConstants.RELOAD_TIME
+	print("[Combat] - reloading")
+	_refresh_ammo_indicator()
+
+
+func _update_reload(delta: float) -> void:
+	if _reload_left <= 0.0:
+		return
+	_reload_left -= delta
+	if _reload_left <= 0.0:
+		_reload_left = 0.0
+		_ammo = CombatConstants.MAGAZINE_SIZE
+		print("[Combat] - reloaded")
+	_refresh_ammo_indicator()
+
+
+func _refresh_ammo_indicator() -> void:
+	if _ammo_indicator == null:
+		return
+	if not _mods.real_bullets:
+		_ammo_indicator.show_state(0, 0, -1.0, _mods.color)
+		return
+	var ratio: float = 1.0 - _reload_left / CombatConstants.RELOAD_TIME if _reload_left > 0.0 else -1.0
+	_ammo_indicator.show_state(_ammo, CombatConstants.MAGAZINE_SIZE, ratio, _mods.color)
+
+
+## Brimstone: holding the button charges the laser; once charged the beam fires, then the cooldown starts.
+func _update_laser(delta: float, wants_fire: bool) -> void:
+	if _laser != null and is_instance_valid(_laser):
+		return
+	if not wants_fire or _fire_timer > 0.0:
+		_cancel_laser()
+		return
+	if _laser == null:
+		_laser = LaserBeam.new()
+		_laser.setup(_mods, CombatConstants.WEAPON_BASE_DAMAGE, _health)
+		_muzzle.add_child(_laser)
+	_laser_charge += delta * _mods.fire_rate_multiplier
+	_laser.set_charge(_laser_charge / CombatConstants.LASER_CHARGE_TIME)
+	if _laser_charge >= CombatConstants.LASER_CHARGE_TIME:
+		_laser.finished.connect(_on_laser_finished)
+		_laser.fire()
+		_muzzle_flash.flash(_mods.color)
+		_recoil_offset = -_shot_direction() * FeelConstants.SPRITE_RECOIL
+
+
+func _on_laser_finished() -> void:
+	_laser = null
+	_laser_charge = 0.0
+	_fire_timer = fire_rate_seconds / _mods.fire_rate_multiplier
+
+
+## Drops the charge (button released, potion swapped, death).
+func _cancel_laser() -> void:
+	_laser_charge = 0.0
+	if _laser != null and is_instance_valid(_laser):
+		_laser.queue_free()
+	_laser = null
 
 
 ## Recomputes the modifiers from the active potion and tints the crosshair.
@@ -233,6 +338,10 @@ func _recalculate_modifiers() -> void:
 	if potion != null:
 		_mods.color = potion.color
 		_mods.source_items = potion.items
+	_cancel_laser()
+	_ammo = CombatConstants.MAGAZINE_SIZE
+	_reload_left = 0.0
+	_refresh_ammo_indicator()
 	_director.configure(_mods, potion.aspect_counts if potion != null else {})
 	_crosshair.color = Color(_mods.color, 0.9)
 	_crosshair.queue_redraw()
@@ -240,10 +349,9 @@ func _recalculate_modifiers() -> void:
 	print("[Potion] - modifiers: damage x%.2f, range x%.2f, fire rate x%.2f" % [_mods.damage_multiplier, _mods.range_multiplier, _mods.fire_rate_multiplier])
 
 
-## Warns once about unimplemented effects when swapping potions.
-func _on_potion_selected(index: int) -> void:
+## Recomputes the modifiers when swapping potions.
+func _on_potion_selected(_index: int) -> void:
 	_recalculate_modifiers()
-	_mods.print_unimplemented()
 
 
 ## Toggles the system cursor and crosshair according to the pause.
@@ -310,6 +418,7 @@ func _on_died() -> void:
 	EventBus.player_died.emit()
 	remove_from_group("player")
 	set_physics_process(false)
+	_cancel_laser()
 	set_process_unhandled_input(false)
 	_hurtbox.set_deferred("monitorable", false)
 	_crosshair.visible = false

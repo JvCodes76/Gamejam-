@@ -1,9 +1,9 @@
 class_name Boss
 extends EnemyBase
-## Boss that adapts to potions: on crossing each health threshold (75%, 50%, 25%) it closes its wings and becomes immune
+## Boss that adapts to potions: on crossing each health threshold (70%, 25%) it closes its wings and becomes immune
 ## to the items of the potion that dealt the last hit (immunities accumulate). The effects of those items stop
 ## working against it: hits go through ProjectileModifiers.for_target(), which asks for adapt_modifiers().
-## Each damage taken has a small chance of dropping an item.
+## Each damage taken has a 5% chance of dropping an item.
 ## Besides chasing, it alternates two attacks aimed at the player: an explosion around itself (wings close while a
 ## red circle fills up on the ground) and a laser (the eye charges, an aiming line locks and a beam sweeps).
 
@@ -16,15 +16,15 @@ const TARGET_BODY_OFFSET: Vector2 = Vector2(0.0, -25.0)
 # Contact damage of the scene; loop scaling multiplies the hitbox damage, and the attacks follow it
 const BASE_CONTACT_DAMAGE: float = 15.0
 # Death cinematic: angle (degrees) of each white rectangle and the pause (s) before each one / after the last
-const DEATH_RECT_ANGLES: Array[float] = [-25.0, 40.0]
+const DEATH_RECT_ANGLES: Array[float] = [0.0, 90.0, 45.0, 135.0]
 const DEATH_RECT_INTERVAL: float = 1.0
 
 ## Name shown on the health bar
 @export var display_name: String = "Fallen Angel"
 ## Fractions of max health that trigger the adaptation (in descending order)
-@export var adapt_thresholds: Array[float] = [0.75, 0.5, 0.25]
+@export var adapt_thresholds: Array[float] = [0.7, 0.25]
 ## Chance (0-1) of dropping an item on each damage taken
-@export_range(0.0, 1.0) var drop_chance_per_damage: float = 0.01
+@export_range(0.0, 1.0) var drop_chance_per_damage: float = 0.05
 
 @export_group("Animation")
 @export var idle_texture: Texture2D
@@ -38,6 +38,20 @@ const DEATH_RECT_INTERVAL: float = 1.0
 @export var adapt_hold_time: float = 0.9
 ## Flash color when adapting
 @export var adapt_flash_color: Color = Color(0.75, 0.4, 1.0)
+
+@export_group("Resistance")
+## Fraction of direct hit damage (basic shots) that goes through; DoT and statuses only get the frozen reduction
+@export_range(0.05, 1.0) var basic_damage_scale: float = 0.5
+## Fraction of all damage that goes through while frozen before the rage
+@export_range(0.05, 1.0) var frozen_damage_scale: float = 0.25
+
+@export_group("Rage")
+## Time (s) frozen (wings closed) at the last threshold, before coming back in rage
+@export var rage_freeze_time: float = 7.0
+## Chase speed multiplier while in rage
+@export var rage_speed_multiplier: float = 1.6
+## Sprite tint while in rage
+@export var rage_tint: Color = Color(1.0, 0.35, 0.35)
 
 @export_group("Attacks")
 ## Delay (s) before the first attack after spawning
@@ -91,10 +105,17 @@ var _sweep_sign: float = 1.0
 var _laser_tick_left: float = 0.0
 var _recover_wings: bool = false
 var _fx: BossAttackFx = null
+# Time (s) the wings stay closed in the current adaptation (longer at the rage threshold)
+var _hold_time: float = 0.0
+# The current adaptation is the last one: the boss comes back in rage
+var _rage_pending: bool = false
+var _raging: bool = false
 
 
 func _ready() -> void:
 	super()
+	_hold_time = adapt_hold_time
+	_health.direct_damage_scale = basic_damage_scale
 	_set_sheet(idle_texture, idle_frames)
 	_health.health_changed.connect(_on_health_changed)
 	_health.damaged.connect(_on_damaged)
@@ -123,7 +144,8 @@ func _physics_process(delta: float) -> void:
 func _chase_velocity(target: Node2D) -> Vector2:
 	if _anim_state != AnimState.IDLE:
 		return Vector2.ZERO
-	return super(target)
+	var speed: float = rage_speed_multiplier if _raging else 1.0
+	return super(target) * speed
 
 
 ## Records the hit's potion and returns the modifiers without the items the boss is immune to.
@@ -167,26 +189,31 @@ func _on_health_changed(current: int, max_value: int) -> void:
 		_next_threshold += 1
 		crossed = true
 	if crossed:
-		_adapt()
+		_adapt(_next_threshold >= adapt_thresholds.size() and not _raging)
 
 
 # Becomes immune to the items of the last potion that hit it and announces the adaptation.
-func _adapt() -> void:
+func _adapt(rage: bool) -> void:
 	var new_items: Array[ItemData] = []
 	for item: ItemData in _last_hit_items:
 		if item != null and not _immune.has(item.id):
 			_immune[item.id] = item
 			new_items.append(item)
-	if new_items.is_empty():
+	if new_items.is_empty() and not rage:
 		print("[Boss] - threshold crossed, but the last potion brought no new items to adapt to")
 		return
+	_rage_pending = rage
+	if rage:
+		_health.damage_scale = frozen_damage_scale
+	_hold_time = rage_freeze_time if rage else adapt_hold_time
 	_filtered_cache.clear()
 	var names: PackedStringArray = []
 	for item: ItemData in new_items:
 		names.append(String(item.id))
 	print("[Boss] - adapted: immune to %s" % ", ".join(names))
 	_play_adapt_feedback()
-	EventBus.boss_adapted.emit(new_items, immune_items())
+	if not new_items.is_empty():
+		EventBus.boss_adapted.emit(new_items, immune_items())
 
 
 func _play_adapt_feedback() -> void:
@@ -201,7 +228,7 @@ func _play_adapt_feedback() -> void:
 	EventBus.play_sfx_requested.emit("room_lock")
 
 
-# 1% (default) chance of dropping an item on each damage taken.
+# 5% (default) chance of dropping an item on each damage taken.
 func _on_damaged(_amount: int) -> void:
 	if randf() < drop_chance_per_damage:
 		print("[Boss] - damage dropped an item")
@@ -222,9 +249,11 @@ func _tick_animation(delta: float) -> void:
 				frame = wings_frames - 1
 			_sprite.frame = frame
 		AnimState.HOLD:
-			if _anim_time >= adapt_hold_time:
+			if _anim_time >= _hold_time:
 				_anim_state = AnimState.OPENING
 				_anim_time = 0.0
+				if _rage_pending:
+					_start_rage()
 		AnimState.ATTACK:
 			pass
 		AnimState.OPENING:
@@ -235,6 +264,21 @@ func _tick_animation(delta: float) -> void:
 				_set_sheet(idle_texture, idle_frames)
 			else:
 				_sprite.frame = frame
+
+
+# Comes back from the freeze: red tint, faster chase, shake and flash
+func _start_rage() -> void:
+	_rage_pending = false
+	_raging = true
+	_health.damage_scale = 1.0
+	_base_modulate = rage_tint
+	_sprite.modulate = rage_tint
+	var feedback: HitFeedback = get_node_or_null("HitFeedback") as HitFeedback
+	if feedback != null:
+		feedback.flash(rage_tint, 0.4)
+	EventBus.screen_shake_requested.emit(FeelConstants.TRAUMA_ELITE_DEATH)
+	EventBus.play_sfx_requested.emit("elite_die")
+	print("[Boss] - rage")
 
 
 # --- Attacks ---

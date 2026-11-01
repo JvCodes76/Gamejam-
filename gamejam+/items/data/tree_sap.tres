@@ -16,6 +16,7 @@ effect_type = 3
 script = ExtResource("1")
 id = &"tree_sap"
 display_name = "Tree Sap"
+description = "Fun fact: When fossilized, it becomes ambar."
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([0, 6])

@@ -1,7 +1,7 @@
 class_name ImpactEffect
 extends Node2D
 
-@export var splash_damage_fraction: float = 0.5
+@export var splash_damage_fraction: float = CombatConstants.EXPLOSIVE_FRACTION
 @export var particle_count: int = 16
 @export var particle_lifetime: float = 0.6
 @export var ring_alpha: float = 0.25
@@ -26,13 +26,15 @@ var _ring_scale: float = 0.2
 
 
 ## Creates the effect in the current scene (added deferred, safe inside physics callbacks).
-static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, mods: ProjectileModifiers, new_base_damage: int, skip: Array[Hurtbox]) -> ImpactEffect:
+## "explode" turns on the area damage (Explosive: 40% of the bullet damage); without it, the impact is only visual.
+static func spawn(scene: Node, pos: Vector2, damage: int, color: Color, mods: ProjectileModifiers, new_base_damage: int, skip: Array[Hurtbox], explode: bool = false) -> ImpactEffect:
 	var fx: ImpactEffect = (load("res://projectiles/impact_effect.tscn") as PackedScene).instantiate() as ImpactEffect
 	fx.global_position = pos
 	fx.impact_damage = damage
 	fx.tint = color
 	fx.modifiers = mods
 	fx.base_damage = new_base_damage
+	fx.splash_enabled = explode
 	if mods != null:
 		fx.impact_radius = mods.impact_radius()
 	fx.excluded = skip

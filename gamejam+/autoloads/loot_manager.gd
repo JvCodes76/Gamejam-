@@ -86,9 +86,9 @@ func drop_chance(source: Source) -> float:
 	var loop_mult: float = 1.0 + loop_drop_chance_growth * GameManager.loop_index
 	match source:
 		Source.NORMAL_ENEMY:
-			return minf((normal_drop_chance + normal_drop_chance_per_cemetery * done) * loop_mult, normal_drop_chance_cap)
+			return minf((normal_drop_chance + normal_drop_chance_per_cemetery * done) * loop_mult * _butcher_mult(), normal_drop_chance_cap)
 		Source.ELITE_ENEMY:
-			return minf((elite_drop_chance + elite_drop_chance_per_cemetery * done) * loop_mult, elite_drop_chance_cap)
+			return minf((elite_drop_chance + elite_drop_chance_per_cemetery * done) * loop_mult * _butcher_mult(), elite_drop_chance_cap)
 	return 1.0
 
 
@@ -151,6 +151,14 @@ func _roll_from_rarity(rarity: ItemEnums.Rarity) -> ItemData:
 		var fresh: Array = pool.filter(func(item: ItemData) -> bool: return not _is_owned(item))
 		return (fresh if not fresh.is_empty() else pool).pick_random()
 	return null
+
+
+# Unethical Butcher (active potion): multiplier on the enemies' drop chance
+func _butcher_mult() -> float:
+	var potion: PotionData = ItemManager.get_active_potion()
+	if potion != null and potion.special_synergies.has(SpecialSynergies.BUTCHER):
+		return SynergyConstants.BUTCHER_DROP_CHANCE_MULT
+	return 1.0
 
 
 func _base_weights(source: Source) -> Array[float]:

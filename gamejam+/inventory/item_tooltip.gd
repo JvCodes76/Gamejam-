@@ -38,6 +38,9 @@ const EFFECT_NAMES: Dictionary = {
 	ItemEffect.EffectType.EXPLOSIVE: "Explosive",
 	ItemEffect.EffectType.FIRE_BREATH: "Fire breath",
 	ItemEffect.EffectType.REAL_BULLETS: "Real bullets",
+	ItemEffect.EffectType.SPLIT: "+Split",
+	ItemEffect.EffectType.BOUNCE: "+Bounce",
+	ItemEffect.EffectType.POISON_CLOUD: "Poison cloud",
 }
 
 var _item: PhysicalItem

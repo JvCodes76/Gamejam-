@@ -16,6 +16,7 @@ effect_type = 7
 script = ExtResource("1")
 id = &"rose_quartz"
 display_name = "Rose Quartz"
+description = "Crystal energy is scary stuff"
 icon = ExtResource("3")
 rarity = 1
 aspects = Array[int]([3, 6])

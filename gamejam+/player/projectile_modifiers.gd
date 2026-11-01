@@ -5,11 +5,6 @@ extends RefCounted
 ## Damage: Hitbox.damage remains an int; the fractional multiplier is accumulated
 ## in roll_damage() (instance shared among the bullets of the same shot/potion).
 
-const UNIMPLEMENTED_TYPES: Array[ItemEffect.EffectType] = [
-	ItemEffect.EffectType.HOMING, ItemEffect.EffectType.AOE, ItemEffect.EffectType.LASER,
-	ItemEffect.EffectType.EXPLOSIVE, ItemEffect.EffectType.FIRE_BREATH, ItemEffect.EffectType.REAL_BULLETS,
-]
-
 var color: Color = Color.WHITE
 var damage_multiplier: float = 1.0
 var range_multiplier: float = 1.0
@@ -24,7 +19,19 @@ var pierce_count: int = 0
 var has_poison_ingredient: bool = false
 var fire_dps: float = 0.0
 var fire_duration: float = CombatConstants.FIRE_DURATION
-var unimplemented: Dictionary = {}
+## Homing level (0 = off), AOE aura level, explosive on/off, Deathcap's poison cloud level.
+var homing_level: float = 0.0
+var aoe_level: float = 0.0
+var explosive: bool = false
+var poison_cloud_level: float = 0.0
+## Enemies the bounce can jump to after a hit (effect BOUNCE + RAINBOWS!!!).
+var bounce_count: int = 0
+## Children spawned when the shot splits on a hit (effect SPLIT; Weird Eye Drops guarantees at least 2).
+var split_count: int = 0
+## Weapon replacements (priority: fire breath > real bullets > laser).
+var laser: bool = false
+var fire_breath: bool = false
+var real_bullets: bool = false
 ## Aspect synergy effects resolved for this potion (SynergyResolver).
 var synergy: SynergyState = SynergyState.new()
 ## Rage damage multiplier (Evil synergy); maintained by the SynergyDirector.
@@ -41,6 +48,13 @@ var _secondary_carry: float = 0.0
 static func from_totals(totals: Dictionary, aspects: Dictionary = {}, specials: Array[StringName] = []) -> ProjectileModifiers:
 	var m: ProjectileModifiers = ProjectileModifiers.new()
 	m.damage_multiplier = 1.0 + _total(totals, ItemEffect.EffectType.DAMAGE) * CombatConstants.DAMAGE_PER_POINT
+	m.fire_breath = _total(totals, ItemEffect.EffectType.FIRE_BREATH) > 0.0
+	m.real_bullets = not m.fire_breath and _total(totals, ItemEffect.EffectType.REAL_BULLETS) > 0.0
+	m.laser = not m.fire_breath and not m.real_bullets and _total(totals, ItemEffect.EffectType.LASER) > 0.0
+	if _total(totals, ItemEffect.EffectType.FIRE_BREATH) > 0.0:
+		m.damage_multiplier *= CombatConstants.FIRE_BREATH_DAMAGE_MULT
+	if _total(totals, ItemEffect.EffectType.REAL_BULLETS) > 0.0:
+		m.damage_multiplier *= CombatConstants.REAL_BULLETS_DAMAGE_MULT
 	m.range_multiplier = 1.0 + _total(totals, ItemEffect.EffectType.RANGE) * CombatConstants.RANGE_PER_POINT
 	m.fire_rate_multiplier = 1.0 + _total(totals, ItemEffect.EffectType.FIRE_RATE) * CombatConstants.FIRE_RATE_PER_POINT
 	m.luck = _total(totals, ItemEffect.EffectType.LUCK)
@@ -52,9 +66,14 @@ static func from_totals(totals: Dictionary, aspects: Dictionary = {}, specials: 
 	m.synergy = SynergyResolver.resolve(aspects, specials)
 	m.has_poison_ingredient = int(aspects.get(ItemEnums.Aspect.POISON, 0)) >= 1
 	m.fire_dps = _total(totals, ItemEffect.EffectType.FIRE_DAMAGE) * CombatConstants.FIRE_DPS_PER_POINT
-	for t: ItemEffect.EffectType in UNIMPLEMENTED_TYPES:
-		if _total(totals, t) != 0.0:
-			m.unimplemented[t] = _total(totals, t)
+	m.homing_level = _total(totals, ItemEffect.EffectType.HOMING)
+	m.aoe_level = _total(totals, ItemEffect.EffectType.AOE)
+	m.explosive = _total(totals, ItemEffect.EffectType.EXPLOSIVE) > 0.0
+	m.poison_cloud_level = _total(totals, ItemEffect.EffectType.POISON_CLOUD)
+	m.bounce_count = int(_total(totals, ItemEffect.EffectType.BOUNCE)) + m.synergy.bounce_count
+	m.split_count = int(_total(totals, ItemEffect.EffectType.SPLIT))
+	if m.synergy.split_on_hit:
+		m.split_count = maxi(m.split_count, 2)
 	return m
 
 
@@ -214,9 +233,11 @@ func apply_on_hit_effects(target: Hurtbox, base_damage: int) -> void:
 	if fire_dps > 0.0:
 		target.apply_dot(fire_dps, fire_duration, &"fire", CombatConstants.FIRE_TICK)
 	if has_poison_ingredient and randf() < poison_chance():
-		target.apply_dot(poison_dps(base_damage), CombatConstants.POISON_DURATION, &"poison", CombatConstants.POISON_TICK)
+		target.apply_dot(poison_dps(base_damage), CombatConstants.POISON_DURATION, &"poison", CombatConstants.POISON_TICK, CombatConstants.POISON_MAX_STACKS)
 		print("[Combat] - target poisoned (%.1f dps)" % poison_dps(base_damage))
 		_apply_poison_synergy(target)
+		if poison_cloud_level > 0.0:
+			PoisonCloud.spawn(target.get_tree().current_scene, target, self, base_damage)
 	if randf() < charm_chance():
 		target.apply_status(StatusEffects.CHARMED, CombatConstants.CHARM_DURATION)
 	_apply_hit_synergies(target, base_damage)
@@ -240,12 +261,6 @@ func _apply_hit_synergies(target: Hurtbox, base_damage: int) -> void:
 	if synergy.stun_chance > 0.0 and randf() < synergy.stun_chance:
 		target.apply_status(StatusEffects.STUN, StatusEffects.stun_duration(0.0, synergy.stun_extra, synergy.stun_max))
 		print("[Synergy] - enemy stunned")
-
-
-## Prints once the effects that are stored but not yet implemented.
-func print_unimplemented() -> void:
-	for t: ItemEffect.EffectType in unimplemented:
-		print("[Potion] - effect %s not implemented yet" % ItemEffect.EffectType.keys()[t])
 
 
 static func _total(totals: Dictionary, type: ItemEffect.EffectType) -> float:

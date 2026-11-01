@@ -123,7 +123,7 @@ func _on_enemy_dot_ticked(enemy: Node, source: StringName, amount: int) -> void:
 			print("[Synergy] - poison killed a basic enemy")
 
 
-## Kills: explosion of marked enemies (Animal 12), mud puddle (Earth 12) and mark re-evaluation.
+## Kills: explosion of marked enemies (Animal 12), mud puddle (Earth 12), Butcher's healing orb and mark re-evaluation.
 func _on_enemy_died(pos: Vector2, was_marked: bool, _is_basic: bool) -> void:
 	if _mods == null:
 		return
@@ -135,7 +135,7 @@ func _on_enemy_died(pos: Vector2, was_marked: bool, _is_basic: bool) -> void:
 	if _state.mud_death_pool:
 		MudTrail.spawn(scene, pos, SynergyConstants.EARTH_DEATH_POOL_RADIUS, SynergyConstants.EARTH_DEATH_POOL_LIFETIME, _state.mud_slow, _mods.mud_dps(CombatConstants.WEAPON_BASE_DAMAGE))
 		print("[Synergy] - mud puddle on death")
-	if was_marked and _state.butcher_orb_chance > 0.0 and randf() < _state.butcher_orb_chance:
+	if _state.butcher_orb_chance > 0.0 and randf() < _state.butcher_orb_chance:
 		HealOrb.spawn(scene, pos)
 		print("[Synergy] - Unethical Butcher: healing orb dropped")
 	if _state.mark_count > 0:

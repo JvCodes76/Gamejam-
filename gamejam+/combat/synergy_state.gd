@@ -59,7 +59,7 @@ var poison_chance_bonus: float = 0.0
 # Spice bag: cloud trail and its slow
 var cloud_enabled: bool = false
 var cloud_slow: float = 0.0
-# Unethical Butcher: chance of a healing orb when dying marked
+# Unethical Butcher: chance of a healing orb when any enemy dies (the item drop bonus lives in LootManager)
 var butcher_orb_chance: float = 0.0
 # Crunchy!: bonus damage taken by stunned enemies
 var stun_damage_bonus: float = 0.0

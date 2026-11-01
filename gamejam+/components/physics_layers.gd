@@ -15,5 +15,5 @@ const BULLET_BLOCKER: int = 64
 
 # What blocks the movement of the player, enemies and ghosts
 const MOVE_MASK: int = WORLD | LOW_OBSTACLE
-# What destroys (or bounces) a projectile
+# What destroys a projectile
 const PROJECTILE_WALL_MASK: int = WORLD | BULLET_BLOCKER

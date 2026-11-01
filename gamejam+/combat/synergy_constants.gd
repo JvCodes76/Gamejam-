@@ -142,9 +142,11 @@ const CLOUD_REFRESH: float = 0.2
 # Cloud color (translucent light gray)
 const CLOUD_COLOR: Color = Color(0.82, 0.82, 0.85, 0.4)
 
-# --- Unethical Butcher :( : healing orb dropped by a marked enemy ---
-# [N] Chance to drop the orb when dying marked
-const BUTCHER_ORB_CHANCE: float = 0.25
+# --- Unethical Butcher :( : higher chance of enemies dropping items and healing orbs ---
+# [N] Chance of any dying enemy dropping the orb
+const BUTCHER_ORB_CHANCE: float = 0.15
+# [N] Multiplier on the item drop chance of regular and elite enemies
+const BUTCHER_DROP_CHANCE_MULT: float = 1.5
 # Health healed on collecting the orb
 const BUTCHER_ORB_HEAL: int = 15
 # [N] Radius at which the orb attracts the player (px)
@@ -189,8 +191,6 @@ const RAINBOW_COLORS: Array[Color] = [
 	Color(1.0, 0.15, 0.15), Color(1.0, 0.55, 0.1), Color(1.0, 0.95, 0.2),
 	Color(0.2, 0.9, 0.3), Color(0.2, 0.5, 1.0), Color(0.6, 0.25, 0.9),
 ]
-# Clearance when pulling the bullet back from the wall after the bounce (px)
-const BOUNCE_PUSH_OUT: float = 4.0
 
 # --- Do NOT make this tea.: when piercing a basic enemy (needs pierce) ---
 # [N] Chance of the basic enemy losing health instantly

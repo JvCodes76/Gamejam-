@@ -52,9 +52,9 @@ func _physics_process(delta: float) -> void:
 
 
 # Passes damage over time to the HealthComponent.
-func apply_dot(dps: float, duration: float, source: StringName = &"dot", tick: float = HealthComponent.DOT_TICK) -> void:
+func apply_dot(dps: float, duration: float, source: StringName = &"dot", tick: float = HealthComponent.DOT_TICK, max_stacks: int = 1) -> void:
 	if health_component:
-		health_component.apply_dot(dps, duration, source, tick)
+		health_component.apply_dot(dps, duration, source, tick, max_stacks)
 
 
 # Applies a status to the owner (sibling StatusEffects node), if it exists.

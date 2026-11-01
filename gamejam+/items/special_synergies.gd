@@ -24,7 +24,7 @@ const RECIPES: Array[Dictionary] = [
 	{"id": SPICE_BAG, "name": "Spice bag", "item_ids": [&"cinnamon", &"star_anise", &"mandrake_root"],
 		"description": "Shots leave a slowing cloud"},
 	{"id": BUTCHER, "name": "Unethical Butcher :(", "item_ids": [&"wolf_tooth", &"salamander_tail", &"spider_gland", &"eye_of_giant_newt"],
-		"description": "Marked enemies may drop a healing orb"},
+		"description": "Enemies are more likely to drop items and healing orbs"},
 	{"id": CRUNCHY, "name": "Crunchy!", "item_ids": [&"salt", &"obsidian", &"rose_quartz"],
 		"description": "Stunned enemies take +10% damage"},
 	{"id": RESPECTS, "name": "Press F to pay respects", "item_ids": [&"rose_petal", &"graveyard_dirt"],

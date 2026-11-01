@@ -12,6 +12,7 @@ effect_type = 3
 script = ExtResource("1")
 id = &"carrot"
 display_name = "Carrot"
+description = "Great for your eyes!"
 icon = ExtResource("3")
 aspects = Array[int]([0])
 effects = Array[ExtResource("2")]([SubResource("e1")])

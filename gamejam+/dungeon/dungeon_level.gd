@@ -7,6 +7,8 @@ extends Node2D
 const ROOM_TRIGGER_INSET: float = 40.0
 # [DEBUG] Distance (px) from the player to the boss door, on the outside, in the debug shortcut
 const DEBUG_BOSS_DOOR_DISTANCE: float = 48.0
+# Boss arena cauldron: distance (px) from the left wall and from the far wall
+const BOSS_CAULDRON_MARGIN: Vector2 = Vector2(96.0, 96.0)
 
 @export_group("Graveyards")
 ## Number of rooms in each graveyard (the array size is the number of graveyards)
@@ -25,6 +27,10 @@ const DEBUG_BOSS_DOOR_DISTANCE: float = 48.0
 @export var exterior_margin_tiles: int = 12
 ## Multiplier for the amount of woods props (0 = no props)
 @export var exterior_density: float = 1.0
+## Pumpkins inside the rooms may become mimics (chance per pumpkin, at least min_mimics per graveyard)
+@export var pumpkin_mimic_scene: PackedScene = preload("res://enemies/pumpkin_mimic.tscn")
+@export_range(0.0, 1.0) var pumpkin_mimic_chance: float = 0.10
+@export var min_pumpkin_mimics: int = 1
 @export var void_color: Color = Color.BLACK
 
 @export_group("Salas extras")
@@ -53,7 +59,7 @@ const DEBUG_BOSS_DOOR_DISTANCE: float = 48.0
 @export_group("Boss")
 ## Boss scene (empty = placeholder: uses the enlarged and tinted elite_scene)
 @export var boss_scene: PackedScene
-@export var boss_health_multiplier: float = 40.0
+@export var boss_health_multiplier: float = 100.0
 @export var boss_scale: float = 2.6
 @export var boss_tint: Color = Color(1.0, 0.45, 0.45)
 @export var boss_move_speed_multiplier: float = 0.8
@@ -97,6 +103,7 @@ var _previous_clear_color: Color
 
 
 func _ready() -> void:
+	print("[Dungeon] - [DEBUG] level ready (debug build: %s, start at boss: %s)" % [OS.is_debug_build(), debug_start_at_boss])
 	_previous_clear_color = RenderingServer.get_default_clear_color()
 	RenderingServer.set_default_clear_color(void_color)
 	enemy_root = $Enemies as Node2D
@@ -121,6 +128,7 @@ func _ready() -> void:
 	}
 	rooms = DungeonGenerator.generate(rooms_per_cemetery[index - 1], is_final, weights, cell_pitch_tiles, DungeonBuilder.TILE, _rng)
 	DungeonBuilder.new().build(self, rooms, corridor_width_tiles, prop_density, exterior_margin_tiles, exterior_density, _rng)
+	_spawn_pumpkin_mimics()
 	_populate_rooms()
 	if jump_to_boss:
 		_debug_place_at_boss()
@@ -138,12 +146,15 @@ func _exit_tree() -> void:
 
 
 # [DEBUG] Shortcut key: reloads the level already in the last graveyard, at the boss door.
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if not OS.is_debug_build() or _leaving:
 		return
 	var key: InputEventKey = event as InputEventKey
-	if key == null or not key.pressed or key.echo or not key.shift_pressed or key.keycode != debug_boss_key:
+	if key == null or not key.pressed or key.echo or not key.shift_pressed:
 		return
+	if key.keycode != debug_boss_key and key.physical_keycode != debug_boss_key:
+		return
+	print("[Dungeon] - [DEBUG] boss shortcut pressed")
 	get_viewport().set_input_as_handled()
 	_leaving = true
 	GameManager.debug_go_to_boss()
@@ -206,6 +217,29 @@ func loop_points_multiplier() -> float:
 	return 1.0 + loop_points_scaling * GameManager.loop_index
 
 
+# Swaps some pumpkins inside the rooms (not in the woods, where the player cannot reach) for mimics.
+func _spawn_pumpkin_mimics() -> void:
+	var props_root: Node2D = get_node_or_null("Props") as Node2D
+	if props_root == null:
+		return
+	var pumpkins: Array[Prop] = []
+	for child: Node in props_root.get_children():
+		var prop: Prop = child as Prop
+		if prop == null or prop.kind not in PumpkinMimicSpawner.PUMPKIN_KINDS:
+			continue
+		for room: RoomData in rooms:
+			if room.rect.has_point(prop.position):
+				pumpkins.append(prop)
+				break
+	var spawner: PumpkinMimicSpawner = PumpkinMimicSpawner.new()
+	spawner.props_root = props_root
+	spawner.mimic_scene = pumpkin_mimic_scene
+	spawner.mimic_chance = pumpkin_mimic_chance
+	spawner.min_mimics = min_pumpkin_mimics
+	spawner.swap_pumpkins(pumpkins)
+	spawner.free()
+
+
 # Places the player, the cauldron, the item and the portal; creates each room's encounter.
 func _populate_rooms() -> void:
 	for room: RoomData in rooms:
@@ -222,10 +256,24 @@ func _populate_rooms() -> void:
 				var cauldron: Node2D = cauldron_scene.instantiate() as Node2D
 				cauldron.position = room.center()
 				add_child(cauldron)
+			RoomData.Type.BOSS:
+				_place_boss_cauldron(room)
 			RoomData.Type.ITEM:
 				_drop_room_item(room)
 			RoomData.Type.EXIT:
 				_build_portal(room)
+
+
+# Boss arena: cauldron in a corner on the side opposite the door, so the player can brew during the fight.
+func _place_boss_cauldron(room: RoomData) -> void:
+	if cauldron_scene == null:
+		return
+	var from_door_up: bool = not room.doors.is_empty() and room.doors[0].side == Vector2i.UP
+	var y: float = room.rect.end.y - BOSS_CAULDRON_MARGIN.y if from_door_up else room.rect.position.y + BOSS_CAULDRON_MARGIN.y + 32.0
+	var cauldron: Node2D = cauldron_scene.instantiate() as Node2D
+	cauldron.position = Vector2(room.rect.position.x + BOSS_CAULDRON_MARGIN.x, y)
+	add_child(cauldron)
+	print("[Dungeon] - cauldron placed in the boss arena")
 
 
 # Item room: rarity roll + item from the LootManager, at the center of the room.

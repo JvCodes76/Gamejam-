@@ -20,6 +20,7 @@ effect_type = 13
 script = ExtResource("1")
 id = &"gunpowder"
 display_name = "Gunpowder"
+description = "Rare ingredient from the eastern lands. Smells awful."
 icon = ExtResource("3")
 rarity = 2
 aspects = Array[int]([6, 5, 3])
